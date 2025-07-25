@@ -36,7 +36,7 @@ class CreateUsersTable extends Migration
             'role' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 20,
-                'comment'    => 'admin, user, dll',
+                'comment'    => 'admin, karyawan, pelanggan',
             ],
             'status' => [
                 'type'       => 'VARCHAR',
@@ -72,7 +72,7 @@ class CreateUsersTable extends Migration
         // Tambahkan admin default
         $data = [
             'username'   => 'admin',
-            'email'      => 'admin@example.com',
+            'email'      => 'admin@tiarawash.com',
             'password'   => password_hash('admin123', PASSWORD_DEFAULT),
             'name'       => 'Administrator',
             'role'       => 'admin',
