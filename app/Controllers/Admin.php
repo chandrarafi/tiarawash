@@ -17,14 +17,16 @@ class Admin extends BaseController
     public function index()
     {
         $title = 'Dashboard';
-        return view('admin/dashboard', compact('title'));
+        $active = 'dashboard';
+        return view('admin/dashboard', compact('title', 'active'));
     }
 
     // User Management
     public function users()
     {
         $title = 'User Management';
-        return view('admin/users/index', compact('title'));
+        $active = 'users';
+        return view('admin/users/index', compact('title', 'active'));
     }
 
     public function getUsers()
@@ -185,8 +187,8 @@ class Admin extends BaseController
 
     public function getRoles()
     {
-        // Daftar role yang tersedia
-        $roles = ['admin', 'manager', 'user'];
+        // Daftar role yang tersedia - hanya 3 aktor: admin, pimpinan, pelanggan
+        $roles = ['admin', 'pimpinan', 'pelanggan'];
 
         return $this->response->setJSON([
             'status' => 'success',

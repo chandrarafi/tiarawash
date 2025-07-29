@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - TiaraWash</title>
+    <title>Daftar Akun - TiaraWash</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
@@ -83,9 +83,45 @@
     </style>
 </head>
 
-<body class="h-full font-sans">
+<body class="h-full font-sans bg-gray-50">
     <div class="min-h-full flex">
-        <!-- Left Panel - Login Form -->
+        <!-- Left Panel - Hero Image -->
+        <div class="hidden lg:block relative w-0 flex-1">
+            <div class="absolute inset-0 gradient-bg">
+                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+                <div class="relative h-full flex items-center justify-center">
+                    <div class="text-center text-white animate-fade-in">
+                        <div class="mb-8">
+                            <i class="fas fa-user-plus text-6xl mb-4 animate-float"></i>
+                            <h2 class="text-4xl font-bold mb-4">Bergabung dengan TiaraWash!</h2>
+                            <p class="text-xl opacity-90 max-w-md mx-auto">
+                                Nikmati kemudahan booking dan layanan cuci kendaraan terbaik
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
+                            <div class="glass-effect rounded-lg p-4 text-left">
+                                <i class="fas fa-mobile-alt text-primary-200 text-2xl mb-2"></i>
+                                <h3 class="font-semibold text-gray-800">Booking Online</h3>
+                                <p class="text-sm text-gray-600">Pesan layanan kapan saja, dimana saja</p>
+                            </div>
+                            <div class="glass-effect rounded-lg p-4 text-left">
+                                <i class="fas fa-star text-primary-200 text-2xl mb-2"></i>
+                                <h3 class="font-semibold text-gray-800">Layanan Berkualitas</h3>
+                                <p class="text-sm text-gray-600">Cuci kendaraan dengan standar terbaik</p>
+                            </div>
+                            <div class="glass-effect rounded-lg p-4 text-left">
+                                <i class="fas fa-history text-primary-200 text-2xl mb-2"></i>
+                                <h3 class="font-semibold text-gray-800">Riwayat Lengkap</h3>
+                                <p class="text-sm text-gray-600">Pantau semua transaksi Anda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Register Form -->
         <div class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
             <div class="mx-auto w-full max-w-sm lg:w-96">
                 <!-- Logo and Title -->
@@ -93,16 +129,44 @@
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full mb-4 animate-float">
                         <i class="fas fa-car-wash text-white text-2xl"></i>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-900">TiaraWash</h1>
-                    <p class="text-gray-600 mt-2">Sistem Manajemen Cuci Kendaraan</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Daftar Akun</h1>
+                    <p class="text-gray-600 mt-2">Buat akun pelanggan TiaraWash</p>
                 </div>
 
-                <!-- Login Form -->
+                <!-- Register Form -->
                 <div class="animate-slide-up">
-                    <form id="loginForm" class="space-y-6">
+                    <form id="registerForm" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user text-primary-500 mr-2"></i>Nama Lengkap
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                required
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
+                                placeholder="Masukkan nama lengkap">
+                            <div id="name-error" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-envelope text-primary-500 mr-2"></i>Email
+                            </label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
+                                placeholder="contoh@email.com">
+                            <div id="email-error" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+
                         <div>
                             <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-user text-primary-500 mr-2"></i>Username atau Email
+                                <i class="fas fa-at text-primary-500 mr-2"></i>Username
                             </label>
                             <input
                                 id="username"
@@ -110,7 +174,7 @@
                                 type="text"
                                 required
                                 class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
-                                placeholder="Masukkan username atau email">
+                                placeholder="Pilih username unik">
                             <div id="username-error" class="text-red-500 text-sm mt-1 hidden"></div>
                         </div>
 
@@ -125,7 +189,7 @@
                                     type="password"
                                     required
                                     class="appearance-none block w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
-                                    placeholder="Masukkan password">
+                                    placeholder="Minimal 6 karakter">
                                 <button
                                     type="button"
                                     id="togglePassword"
@@ -136,79 +200,61 @@
                             <div id="password-error" class="text-red-500 text-sm mt-1 hidden"></div>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
+                        <div>
+                            <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-lock text-primary-500 mr-2"></i>Konfirmasi Password
+                            </label>
+                            <div class="relative">
                                 <input
-                                    id="remember"
-                                    name="remember"
-                                    type="checkbox"
-                                    class="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded">
-                                <label for="remember" class="ml-2 block text-sm text-gray-700">
-                                    Ingat saya
-                                </label>
+                                    id="confirm_password"
+                                    name="confirm_password"
+                                    type="password"
+                                    required
+                                    class="appearance-none block w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
+                                    placeholder="Ulangi password">
+                                <button
+                                    type="button"
+                                    id="toggleConfirmPassword"
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-eye" id="eyeConfirmIcon"></i>
+                                </button>
                             </div>
-                            <a href="#" class="text-sm text-primary-500 hover:text-primary-600 font-medium">
-                                Lupa password?
-                            </a>
+                            <div id="confirm_password-error" class="text-red-500 text-sm mt-1 hidden"></div>
                         </div>
 
-                        <div>
+                        <div class="flex items-center">
+                            <input
+                                id="terms"
+                                name="terms"
+                                type="checkbox"
+                                required
+                                class="h-4 w-4 text-primary-500 focus:ring-primary-500 border-gray-300 rounded">
+                            <label for="terms" class="ml-2 block text-sm text-gray-700">
+                                Saya menyetujui <a href="#" class="text-primary-500 hover:text-primary-600">Syarat & Ketentuan</a> dan <a href="#" class="text-primary-500 hover:text-primary-600">Kebijakan Privasi</a>
+                            </label>
+                        </div>
+
+                        <div class="pt-2">
                             <button
                                 type="submit"
-                                id="loginBtn"
+                                id="registerBtn"
                                 class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-200 transform hover:scale-105">
                                 <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                                    <i class="fas fa-sign-in-alt text-primary-200 group-hover:text-primary-100"></i>
+                                    <i class="fas fa-user-plus text-primary-200 group-hover:text-primary-100"></i>
                                 </span>
-                                <span id="loginBtnText">Masuk</span>
+                                <span id="registerBtnText">Daftar Akun</span>
                             </button>
                         </div>
 
                         <div class="text-center">
                             <p class="text-sm text-gray-600">
-                                Belum punya akun?
-                                <a href="<?= base_url('auth/register') ?>" class="text-primary-500 hover:text-primary-600 font-medium transition duration-200">
-                                    Daftar sekarang
+                                Sudah punya akun?
+                                <a href="<?= base_url('auth') ?>" class="text-primary-500 hover:text-primary-600 font-medium transition duration-200">
+                                    Masuk sekarang
                                 </a>
                             </p>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Panel - Hero Image -->
-        <div class="hidden lg:block relative w-0 flex-1">
-            <div class="absolute inset-0 gradient-bg">
-                <div class="absolute inset-0 bg-black bg-opacity-20"></div>
-                <div class="relative h-full flex items-center justify-center">
-                    <div class="text-center text-white animate-fade-in">
-                        <div class="mb-8">
-                            <i class="fas fa-car text-6xl mb-4 animate-float"></i>
-                            <h2 class="text-4xl font-bold mb-4">Selamat Datang!</h2>
-                            <p class="text-xl opacity-90 max-w-md mx-auto">
-                                Kelola bisnis cuci kendaraan Anda dengan mudah dan efisien
-                            </p>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 max-w-sm mx-auto">
-                            <div class="glass-effect rounded-lg p-4 text-left">
-                                <i class="fas fa-calendar-check text-primary-200 text-2xl mb-2"></i>
-                                <h3 class="font-semibold text-gray-800">Manajemen Booking</h3>
-                                <p class="text-sm text-gray-600">Kelola jadwal booking pelanggan</p>
-                            </div>
-                            <div class="glass-effect rounded-lg p-4 text-left">
-                                <i class="fas fa-users text-primary-200 text-2xl mb-2"></i>
-                                <h3 class="font-semibold text-gray-800">Data Pelanggan</h3>
-                                <p class="text-sm text-gray-600">Sistem customer relationship</p>
-                            </div>
-                            <div class="glass-effect rounded-lg p-4 text-left">
-                                <i class="fas fa-chart-line text-primary-200 text-2xl mb-2"></i>
-                                <h3 class="font-semibold text-gray-800">Laporan Bisnis</h3>
-                                <p class="text-sm text-gray-600">Analisis performa dan keuangan</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -249,24 +295,37 @@
                 }
             });
 
-            // Login form submission
-            $('#loginForm').submit(function(e) {
+            $('#toggleConfirmPassword').click(function() {
+                const confirmPasswordField = $('#confirm_password');
+                const eyeConfirmIcon = $('#eyeConfirmIcon');
+
+                if (confirmPasswordField.attr('type') === 'password') {
+                    confirmPasswordField.attr('type', 'text');
+                    eyeConfirmIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    confirmPasswordField.attr('type', 'password');
+                    eyeConfirmIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Register form submission
+            $('#registerForm').submit(function(e) {
                 e.preventDefault();
 
                 // Clear previous errors
                 $('.text-red-500').addClass('hidden');
-                $('#username, #password').removeClass('border-red-500');
+                $('input').removeClass('border-red-500');
 
-                const loginBtn = $('#loginBtn');
-                const loginBtnText = $('#loginBtnText');
-                const originalText = loginBtnText.text();
+                const registerBtn = $('#registerBtn');
+                const registerBtnText = $('#registerBtnText');
+                const originalText = registerBtnText.text();
 
                 // Show loading state
-                loginBtn.prop('disabled', true);
-                loginBtnText.html('<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...');
+                registerBtn.prop('disabled', true);
+                registerBtnText.html('<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...');
 
                 $.ajax({
-                    url: '<?= base_url('auth/login') ?>',
+                    url: '<?= base_url('auth/register') ?>',
                     type: 'POST',
                     data: $(this).serialize(),
                     dataType: 'json',
@@ -274,10 +333,10 @@
                         if (response.status === 'success') {
                             showAlert('success', 'Berhasil!', response.message);
                             setTimeout(() => {
-                                window.location.href = response.redirect || '<?= base_url('admin') ?>';
-                            }, 1500);
+                                window.location.href = response.redirect;
+                            }, 2000);
                         } else {
-                            showAlert('error', 'Login Gagal', response.message);
+                            showAlert('error', 'Registrasi Gagal', response.message);
                         }
                     },
                     error: function(xhr) {
@@ -294,8 +353,8 @@
                     },
                     complete: function() {
                         // Reset button state
-                        loginBtn.prop('disabled', false);
-                        loginBtnText.text(originalText);
+                        registerBtn.prop('disabled', false);
+                        registerBtnText.text(originalText);
                     }
                 });
             });
@@ -331,6 +390,20 @@
             $('#alertModal').click(function(e) {
                 if (e.target === this) {
                     $(this).removeClass('flex').addClass('hidden');
+                }
+            });
+
+            // Real-time password confirmation validation
+            $('#confirm_password').on('keyup', function() {
+                const password = $('#password').val();
+                const confirmPassword = $(this).val();
+
+                if (confirmPassword && password !== confirmPassword) {
+                    $(this).addClass('border-red-500');
+                    $('#confirm_password-error').text('Password tidak cocok').removeClass('hidden');
+                } else {
+                    $(this).removeClass('border-red-500');
+                    $('#confirm_password-error').addClass('hidden');
                 }
             });
         });
