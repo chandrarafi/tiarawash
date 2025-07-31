@@ -60,7 +60,7 @@ class Layanan extends BaseController
         $fotoName = null;
         if ($foto && $foto->isValid() && !$foto->hasMoved()) {
             $fotoName = $foto->getRandomName();
-            $foto->move(WRITEPATH . 'uploads/layanan', $fotoName);
+            $foto->move(FCPATH . 'uploads/layanan', $fotoName);
         }
 
         // Simpan data
@@ -130,7 +130,7 @@ class Layanan extends BaseController
                 }
 
                 // Create directory if not exists
-                $uploadPath = WRITEPATH . 'uploads/layanan';
+                $uploadPath = FCPATH . 'uploads/layanan';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
@@ -232,12 +232,12 @@ class Layanan extends BaseController
         $fotoName = $existingLayanan['foto']; // Keep existing foto
         if ($foto && $foto->isValid() && !$foto->hasMoved()) {
             // Delete old foto if exists
-            if ($existingLayanan['foto'] && file_exists(WRITEPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
-                unlink(WRITEPATH . 'uploads/layanan/' . $existingLayanan['foto']);
+            if ($existingLayanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
+                unlink(FCPATH . 'uploads/layanan/' . $existingLayanan['foto']);
             }
 
             $fotoName = $foto->getRandomName();
-            $foto->move(WRITEPATH . 'uploads/layanan', $fotoName);
+            $foto->move(FCPATH . 'uploads/layanan', $fotoName);
         }
 
         // Update data
@@ -310,13 +310,13 @@ class Layanan extends BaseController
                 }
 
                 // Delete old photo if exists
-                if ($existingLayanan['foto'] && file_exists(WRITEPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
-                    unlink(WRITEPATH . 'uploads/layanan/' . $existingLayanan['foto']);
+                if ($existingLayanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
+                    unlink(FCPATH . 'uploads/layanan/' . $existingLayanan['foto']);
                     log_message('debug', 'Old photo deleted: ' . $existingLayanan['foto']);
                 }
 
                 // Create directory if not exists
-                $uploadPath = WRITEPATH . 'uploads/layanan';
+                $uploadPath = FCPATH . 'uploads/layanan';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
@@ -377,8 +377,8 @@ class Layanan extends BaseController
         }
 
         // Delete foto file if exists
-        if ($layanan['foto'] && file_exists(WRITEPATH . 'uploads/layanan/' . $layanan['foto'])) {
-            unlink(WRITEPATH . 'uploads/layanan/' . $layanan['foto']);
+        if ($layanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $layanan['foto'])) {
+            unlink(FCPATH . 'uploads/layanan/' . $layanan['foto']);
         }
 
         $this->layananModel->delete($kode);
@@ -401,7 +401,7 @@ class Layanan extends BaseController
             throw new PageNotFoundException('File tidak ditemukan');
         }
 
-        $filepath = WRITEPATH . 'uploads/layanan/' . $filename;
+        $filepath = FCPATH . 'uploads/layanan/' . $filename;
 
         if (!file_exists($filepath)) {
             throw new PageNotFoundException('File tidak ditemukan');

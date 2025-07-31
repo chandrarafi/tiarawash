@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Form Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </head>
+  <body>
+    <h1>Simple Layanan Form Test</h1>
+
+    <form id="layananForm" enctype="multipart/form-data">
+      <p>
+        Kode:
+        <input
+          type="text"
+          name="kode_layanan"
+          value="SIMPLE-TEST-001"
+          required
+        />
+      </p>
+      <p>
+        Nama:
+        <input type="text" name="nama_layanan" value="Test Simple" required />
+      </p>
+      <p>
+        Jenis:
+        <select name="jenis_kendaraan" required>
+          <option value="motor">Motor</option>
+          <option value="mobil">Mobil</option>
+        </select>
+      </p>
+      <p>Harga: <input type="number" name="harga" value="25000" required /></p>
+      <p>
+        Durasi: <input type="number" name="durasi_menit" value="30" required />
+      </p>
+      <p>
+        Status:
+        <select name="status">
+          <option value="aktif">Aktif</option>
+        </select>
+      </p>
+      <p>Deskripsi: <textarea name="deskripsi">Test deskripsi</textarea></p>
+      <p>Foto: <input type="file" name="foto" accept="image/*" /></p>
+
+      <button type="submit" id="submitBtn">Simpan Layanan</button>
+    </form>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM loaded");
+
+        const layananForm = document.getElementById("layananForm");
+        if (!layananForm) {
+          console.error("Form not found");
+          return;
+        }
+
+        console.log("Form found:", layananForm);
+
+        layananForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          console.log("Form submitted");
+
+          // Show loading
+          const submitBtn = document.getElementById("submitBtn");
+          if (!submitBtn) {
+            console.error("Submit button not found");
+            return;
+          }
+
+          console.log("Submit button found:", submitBtn);
+
+          const originalText = submitBtn.innerHTML;
+          submitBtn.innerHTML = "Menyimpan...";
+          submitBtn.disabled = true;
+
+          const formData = new FormData(layananForm);
+
+          fetch("http://localhost:8080/admin/layanan/store", {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          })
+            .then((response) => {
+              console.log("Response status:", response.status);
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Response data:", data);
+
+              if (data.status) {
+                Swal.fire({
+                  icon: "success",
+                  title: "Berhasil!",
+                  text: data.message,
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: "Gagal!",
+                  text: data.message || "Terjadi kesalahan",
+                });
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              Swal.fire({
+                icon: "error",
+                title: "Error!",
+                text: "Network error: " + error.message,
+              });
+            })
+            .finally(() => {
+              submitBtn.innerHTML = originalText;
+              submitBtn.disabled = false;
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

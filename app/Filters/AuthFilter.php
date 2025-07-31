@@ -37,8 +37,11 @@ class AuthFilter implements FilterInterface
                 }
             }
 
-            // Simpan URL yang dicoba diakses
-            session()->set('redirect_url', current_url());
+            // Simpan URL yang dicoba diakses hanya jika bukan halaman auth
+            $currentUrl = current_url();
+            if (!str_contains($currentUrl, '/auth')) {
+                session()->set('redirect_url', $currentUrl);
+            }
 
             return redirect()->to('auth');
         }

@@ -51,10 +51,11 @@
                                             <td class="text-center"><?= $no++; ?></td>
                                             <td class="text-center">
                                                 <?php if (!empty($item['foto'])) : ?>
-                                                    <img src="<?= base_url('admin/layanan/foto/' . $item['foto']); ?>"
+                                                    <img src="<?= base_url('uploads/layanan/' . $item['foto']); ?>"
                                                         alt="<?= $item['nama_layanan']; ?>"
                                                         class="img-thumbnail"
-                                                        style="width: 60px; height: 60px; object-fit: cover;">
+                                                        style="width: 60px; height: 60px; object-fit: cover;"
+                                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                 <?php else : ?>
                                                     <div class="bg-light d-flex align-items-center justify-content-center"
                                                         style="width: 60px; height: 60px; border-radius: 4px;">

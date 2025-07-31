@@ -48,7 +48,218 @@ class Pelanggan extends BaseController
                 ) ENGINE=InnoDB
             ");
 
-            log_message('info', 'Tabel pelanggan berhasil dibuat');
+            log_message('info', 'Tabel pelanggan berhasil dibuat.');
+        }
+    }
+
+    /**
+     * Dashboard untuk pelanggan
+     */
+    public function dashboard()
+    {
+        // Get current user data
+        $userId = session()->get('user_id');
+        $userEmail = session()->get('email');
+        $userName = session()->get('name');
+
+        // Get user data from database if needed
+        $userModel = new \App\Models\UserModel();
+        $user = $userModel->find($userId);
+
+        // Load required models
+        $bookingModel = new \App\Models\BookingModel();
+        $transaksiModel = new \App\Models\TransaksiModel();
+        $layananModel = new \App\Models\LayananModel();
+        $antrianModel = new \App\Models\AntrianModel();
+
+        // Get pelanggan data
+        $pelanggan = $this->pelangganModel->where('user_id', $userId)->first();
+        $pelangganId = $pelanggan ? $pelanggan['kode_pelanggan'] : null;
+
+        // Get real statistics
+        $stats = [
+            'total_booking' => 0,
+            'booking_bulan_ini' => 0,
+            'total_transaksi' => 0,
+            'rating_rata' => 4.8
+        ];
+
+        if ($pelangganId) {
+            // Total booking
+            $stats['total_booking'] = $bookingModel->where('pelanggan_id', $pelangganId)->countAllResults();
+
+            // Booking bulan ini
+            $currentMonth = date('Y-m');
+            $stats['booking_bulan_ini'] = $bookingModel
+                ->where('pelanggan_id', $pelangganId)
+                ->like('tanggal', $currentMonth, 'after')
+                ->countAllResults();
+
+            // Total transaksi
+            $stats['total_transaksi'] = $transaksiModel->where('pelanggan_id', $pelangganId)->countAllResults();
+        }
+
+        // Get recent bookings
+        $recentBookings = [];
+        if ($pelangganId) {
+            $recentBookings = $bookingModel->getBookingWithDetails();
+            $recentBookings = array_filter($recentBookings, function ($booking) use ($pelangganId) {
+                return $booking['pelanggan_id'] == $pelangganId;
+            });
+            $recentBookings = array_slice($recentBookings, 0, 5); // Get last 5 bookings
+        }
+
+        // Get recent transactions
+        $recentTransactions = [];
+        if ($pelangganId) {
+            // Fix: Use kode_layanan instead of id for join
+            // Since layanan table uses kode_layanan as primary key and transaksi.layanan_id should be VARCHAR
+            $recentTransactions = $transaksiModel
+                ->select('transaksi.*, layanan.nama_layanan')
+                ->join('layanan', 'layanan.kode_layanan = transaksi.layanan_id', 'left')
+                ->where('transaksi.pelanggan_id', $pelangganId)
+                ->orderBy('transaksi.created_at', 'DESC')
+                ->limit(5)
+                ->findAll();
+        }
+
+        // Get today's queue data
+        $todayQueues = [];
+        if ($pelangganId) {
+            $today = date('Y-m-d');
+            $todayQueues = $antrianModel->getAntrianByDate($today);
+            // Filter untuk pelanggan ini
+            $todayQueues = array_filter($todayQueues, function ($antrian) use ($pelangganId) {
+                return $antrian['pelanggan_id'] == $pelangganId;
+            });
+        }
+
+        // Get active services
+        $activeServices = $layananModel->where('status', 'aktif')->findAll();
+
+        // Get recent activities (combine bookings and transactions)
+        $recentActivities = [];
+
+        // Add recent bookings to activities
+        foreach ($recentBookings as $booking) {
+            $recentActivities[] = [
+                'type' => 'booking',
+                'title' => 'Booking ' . ucfirst($booking['jenis_kendaraan']),
+                'description' => 'Booking untuk layanan ' . ($booking['nama_layanan'] ?? 'Unknown'),
+                'time' => $booking['created_at'],
+                'status' => $booking['status'],
+                'icon' => 'calendar-check',
+                'color' => $this->getStatusColor($booking['status'])
+            ];
+        }
+
+        // Add recent transactions to activities  
+        foreach ($recentTransactions as $transaction) {
+            $recentActivities[] = [
+                'type' => 'transaction',
+                'title' => 'Pembayaran ' . ucfirst($transaction['jenis_kendaraan']),
+                'description' => 'Pembayaran untuk ' . ($transaction['nama_layanan'] ?? 'layanan') . ' sebesar Rp ' . number_format($transaction['total_harga'], 0, ',', '.'),
+                'time' => $transaction['created_at'],
+                'status' => $transaction['status_pembayaran'],
+                'icon' => 'credit-card',
+                'color' => $this->getPaymentStatusColor($transaction['status_pembayaran'])
+            ];
+        }
+
+        // Sort activities by time (newest first)
+        usort($recentActivities, function ($a, $b) {
+            return strtotime($b['time']) - strtotime($a['time']);
+        });
+
+        // Limit to 4 most recent activities
+        $recentActivities = array_slice($recentActivities, 0, 4);
+
+        $data = [
+            'title' => 'Dashboard',
+            'subtitle' => 'Selamat datang di portal pelanggan TiaraWash',
+            'user' => $user,
+            'pelanggan' => $pelanggan,
+            'totalBookings' => $stats['total_booking'] ?? 0,
+            'pendingBookings' => $pelangganId ? $bookingModel->where('pelanggan_id', $pelangganId)->where('status', 'pending')->countAllResults() : 0,
+            'completedBookings' => $pelangganId ? $bookingModel->where('pelanggan_id', $pelangganId)->where('status', 'selesai')->countAllResults() : 0,
+            'totalSpent' => $pelangganId ? ($transaksiModel->selectSum('total_harga')->where('pelanggan_id', $pelangganId)->where('status_pembayaran', 'dibayar')->get()->getRow()->total_harga ?? 0) : 0,
+            'recentBookings' => $recentBookings ?? [],
+            'recentTransactions' => $recentTransactions ?? [],
+            'activeServices' => $activeServices ?? [],
+            'stats' => $stats ?? [],
+            'recentActivities' => $recentActivities ?? [],
+            'todayQueues' => $todayQueues ?? []
+        ];
+
+        return view('pelanggan/dashboard', $data);
+    }
+
+    /**
+     * Get color based on booking status
+     */
+    private function getStatusColor($status)
+    {
+        switch (strtolower($status)) {
+            case 'pending':
+                return 'warning';
+            case 'confirmed':
+            case 'dikonfirmasi':
+                return 'info';
+            case 'in_progress':
+            case 'diproses':
+                return 'primary';
+            case 'completed':
+            case 'selesai':
+                return 'success';
+            case 'cancelled':
+            case 'dibatalkan':
+                return 'danger';
+            default:
+                return 'secondary';
+        }
+    }
+
+    /**
+     * Get color based on payment status
+     */
+    private function getPaymentStatusColor($status)
+    {
+        switch (strtolower($status)) {
+            case 'pending':
+                return 'warning';
+            case 'paid':
+            case 'lunas':
+            case 'success':
+                return 'success';
+            case 'failed':
+            case 'gagal':
+                return 'danger';
+            case 'refunded':
+            case 'dikembalikan':
+                return 'info';
+            default:
+                return 'secondary';
+        }
+    }
+
+    /**
+     * Get gradient colors based on status color
+     */
+    private function getGradientColors($color)
+    {
+        switch ($color) {
+            case 'success':
+                return '#4facfe 0%, #00f2fe 100%';
+            case 'warning':
+                return '#43e97b 0%, #38f9d7 100%';
+            case 'danger':
+                return '#fa709a 0%, #fee140 100%';
+            case 'info':
+                return '#667eea 0%, #764ba2 100%';
+            case 'primary':
+                return '#0088cc 0%, #00aaff 100%';
+            default:
+                return '#6c757d 0%, #495057 100%';
         }
     }
 

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Upload Layanan</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .form-group {
+        margin: 10px 0;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+      }
+      input,
+      select,
+      textarea {
+        width: 300px;
+        padding: 5px;
+        margin: 5px 0;
+      }
+      button {
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .result {
+        margin: 20px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Upload Foto Layanan</h1>
+
+    <form id="testForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Kode Layanan:</label>
+        <input
+          type="text"
+          name="kode_layanan"
+          value="TEST-20250729-001"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Nama Layanan:</label>
+        <input
+          type="text"
+          name="nama_layanan"
+          value="Test Cuci Motor Premium"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Jenis Kendaraan:</label>
+        <select name="jenis_kendaraan" required>
+          <option value="motor">Motor</option>
+          <option value="mobil">Mobil</option>
+          <option value="lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Harga:</label>
+        <input type="number" name="harga" value="35000" required />
+      </div>
+
+      <div class="form-group">
+        <label>Durasi (menit):</label>
+        <input type="number" name="durasi_menit" value="45" required />
+      </div>
+
+      <div class="form-group">
+        <label>Status:</label>
+        <select name="status">
+          <option value="aktif">Aktif</option>
+          <option value="nonaktif">Nonaktif</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Deskripsi:</label>
+        <textarea name="deskripsi">
+Layanan cuci motor premium dengan wax dan poles</textarea
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Foto:</label>
+        <input type="file" name="foto" accept="image/*" />
+      </div>
+
+      <button type="submit">Test Upload</button>
+    </form>
+
+    <div id="result" class="result" style="display: none"></div>
+
+    <script>
+      document
+        .getElementById("testForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+          const resultDiv = document.getElementById("result");
+
+          // Show loading
+          resultDiv.style.display = "block";
+          resultDiv.innerHTML = "Mengirim data...";
+
+          fetch("http://localhost:8080/admin/layanan/store", {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          })
+            .then((response) => {
+              console.log("Response status:", response.status);
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Response data:", data);
+              if (data.status) {
+                resultDiv.innerHTML = `<strong>SUCCESS:</strong> ${
+                  data.message
+                }<br><pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+                resultDiv.style.background = "#d4edda";
+                resultDiv.style.color = "#155724";
+              } else {
+                resultDiv.innerHTML = `<strong>ERROR:</strong> ${
+                  data.message
+                }<br><pre>${JSON.stringify(data.errors || {}, null, 2)}</pre>`;
+                resultDiv.style.background = "#f8d7da";
+                resultDiv.style.color = "#721c24";
+              }
+            })
+            .catch((error) => {
+              console.error("Network error:", error);
+              resultDiv.innerHTML = `<strong>NETWORK ERROR:</strong> ${error.message}`;
+              resultDiv.style.background = "#f8d7da";
+              resultDiv.style.color = "#721c24";
+            });
+        });
+    </script>
+  </body>
+</html>

@@ -1,331 +1,1335 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <title>Welcome to CodeIgniter 4!</title>
-    <meta name="description" content="The small framework with powerful features">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" type="image/png" href="/favicon.ico">
+    <title>TiaraWash - Layanan Cuci Kendaraan Premium</title>
 
-    <!-- STYLES -->
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Custom Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <style {csp-style-nonce}>
+    <style>
+        :root {
+            --primary-color: #0088cc;
+            --secondary-color: #00aaff;
+            --accent-color: #ff6b35;
+            --dark-color: #1a1a1a;
+            --light-color: #f8f9fc;
+            --gradient-primary: linear-gradient(135deg, #0088cc, #00aaff);
+            --gradient-secondary: linear-gradient(135deg, #ff6b35, #ff8c42);
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
         * {
-            transition: background-color 300ms ease, color 300ms ease;
-        }
-        *:focus {
-            background-color: rgba(221, 72, 20, .2);
-            outline: none;
-        }
-        html, body {
-            color: rgba(33, 37, 41, 1);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-            font-size: 16px;
             margin: 0;
             padding: 0;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
+            box-sizing: border-box;
         }
-        header {
-            background-color: rgba(247, 248, 249, 1);
-            padding: .4rem 0 0;
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
         }
-        .menu {
-            padding: .4rem 2rem;
+
+        /* Navbar */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 2px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            padding: 1rem 0;
         }
-        header ul {
-            border-bottom: 1px solid rgba(242, 242, 242, 1);
-            list-style-type: none;
-            margin: 0;
-            overflow: hidden;
-            padding: 0;
-            text-align: right;
+
+        .navbar-custom.scrolled {
+            padding: 0.5rem 0;
+            background: rgba(255, 255, 255, 0.98);
         }
-        header li {
-            display: inline-block;
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        header li a {
-            border-radius: 5px;
-            color: rgba(0, 0, 0, .5);
-            display: block;
-            height: 44px;
-            text-decoration: none;
+
+        .navbar-nav .nav-link {
+            font-weight: 500;
+            color: var(--dark-color) !important;
+            margin: 0 1rem;
+            transition: all 0.3s ease;
+            position: relative;
         }
-        header li.menu-item a {
-            border-radius: 5px;
-            margin: 5px 0;
-            height: 38px;
-            line-height: 36px;
-            padding: .4rem .65rem;
-            text-align: center;
+
+        .navbar-nav .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 50%;
+            background: var(--gradient-primary);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
         }
-        header li.menu-item a:hover,
-        header li.menu-item a:focus {
-            background-color: rgba(221, 72, 20, .2);
-            color: rgba(221, 72, 20, 1);
+
+        .navbar-nav .nav-link:hover::after {
+            width: 100%;
         }
-        header .logo {
-            float: left;
-            height: 44px;
-            padding: .4rem .5rem;
-        }
-        header .menu-toggle {
-            display: none;
-            float: right;
-            font-size: 2rem;
-            font-weight: bold;
-        }
-        header .menu-toggle button {
-            background-color: rgba(221, 72, 20, .6);
+
+        .btn-primary-custom {
+            background: var(--gradient-primary);
             border: none;
-            border-radius: 3px;
-            color: rgba(255, 255, 255, 1);
-            cursor: pointer;
-            font: inherit;
-            font-size: 1.3rem;
-            height: 36px;
-            padding: 0;
-            margin: 11px 0;
-            overflow: visible;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+            color: white;
+        }
+
+        /* Professional User Dropdown */
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-avatar {
             width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
-        header .menu-toggle button:hover,
-        header .menu-toggle button:focus {
-            background-color: rgba(221, 72, 20, .8);
-            color: rgba(255, 255, 255, .8);
+
+        .user-avatar:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
         }
-        header .heroe {
-            margin: 0 auto;
-            max-width: 1100px;
-            padding: 1rem 1.75rem 1.75rem 1.75rem;
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-        header .heroe h1 {
-            font-size: 2.5rem;
+
+        .user-info:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--primary-color);
             font-weight: 500;
         }
-        header .heroe h2 {
+
+        .dropdown-menu-custom {
+            background: white;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            padding: 8px;
+            margin-top: 8px;
+            min-width: 200px;
+        }
+
+        .dropdown-item-custom {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            color: var(--dark-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-item-custom:hover {
+            background: var(--light-color);
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .dropdown-item-custom.danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .dropdown-divider-custom {
+            height: 1px;
+            background: #e5e7eb;
+            border: none;
+            margin: 8px 0;
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
             font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
             font-weight: 300;
         }
-        section {
-            margin: 0 auto;
-            max-width: 1100px;
-            padding: 2.5rem 1.75rem 3.5rem 1.75rem;
+
+        .hero-stats {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        section h1 {
-            margin-bottom: 2.5rem;
+
+        .stat-item {
+            text-align: center;
+            color: white;
         }
-        section h2 {
-            font-size: 120%;
-            line-height: 2.5rem;
-            padding-top: 1.5rem;
-        }
-        section pre {
-            background-color: rgba(247, 248, 249, 1);
-            border: 1px solid rgba(242, 242, 242, 1);
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
             display: block;
-            font-size: .9rem;
-            margin: 2rem 0;
-            padding: 1rem 1.5rem;
-            white-space: pre-wrap;
-            word-break: break-all;
+            margin-bottom: 0.5rem;
         }
-        section code {
-            display: block;
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.8;
         }
-        section a {
-            color: rgba(221, 72, 20, 1);
+
+        /* Features Section */
+        .features-section {
+            padding: 8rem 0;
+            background: var(--light-color);
         }
-        section svg {
-            margin-bottom: -5px;
-            margin-right: 5px;
-            width: 25px;
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
         }
-        .further {
-            background-color: rgba(247, 248, 249, 1);
-            border-bottom: 1px solid rgba(242, 242, 242, 1);
-            border-top: 1px solid rgba(242, 242, 242, 1);
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .further h2:first-of-type {
-            padding-top: 0;
+
+        .feature-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid rgba(0, 136, 204, 0.1);
         }
-        .svg-stroke {
-            fill: none;
-            stroke: #000;
-            stroke-width: 32px;
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-medium);
         }
-        footer {
-            background-color: rgba(221, 72, 20, .8);
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-primary);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+
+        .feature-description {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Services Section */
+        .services-section {
+            padding: 8rem 0;
+            background: white;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid rgba(0, 136, 204, 0.1);
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .service-image {
+            height: 250px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+        }
+
+        .service-content {
+            padding: 2rem;
+        }
+
+        .service-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+        }
+
+        .service-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .service-price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .service-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 2rem;
+        }
+
+        .service-features li {
+            padding: 0.5rem 0;
+            color: #666;
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .service-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        /* Testimonials Section */
+        .testimonials-section {
+            padding: 8rem 0;
+            background: var(--light-color);
+        }
+
+        .testimonial-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+            border: 1px solid rgba(0, 136, 204, 0.1);
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .testimonial-quote {
+            font-size: 1.2rem;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .testimonial-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .testimonial-info h5 {
+            margin: 0;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+
+        .testimonial-info small {
+            color: #666;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 0;
+            background: var(--gradient-primary);
+            color: white;
             text-align: center;
         }
-        footer .environment {
-            color: rgba(255, 255, 255, 1);
-            padding: 2rem 1.75rem;
+
+        .cta-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
         }
-        footer .copyrights {
-            background-color: rgba(62, 62, 62, 1);
-            color: rgba(200, 200, 200, 1);
-            padding: .25rem 1.75rem;
+
+        .cta-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
         }
-        @media (max-width: 629px) {
-            header ul {
-                padding: 0;
+
+        .btn-white-custom {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+            display: inline-block;
+            margin: 0 1rem;
+        }
+
+        .btn-white-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+            color: var(--primary-color);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 4rem 0 2rem;
+        }
+
+        .footer-content {
+            margin-bottom: 3rem;
+        }
+
+        .footer-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--secondary-color);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
             }
-            header .menu-toggle {
-                padding: 0 1rem;
+
+            .hero-subtitle {
+                font-size: 1.2rem;
             }
-            header .menu-item {
-                background-color: rgba(244, 245, 246, 1);
-                border-top: 1px solid rgba(242, 242, 242, 1);
-                margin: 0 15px;
-                width: calc(100% - 30px);
+
+            .section-title {
+                font-size: 2rem;
             }
-            header .menu-toggle {
-                display: block;
+
+            .cta-title {
+                font-size: 2rem;
             }
-            header .hidden {
-                display: none;
+        }
+
+        /* Animations */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+
+            0%,
+            100% {
+                transform: translateY(0px);
             }
-            header li.menu-item a {
-                background-color: rgba(221, 72, 20, .1);
+
+            50% {
+                transform: translateY(-20px);
             }
-            header li.menu-item a:hover,
-            header li.menu-item a:focus {
-                background-color: rgba(221, 72, 20, .7);
-                color: rgba(255, 255, 255, .8);
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 991px) {
+            .user-info {
+                background: white;
+                border: 1px solid #e5e7eb;
+            }
+
+            .user-name {
+                color: var(--dark-color);
             }
         }
     </style>
 </head>
+
 <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-car-wash me-2"></i>TiaraWash
+            </a>
 
-<!-- HEADER: MENU + HEROE SECTION -->
-<header>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-    <div class="menu">
-        <ul>
-            <li class="logo">
-                <a href="https://codeigniter.com" target="_blank">
-                    <svg role="img" aria-label="Visit CodeIgniter.com official website!" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2100 500" height="44"><path fill="#dd4814" d="M148.2 411c-20.53-9.07-34.48-28.61-36.31-50.99 1.2-23.02 13.36-44.06 32.67-56.61-3.17 7.73-2.4 16.53 2 23.6 5.01 7 13.63 10.36 22.07 8.61 12.02-3.38 19.06-15.86 15.68-27.89-1.2-4.21-3.6-8.03-6.88-10.91-13.6-11.06-20.43-28.44-18-45.81 2.33-9.2 7.42-17.52 14.61-23.8-5.4 14.4 9.83 28.61 20.05 35.6 18.14 10.88 35.6 22.84 52.32 35.81 18.27 14.4 28.23 36.94 26.67 60-4.11 24.54-21.47 44.8-45.13 52.4 47.33-10.53 96.13-48.13 97.06-101.46-.93-42.67-26.4-80.96-65.33-98.4h-1.73c.86 2.09 1.28 4.34 1.2 6.61.13-1.47.13-2.93 0-4.4.21 1.73.21 3.47 0 5.2-2.96 12.13-15.2 19.6-27.36 16.64-4.86-1.2-9.2-3.93-12.32-7.87-15.6-20 0-42.76 2.61-64.76 1.6-28.13-11.25-55.02-34.05-71.46 11.41 19.02-3.79 44-14.84 58.21-11.07 14.21-27.07 24.8-40.11 37.2-14.05 13.07-26.93 27.44-38.49 42.8-24.99 30.53-34.8 70.8-26.67 109.4 11.15 37.2 42.07 65.15 80.2 72.4h.21l-.13-.12Zm324.56-159.8q0-17.92 6.16-35.56 6.44-17.92 18.48-31.92t29.68-22.68q17.64-8.96 40.04-8.96 26.6 0 45.36 12.04 19.04 12.04 28 31.36l-15.4 9.52q-4.76-9.8-11.76-16.52-6.72-6.72-14.56-10.92-7.84-4.2-16.24-5.88-8.4-1.96-16.52-1.96-17.92 0-31.64 7.28-13.72 7.28-23.24 19.04-9.24 11.76-14 26.6-4.76 14.56-4.76 29.68 0 16.52 5.6 31.64 5.88 15.12 15.68 26.88 10.08 11.48 23.52 18.48 13.72 6.72 29.68 6.72 8.4 0 17.08-1.96 8.96-2.24 17.08-6.72 8.4-4.76 15.4-11.48 7-7 11.76-16.8l16.24 8.4q-4.76 11.2-13.44 19.88-8.68 8.4-19.32 14.28-10.64 5.88-22.68 8.96-11.76 3.08-23.24 3.08-20.44 0-37.52-8.96-17.08-8.96-29.4-23.24-12.32-14.56-19.32-32.76-6.72-18.48-6.72-37.52Zm263.48 103.6q-15.96 0-29.12-5.88-13.16-6.16-22.96-16.52-9.52-10.36-14.84-24.08Q664 294.6 664 279.48q0-15.4 5.32-29.12 5.6-13.72 15.12-24.08 9.8-10.36 22.96-16.52t28.84-6.16q15.68 0 28.84 6.16 13.44 6.16 22.96 16.52 9.8 10.36 15.12 24.08 5.6 13.72 5.6 29.12 0 15.12-5.32 28.84t-15.12 24.08q-9.52 10.36-22.96 16.52-13.16 5.88-29.12 5.88Zm-52.92-75.04q0 12.32 4.2 22.96 4.2 10.36 11.2 18.48 7.28 7.84 16.8 12.32 9.8 4.48 20.72 4.48 10.92 0 20.44-4.48 9.8-4.76 17.08-12.6 7.28-8.12 11.48-18.76 4.2-10.64 4.2-22.96 0-12.04-4.2-22.68-4.2-10.92-11.48-18.76-7.28-8.12-17.08-12.6-9.52-4.76-20.44-4.76-10.92 0-20.44 4.76-9.52 4.48-16.8 12.6-7.28 8.12-11.48 19.04-4.2 10.64-4.2 22.96ZM900.6 354.8q-15.12 0-28-6.16-12.88-6.44-22.12-16.8t-14.56-23.8q-5.04-13.72-5.04-28.56 0-15.4 5.04-29.12 5.04-14 13.72-24.36 8.96-10.36 21-16.24 12.32-6.16 26.88-6.16 18.48 0 32.76 9.8 14.28 9.52 22.4 23.24V147.6h19.04v179.76q0 7.84 6.72 7.84V352q-4.2.84-6.72.84-6.72 0-11.76-4.2-5.04-4.48-5.04-10.64v-14.28Q946.24 338 931.4 346.4t-30.8 8.4Zm4.2-16.8q7 0 14.84-2.8 8.12-2.8 15.12-7.56 7-5.04 11.76-11.48 5.04-6.72 6.16-14.28V256.8q-2.8-7.56-8.12-14-5.32-6.72-12.32-11.76-6.72-5.04-14.56-7.84-7.84-2.8-15.4-2.8-11.76 0-21.28 5.04-9.52 5.04-16.52 13.44-6.72 8.12-10.36 18.76-3.64 10.64-3.64 21.84 0 11.76 4.2 22.4 4.2 10.64 11.48 18.76 7.28 7.84 17.08 12.6Q893.32 338 904.8 338Zm173.04 16.8q-15.96 0-29.4-5.88-13.16-6.16-22.96-16.52-9.8-10.64-15.4-24.36-5.32-13.72-5.32-29.4 0-15.4 5.32-28.84 5.6-13.72 15.12-23.8 9.8-10.36 23.24-16.24 13.44-6.16 29.12-6.16 15.96 0 29.12 6.16 13.44 5.88 22.96 16.24 9.52 10.36 14.84 23.8 5.32 13.44 5.32 28.56v4.48q0 2.24-.28 3.08h-124.88q.84 11.76 5.32 21.84 4.76 9.8 12.04 17.08 7.28 7.28 16.52 11.48 9.52 3.92 20.16 3.92 7 0 14-1.96t12.88-5.32q5.88-3.36 10.64-8.12 4.76-5.04 7.28-10.92l16.52 4.48q-3.36 8.12-9.52 14.84-6.16 6.44-14.28 11.48-8.12 4.76-17.92 7.56-9.8 2.52-20.44 2.52Zm-53.48-83.44h107.24q-.84-11.76-5.6-21.28-4.48-9.8-11.76-16.8-7-7-16.52-10.92-9.24-3.92-19.88-3.92-10.64 0-20.16 3.92t-16.8 10.92q-7 7-11.48 16.8-4.2 9.8-5.04 21.28Zm193.2 80.64h-38.64V153.2h38.64V352Zm93.52.84q-14.84 0-26.88-5.88t-21-15.96q-8.68-10.36-13.44-23.8-4.76-13.44-4.76-28.56 0-15.96 5.04-29.68 5.04-13.72 14-24.08 8.96-10.36 21.56-16.24 12.6-5.88 27.72-5.88 17.08 0 29.96 7.84 12.88 7.56 21.28 20.44v-25.76h32.76V345q0 16.24-6.16 29.12-6.16 12.88-17.08 21.84-10.64 8.96-25.76 13.72-14.84 4.76-32.48 4.76-24.08 0-40.6-7.84-16.24-8.12-28-22.68l20.44-19.88q8.4 10.36 21 16.24 12.88 5.88 27.16 5.88 8.68 0 16.52-2.24 8.12-2.52 14.28-7.56 6.16-5.04 9.52-12.88 3.64-7.84 3.64-18.48v-18.48q-7.28 12.6-20.44 19.6-13.16 6.72-28.28 6.72Zm12.6-29.96q6.16 0 11.76-1.96t10.36-5.32q4.76-3.36 8.4-7.84 3.64-4.48 5.6-9.52v-35q-5.04-12.88-15.96-20.72-10.64-7.84-22.4-7.84-8.68 0-15.68 3.92-7 3.64-12.04 10.08-5.04 6.16-7.84 14.28-2.52 8.12-2.52 16.8 0 8.96 3.08 16.8t8.4 13.72q5.6 5.88 12.88 9.24 7.28 3.36 15.96 3.36Zm243.88-62.44V352h-37.52v-82.32q0-17.64-6.16-25.76-6.16-8.12-17.08-8.12-5.6 0-11.48 2.24-5.88 2.24-11.2 6.44-5.04 3.92-9.24 9.52t-6.16 12.32V352h-37.52V205.28h33.88v27.16q8.12-14 23.52-21.84t34.72-7.84q13.72 0 22.4 5.04 8.68 5.04 13.44 13.16 4.76 8.12 6.44 18.48 1.96 10.36 1.96 21Zm70.28 91.56h-37.52V205.28h37.52V352Zm0-167.16h-37.52V147.6h37.52v37.24Zm114.24 129.92 7.56 29.68q-7.56 3.36-18.48 6.72-10.92 3.36-22.96 3.36-7.84 0-14.84-1.96-6.72-1.96-12.04-6.16-5.04-4.48-8.12-11.2-3.08-7-3.08-16.8v-84.28h-19.32v-28.84h19.32v-47.6h37.52v47.6h30.8v28.84h-30.8v71.68q0 7.84 3.92 11.2 4.2 3.08 10.08 3.08t11.48-1.96q5.6-1.96 8.96-3.36Zm91.56 40.04q-17.64 0-31.92-5.88-14.28-6.16-24.36-16.52t-15.68-24.08q-5.32-13.72-5.32-28.84 0-15.68 5.32-29.4 5.32-14 15.4-24.36 10.08-10.64 24.36-16.8 14.56-6.16 32.48-6.16 17.92 0 31.92 6.16 14.28 6.16 24.08 16.52 10.08 10.36 15.12 24.08 5.32 13.72 5.32 28.56 0 3.64-.28 7 0 3.36-.56 5.6h-113.4q.84 8.68 4.2 15.4 3.36 6.72 8.68 11.48 5.32 4.76 12.04 7.28 6.72 2.52 14 2.52 11.2 0 21-5.32 10.08-5.6 13.72-14.56l32.2 8.96q-8.12 16.8-26.04 27.72-17.64 10.64-42.28 10.64Zm-38.08-88.48h76.16q-1.4-16.52-12.32-26.32-10.64-10.08-26.04-10.08-7.56 0-14.28 2.8-6.44 2.52-11.48 7.28t-8.4 11.48q-3.08 6.72-3.64 14.84Zm225.12-62.72v34.16q-17.08.28-30.52 6.72-13.44 6.16-19.32 18.76V352h-37.52V205.28h34.44v31.36q3.92-7.56 9.24-13.44 5.32-6.16 11.48-10.64t12.32-6.72q6.44-2.52 12.32-2.52h4.48q1.68 0 3.08.28Z"/></svg>
-                </a>
-            </li>
-            <li class="menu-toggle">
-                <button id="menuToggle">&#9776;</button>
-            </li>
-            <li class="menu-item hidden"><a href="#">Home</a></li>
-            <li class="menu-item hidden"><a href="https://codeigniter.com/user_guide/" target="_blank">Docs</a>
-            </li>
-            <li class="menu-item hidden"><a href="https://forum.codeigniter.com/" target="_blank">Community</a></li>
-            <li class="menu-item hidden"><a
-                    href="https://codeigniter.com/contribute" target="_blank">Contribute</a>
-            </li>
-        </ul>
-    </div>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Beranda</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#layanan">Layanan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tentang">Tentang</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#testimoni">Testimoni</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#kontak">Kontak</a>
+                    </li>
+                </ul>
 
-    <div class="heroe">
+                <div class="navbar-nav">
+                    <?php if (isset($isLoggedIn) && $isLoggedIn): ?>
+                        <!-- User is logged in - show profile dropdown -->
+                        <div class="dropdown user-dropdown">
+                            <div class="user-info" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="user-avatar">
+                                    <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                                    <?php if (isset($user['unread_notifications']) && $user['unread_notifications'] > 0): ?>
+                                        <span class="notification-badge"><?= $user['unread_notifications'] ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="d-none d-lg-block">
+                                    <div class="user-name"><?= esc($user['name']) ?></div>
+                                    <div class="user-role"><?= ucfirst($user['role']) ?></div>
+                                </div>
+                                <i class="fas fa-chevron-down ms-2"></i>
+                            </div>
 
-        <h1>Welcome to CodeIgniter <?= CodeIgniter\CodeIgniter::CI_VERSION ?></h1>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom">
+                                <?php if ($user['role'] === 'pelanggan'): ?>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/dashboard') ?>">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            Dashboard
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/booking/create') ?>">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            Booking Baru
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/booking/history') ?>">
+                                            <i class="fas fa-history"></i>
+                                            Riwayat Booking
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/profile') ?>">
+                                            <i class="fas fa-user-cog"></i>
+                                            Profil Saya
+                                        </a>
+                                    </li>
+                                <?php elseif ($user['role'] === 'admin' || $user['role'] === 'pimpinan'): ?>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('admin/dashboard') ?>">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            Dashboard Admin
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('admin/layanan') ?>">
+                                            <i class="fas fa-cogs"></i>
+                                            Kelola Layanan
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item-custom" href="<?= site_url('admin/pelanggan') ?>">
+                                            <i class="fas fa-users"></i>
+                                            Kelola Pelanggan
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
 
-        <h2>The small framework with powerful features</h2>
+                                <li>
+                                    <hr class="dropdown-divider-custom">
+                                </li>
 
-    </div>
+                                <li>
+                                    <a class="dropdown-item-custom" href="#" onclick="handleNotifications()">
+                                        <i class="fas fa-bell"></i>
+                                        Notifikasi
+                                        <?php if (isset($user['unread_notifications']) && $user['unread_notifications'] > 0): ?>
+                                            <span class="badge bg-danger ms-auto"><?= $user['unread_notifications'] ?></span>
+                                        <?php endif; ?>
+                                    </a>
+                                </li>
 
-</header>
+                                <li>
+                                    <a class="dropdown-item-custom" href="#" onclick="handleSettings()">
+                                        <i class="fas fa-cog"></i>
+                                        Pengaturan
+                                    </a>
+                                </li>
 
-<!-- CONTENT -->
+                                <li>
+                                    <hr class="dropdown-divider-custom">
+                                </li>
 
-<section>
+                                <li>
+                                    <a class="dropdown-item-custom danger" href="#" onclick="handleLogout()">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    <?php else: ?>
+                        <!-- User is not logged in - show login/register buttons -->
+                        <a href="<?= site_url('auth') ?>" class="btn-primary-custom me-2">
+                            <i class="fas fa-sign-in-alt me-2"></i>Masuk
+                        </a>
+                        <a href="<?= site_url('auth/register') ?>" class="btn btn-outline-primary rounded-pill px-3">
+                            <i class="fas fa-user-plus me-2"></i>Daftar
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <h1>About this page</h1>
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content" data-aos="fade-right">
+                    <h1 class="hero-title">Layanan Cuci Kendaraan <span style="color: #ff6b35;">Premium</span></h1>
+                    <p class="hero-subtitle">
+                        Nikmati pengalaman cuci kendaraan terbaik dengan teknologi modern,
+                        pelayanan profesional, dan hasil yang memuaskan di TiaraWash.
+                    </p>
 
-    <p>The page you are looking at is being generated dynamically by CodeIgniter.</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <?php if (isset($isLoggedIn) && $isLoggedIn && $user['role'] === 'pelanggan'): ?>
+                            <a href="<?= site_url('booking') ?>" class="btn-white-custom">
+                                <i class="fas fa-calendar-plus me-2"></i>Booking Sekarang
+                            </a>
+                            <a href="<?= site_url('pelanggan/dashboard') ?>" class="btn btn-outline-light rounded-pill px-4 py-3">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard Saya
+                            </a>
+                        <?php else: ?>
+                            <a href="<?= site_url('booking') ?>" class="btn-white-custom">
+                                <i class="fas fa-calendar-plus me-2"></i>Booking Sekarang
+                            </a>
+                        <?php endif; ?>
+                    </div>
 
-    <p>If you would like to edit this page you will find it located at:</p>
+                    <div class="hero-stats" data-aos="fade-up" data-aos-delay="200">
+                        <div class="row">
+                            <div class="col-4 stat-item">
+                                <span class="stat-number"><?= $stats['total_customers'] ?>+</span>
+                                <span class="stat-label">Pelanggan Puas</span>
+                            </div>
+                            <div class="col-4 stat-item">
+                                <span class="stat-number"><?= $stats['total_services'] ?>+</span>
+                                <span class="stat-label">Jenis Layanan</span>
+                            </div>
+                            <div class="col-4 stat-item">
+                                <span class="stat-number">24/7</span>
+                                <span class="stat-label">Customer Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <pre><code>app/Views/welcome_message.php</code></pre>
-
-    <p>The corresponding controller for this page can be found at:</p>
-
-    <pre><code>app/Controllers/Home.php</code></pre>
-
-</section>
-
-<div class="further">
-
-    <section>
-
-        <h1>Go further</h1>
-
-        <h2>
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect x='32' y='96' width='64' height='368' rx='16' ry='16' class="svg-stroke" /><line x1='112' y1='224' x2='240' y2='224' class="svg-stroke" /><line x1='112' y1='400' x2='240' y2='400' class="svg-stroke" /><rect x='112' y='160' width='128' height='304' rx='16' ry='16' class="svg-stroke" /><rect x='256' y='48' width='96' height='416' rx='16' ry='16' class="svg-stroke" /><path d='M422.46,96.11l-40.4,4.25c-11.12,1.17-19.18,11.57-17.93,23.1l34.92,321.59c1.26,11.53,11.37,20,22.49,18.84l40.4-4.25c11.12-1.17,19.18-11.57,17.93-23.1L445,115C443.69,103.42,433.58,94.94,422.46,96.11Z' class="svg-stroke"/></svg>
-            Learn
-        </h2>
-
-        <p>The User Guide contains an introduction, tutorial, a number of "how to"
-            guides, and then reference documentation for the components that make up
-            the framework. Check the <a href="https://codeigniter.com/user_guide/"
-            target="_blank">User Guide</a> !</p>
-
-        <h2>
-            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path d='M431,320.6c-1-3.6,1.2-8.6,3.3-12.2a33.68,33.68,0,0,1,2.1-3.1A162,162,0,0,0,464,215c.3-92.2-77.5-167-173.7-167C206.4,48,136.4,105.1,120,180.9a160.7,160.7,0,0,0-3.7,34.2c0,92.3,74.8,169.1,171,169.1,15.3,0,35.9-4.6,47.2-7.7s22.5-7.2,25.4-8.3a26.44,26.44,0,0,1,9.3-1.7,26,26,0,0,1,10.1,2L436,388.6a13.52,13.52,0,0,0,3.9,1,8,8,0,0,0,8-8,12.85,12.85,0,0,0-.5-2.7Z' class="svg-stroke" /><path d='M66.46,232a146.23,146.23,0,0,0,6.39,152.67c2.31,3.49,3.61,6.19,3.21,8s-11.93,61.87-11.93,61.87a8,8,0,0,0,2.71,7.68A8.17,8.17,0,0,0,72,464a7.26,7.26,0,0,0,2.91-.6l56.21-22a15.7,15.7,0,0,1,12,.2c18.94,7.38,39.88,12,60.83,12A159.21,159.21,0,0,0,284,432.11' class="svg-stroke" /></svg>
-            Discuss
-        </h2>
-
-        <p>CodeIgniter is a community-developed open source project, with several
-             venues for the community members to gather and exchange ideas. View all
-             the threads on <a href="https://forum.codeigniter.com/"
-             target="_blank">CodeIgniter's forum</a>, or <a href="https://join.slack.com/t/codeigniterchat/shared_invite/zt-rl30zw00-obL1Hr1q1ATvkzVkFp8S0Q"
-             target="_blank">chat on Slack</a> !</p>
-
-        <h2>
-        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><line x1='176' y1='48' x2='336' y2='48' class="svg-stroke" /><line x1='118' y1='304' x2='394' y2='304' class="svg-stroke" /><path d='M208,48v93.48a64.09,64.09,0,0,1-9.88,34.18L73.21,373.49C48.4,412.78,76.63,464,123.08,464H388.92c46.45,0,74.68-51.22,49.87-90.51L313.87,175.66A64.09,64.09,0,0,1,304,141.48V48' class="svg-stroke" /></svg>
-             Contribute
-        </h2>
-
-        <p>CodeIgniter is a community driven project and accepts contributions
-             of code and documentation from the community. Why not
-             <a href="https://codeigniter.com/contribute" target="_blank">
-             join us</a> ?</p>
-
+                <div class="col-lg-6 text-center" data-aos="fade-left">
+                    <div class="floating">
+                        <i class="fas fa-car" style="font-size: 15rem; color: rgba(255,255,255,0.2);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
-</div>
+    <!-- Features Section -->
+    <section id="tentang" class="features-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12" data-aos="fade-up">
+                    <h2 class="section-title">Mengapa Memilih TiaraWash?</h2>
+                    <p class="section-subtitle">
+                        Kami berkomitmen memberikan layanan cuci kendaraan terbaik dengan
+                        teknologi modern dan pelayanan yang memuaskan.
+                    </p>
+                </div>
+            </div>
 
-<!-- FOOTER: DEBUG INFO + COPYRIGHTS -->
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 class="feature-title">Booking Online 24/7</h3>
+                        <p class="feature-description">
+                            Pesan layanan cuci kendaraan kapan saja dengan sistem booking online
+                            yang mudah dan praktis. Tidak perlu antri lama!
+                        </p>
+                    </div>
+                </div>
 
-<footer>
-    <div class="environment">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Teknologi Modern</h3>
+                        <p class="feature-description">
+                            Menggunakan peralatan cuci terdepan dengan teknologi steam cleaning
+                            dan produk pembersih berkualitas tinggi yang aman untuk kendaraan.
+                        </p>
+                    </div>
+                </div>
 
-        <p>Page rendered in {elapsed_time} seconds using {memory_usage} MB of memory.</p>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="feature-title">Tenaga Profesional</h3>
+                        <p class="feature-description">
+                            Tim cuci berpengalaman dan terlatih yang memahami cara merawat
+                            setiap jenis kendaraan dengan teliti dan hati-hati.
+                        </p>
+                    </div>
+                </div>
 
-        <p>Environment: <?= ENVIRONMENT ?></p>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h3 class="feature-title">Ramah Lingkungan</h3>
+                        <p class="feature-description">
+                            Menggunakan produk pembersih yang ramah lingkungan dan sistem
+                            daur ulang air untuk menjaga kelestarian alam.
+                        </p>
+                    </div>
+                </div>
 
-    </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3 class="feature-title">Harga Terjangkau</h3>
+                        <p class="feature-description">
+                            Menawarkan berbagai paket layanan dengan harga yang kompetitif
+                            dan sesuai dengan kualitas layanan premium yang diberikan.
+                        </p>
+                    </div>
+                </div>
 
-    <div class="copyrights">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <h3 class="feature-title">Garansi Kepuasan</h3>
+                        <p class="feature-description">
+                            Memberikan garansi kepuasan 100% dengan layanan after-sales
+                            dan komitmen untuk memberikan hasil terbaik.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <p>&copy; <?= date('Y') ?> CodeIgniter Foundation. CodeIgniter is open source project released under the MIT
-            open source licence.</p>
+    <!-- Services Section -->
+    <section id="layanan" class="services-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12" data-aos="fade-up">
+                    <h2 class="section-title">Paket Layanan Kami</h2>
+                    <p class="section-subtitle">
+                        Pilih paket layanan yang sesuai dengan kebutuhan kendaraan Anda.
+                        Semua paket dilengkapi dengan jaminan kualitas terbaik.
+                    </p>
+                </div>
+            </div>
 
-    </div>
+            <div class="row g-4">
+                <?php
+                $vehicleTypes = [
+                    'motor' => ['icon' => 'fas fa-motorcycle', 'title' => 'Cuci Motor Premium', 'delay' => 100],
+                    'mobil' => ['icon' => 'fas fa-car', 'title' => 'Cuci Mobil Premium', 'delay' => 200],
+                    'lainnya' => ['icon' => 'fas fa-truck', 'title' => 'Cuci Kendaraan Lainnya', 'delay' => 300]
+                ];
 
-</footer>
+                foreach ($vehicleTypes as $type => $config):
+                    $services = $grouped_services[$type] ?? [];
+                    if (empty($services)) continue;
 
-<!-- SCRIPTS -->
+                    // Get the first service for display (you can modify this logic)
+                    $featuredService = $services[0];
+                    $minPrice = min(array_column($services, 'harga'));
+                ?>
 
-<script {csp-script-nonce}>
-    document.getElementById("menuToggle").addEventListener('click', toggleMenu);
-    function toggleMenu() {
-        var menuItems = document.getElementsByClassName('menu-item');
-        for (var i = 0; i < menuItems.length; i++) {
-            var menuItem = menuItems[i];
-            menuItem.classList.toggle("hidden");
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="<?= $config['delay'] ?>">
+                        <div class="service-card">
+                            <div class="service-image">
+                                <?php if (!empty($featuredService['foto'])): ?>
+                                    <img src="<?= base_url('uploads/layanan/' . $featuredService['foto']); ?>"
+                                        alt="<?= esc($featuredService['nama_layanan']) ?>"
+                                        style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                                <?php else: ?>
+                                    <i class="<?= $config['icon'] ?>"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="service-content">
+                                <h3 class="service-title"><?= $config['title'] ?></h3>
+                                <p class="service-description">
+                                    <?= esc($featuredService['deskripsi']) ?>
+                                </p>
+                                <div class="service-price">Mulai Rp <?= number_format($minPrice, 0, ',', '.') ?></div>
+                                <ul class="service-features">
+                                    <?php foreach (array_slice($services, 0, 4) as $service): ?>
+                                        <li><?= esc($service['nama_layanan']) ?> (<?= $service['durasi_menit'] ?> menit)</li>
+                                    <?php endforeach; ?>
+                                    <?php if (count($services) > 4): ?>
+                                        <li>Dan <?= count($services) - 4 ?> layanan lainnya</li>
+                                    <?php endif; ?>
+                                </ul>
+                                <a href="<?= site_url('booking') ?>" class="btn-primary-custom w-100">
+                                    <i class="fas fa-calendar-plus me-2"></i>Booking Sekarang
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimoni" class="testimonials-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-12" data-aos="fade-up">
+                    <h2 class="section-title">Apa Kata Pelanggan Kami?</h2>
+                    <p class="section-subtitle">
+                        Kepuasan pelanggan adalah prioritas utama kami.
+                        Berikut testimoni dari pelanggan yang telah merasakan layanan TiaraWash.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "Pelayanan sangat memuaskan! Motor saya jadi kinclong dan bersih banget.
+                            Sistem booking online juga memudahkan, tidak perlu antri lama."
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">BS</div>
+                            <div class="testimonial-info">
+                                <h5>Budi Santoso</h5>
+                                <small>Pelanggan Motor</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "TiaraWash benar-benar professional! Mobil saya dicuci dengan teliti,
+                            interior juga dibersihkan sampai bersih. Harganya juga reasonable."
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">SA</div>
+                            <div class="testimonial-info">
+                                <h5>Sari Andini</h5>
+                                <small>Pelanggan Mobil</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "Sudah langganan di TiaraWash hampir 2 tahun. Kualitas konsisten,
+                            pelayanan ramah, dan hasilnya selalu memuaskan. Highly recommended!"
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">AR</div>
+                            <div class="testimonial-info">
+                                <h5>Ahmad Rizki</h5>
+                                <small>Pelanggan Setia</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "Truk perusahaan kami selalu dicuci di TiaraWash. Mereka punya
+                            pengalaman menangani kendaraan besar dengan hasil yang sangat baik."
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">DW</div>
+                            <div class="testimonial-info">
+                                <h5>Dewi Wulandari</h5>
+                                <small>Manager Fleet</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="500">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "Aplikasi booking-nya user friendly banget! Bisa pilih waktu dan
+                            jenis layanan dengan mudah. Prosesnya juga cepat dan efisien."
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">RH</div>
+                            <div class="testimonial-info">
+                                <h5>Rina Hartanti</h5>
+                                <small>Tech Enthusiast</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="600">
+                    <div class="testimonial-card">
+                        <p class="testimonial-quote">
+                            "Customer service nya responsif dan helpful. Ketika ada masalah,
+                            langsung ditangani dengan baik. Benar-benar service excellent!"
+                        </p>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">MF</div>
+                            <div class="testimonial-info">
+                                <h5>Maya Fitri</h5>
+                                <small>Entrepreneur</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container text-center" data-aos="fade-up">
+            <h2 class="cta-title">Siap Merasakan Layanan Premium Kami?</h2>
+            <p class="cta-subtitle">
+                Bergabunglah dengan ribuan pelanggan yang telah merasakan kepuasan
+                layanan cuci kendaraan terbaik di TiaraWash.
+            </p>
+
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="<?= site_url('auth/register') ?>" class="btn-white-custom">
+                    <i class="fas fa-user-plus me-2"></i>Daftar Sekarang
+                </a>
+                <a href="<?= site_url('auth') ?>" class="btn btn-outline-light rounded-pill px-4 py-3">
+                    <i class="fas fa-sign-in-alt me-2"></i>Sudah Punya Akun?
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="kontak" class="footer">
+        <div class="container">
+            <div class="row footer-content">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h3 class="footer-title">
+                        <i class="fas fa-car-wash me-2"></i>TiaraWash
+                    </h3>
+                    <p class="mb-4">
+                        Layanan cuci kendaraan premium dengan teknologi modern dan
+                        pelayanan profesional untuk kepuasan pelanggan.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white-50 fs-4"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-white-50 fs-4"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white-50 fs-4"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white-50 fs-4"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h4 class="footer-title">Layanan</h4>
+                    <ul class="footer-links">
+                        <li><a href="#layanan">Cuci Motor</a></li>
+                        <li><a href="#layanan">Cuci Mobil</a></li>
+                        <li><a href="#layanan">Cuci Truk</a></li>
+                        <li><a href="#layanan">Detailing</a></li>
+                        <li><a href="#layanan">Waxing</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h4 class="footer-title">Perusahaan</h4>
+                    <ul class="footer-links">
+                        <li><a href="#tentang">Tentang Kami</a></li>
+                        <li><a href="#testimoni">Testimoni</a></li>
+                        <li><a href="#">Karir</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h4 class="footer-title">Kontak Kami</h4>
+                    <ul class="footer-links">
+                        <li>
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Jl. Raya Cuci No. 123, Jakarta Selatan
+                        </li>
+                        <li>
+                            <i class="fas fa-phone me-2"></i>
+                            +62 21 1234 5678
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope me-2"></i>
+                            info@tiarawash.com
+                        </li>
+                        <li>
+                            <i class="fas fa-clock me-2"></i>
+                            Senin - Minggu: 06:00 - 22:00
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 TiaraWash. Semua hak dilindungi. | Dibuat dengan ❤️ untuk pelanggan terbaik</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar-custom');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add fade-in animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Professional dropdown functions
+        function handleNotifications() {
+            // Show notifications panel or redirect to notifications page
+            console.log('Opening notifications...');
+            // You can implement a modal or redirect to notifications page
+            // window.location.href = '<?= site_url('pelanggan/notifications') ?>';
         }
-    }
-</script>
 
-<!-- -->
+        function handleSettings() {
+            // Redirect to settings page based on user role
+            <?php if (isset($user) && $user): ?>
+                <?php if ($user['role'] === 'pelanggan'): ?>
+                    window.location.href = '<?= site_url('pelanggan/profile') ?>';
+                <?php else: ?>
+                    window.location.href = '<?= site_url('admin/settings') ?>';
+                <?php endif; ?>
+            <?php endif; ?>
+        }
 
+        function handleLogout() {
+            // Use SweetAlert2 for professional logout confirmation
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Konfirmasi Logout',
+                    text: 'Apakah Anda yakin ingin keluar dari akun?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0088cc',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Logout',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading state
+                        Swal.fire({
+                            title: 'Logging out...',
+                            text: 'Mohon tunggu sebentar',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // Redirect to logout
+                        window.location.href = '<?= site_url('auth/logout') ?>';
+                    }
+                });
+            } else {
+                // Fallback to native confirm if SweetAlert2 is not available
+                if (confirm('Apakah Anda yakin ingin logout?')) {
+                    window.location.href = '<?= site_url('auth/logout') ?>';
+                }
+            }
+        }
+
+        // Professional dropdown hover effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const userDropdown = document.querySelector('.user-dropdown');
+            if (userDropdown) {
+                const dropdownItems = userDropdown.querySelectorAll('.dropdown-item-custom');
+
+                dropdownItems.forEach(item => {
+                    item.addEventListener('mouseenter', function() {
+                        this.style.transform = 'translateX(4px)';
+                    });
+
+                    item.addEventListener('mouseleave', function() {
+                        this.style.transform = 'translateX(0)';
+                    });
+                });
+            }
+        });
+    </script>
+
+    <!-- Add SweetAlert2 for professional alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

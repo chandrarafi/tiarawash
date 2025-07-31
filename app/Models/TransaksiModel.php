@@ -24,6 +24,7 @@ class TransaksiModel extends Model
         'metode_pembayaran',
         'status_pembayaran',
         'catatan',
+        'bukti_pembayaran',
         'user_id'
     ];
 
@@ -34,12 +35,21 @@ class TransaksiModel extends Model
     protected $updatedField  = 'updated_at';
 
     // Validation
-    protected $validationRules = [
+    protected $validationRules      = [
+        'no_transaksi'     => 'permit_empty|is_unique[transaksi.no_transaksi]',
         'tanggal'          => 'required|valid_date',
-        'no_plat'          => 'required',
+        'booking_id'       => 'permit_empty|numeric',
+        'pelanggan_id'     => 'required|max_length[10]',
+        'layanan_id'       => 'required|is_not_unique[layanan.kode_layanan]',
+        'no_plat'          => 'required|max_length[20]',
         'jenis_kendaraan'  => 'required|in_list[motor,mobil,lainnya]',
-        'layanan_id'       => 'required|numeric|is_not_unique[layanan.id]',
+        'merk_kendaraan'   => 'permit_empty|max_length[50]',
+        'total_harga'      => 'permit_empty|decimal',
+        'status_pembayaran' => 'required|in_list[belum_bayar,dibayar,batal]',
         'metode_pembayaran' => 'required|in_list[tunai,kartu_kredit,kartu_debit,e-wallet,transfer]',
+        'catatan'          => 'permit_empty',
+        'bukti_pembayaran' => 'permit_empty|max_length[255]',
+        'user_id'          => 'permit_empty|numeric'
     ];
 
     protected $validationMessages = [
@@ -92,20 +102,56 @@ class TransaksiModel extends Model
         return $data;
     }
 
+    /**
+     * Get validation rules for debugging
+     */
+    public function getValidationRules(array $options = []): array
+    {
+        return parent::getValidationRules($options);
+    }
+
+    /**
+     * Get raw validation rules for debugging
+     */
+    public function getRawValidationRules(): array
+    {
+        return $this->validationRules;
+    }
+
     public function getTransaksiWithDetails($id = null)
     {
         $builder = $this->db->table('transaksi t');
         $builder->select('t.*, p.nama_pelanggan, l.nama_layanan, u.name as nama_kasir');
         $builder->join('pelanggan p', 'p.kode_pelanggan = t.pelanggan_id', 'left');
-        $builder->join('layanan l', 'l.id = t.layanan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = t.layanan_id', 'left');
         $builder->join('users u', 'u.id = t.user_id', 'left');
 
         if ($id !== null) {
-            $builder->where('t.id', $id);
+            // Check if $id is numeric (ID) or string (no_transaksi)
+            if (is_numeric($id)) {
+                $builder->where('t.id', $id);
+            } else {
+                $builder->where('t.no_transaksi', $id);
+            }
             return $builder->get()->getRowArray();
         }
 
         return $builder->get()->getResultArray();
+    }
+
+    /**
+     * Get transaksi by no_transaksi specifically
+     */
+    public function getTransaksiByNoTransaksi($noTransaksi)
+    {
+        $builder = $this->db->table('transaksi t');
+        $builder->select('t.*, p.nama_pelanggan, l.nama_layanan, u.name as nama_kasir');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = t.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = t.layanan_id', 'left');
+        $builder->join('users u', 'u.id = t.user_id', 'left');
+        $builder->where('t.no_transaksi', $noTransaksi);
+
+        return $builder->get()->getRowArray();
     }
 
     public function getTransaksiByPelanggan($pelangganId)
@@ -152,7 +198,7 @@ class TransaksiModel extends Model
     {
         $builder = $this->db->table('transaksi t');
         $builder->select('l.nama_layanan, COUNT(*) as jumlah_transaksi, SUM(t.total_harga) as total_pendapatan');
-        $builder->join('layanan l', 'l.id = t.layanan_id');
+        $builder->join('layanan l', 'l.kode_layanan = t.layanan_id');
         $builder->where('t.tanggal >=', $startDate);
         $builder->where('t.tanggal <=', $endDate);
         $builder->where('t.status_pembayaran', 'dibayar');

@@ -213,7 +213,7 @@
                                             <div class="card-body p-0">
                                                 <?php if (!empty($layanan['foto'])) : ?>
                                                     <img id="current-image"
-                                                        src="<?= base_url('admin/layanan/foto/' . $layanan['foto']); ?>"
+                                                        src="<?= base_url('uploads/layanan/' . $layanan['foto']); ?>"
                                                         alt="<?= $layanan['nama_layanan'] ?? 'Foto Layanan'; ?>"
                                                         class="img-fluid w-100"
                                                         style="height: 150px; object-fit: cover; border-radius: 8px;"

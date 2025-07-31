@@ -241,7 +241,7 @@
             };
 
             // URL dan method berdasarkan mode form
-            let url = '<?= site_url('admin/karyawan/save') ?>';
+            let url = '<?= site_url('admin/karyawan/store') ?>';
             let method = 'POST';
 
             if (formMode === 'edit') {

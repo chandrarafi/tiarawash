@@ -222,6 +222,32 @@
                             <div id="confirm_password-error" class="text-red-500 text-sm mt-1 hidden"></div>
                         </div>
 
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-phone text-primary-500 mr-2"></i>Nomor HP
+                            </label>
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200"
+                                placeholder="Contoh: 08123456789">
+                            <div id="phone-error" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt text-primary-500 mr-2"></i>Alamat
+                            </label>
+                            <textarea
+                                id="address"
+                                name="address"
+                                rows="3"
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition duration-200 resize-none"
+                                placeholder="Masukkan alamat lengkap (opsional)"></textarea>
+                            <div id="address-error" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
+
                         <div class="flex items-center">
                             <input
                                 id="terms"

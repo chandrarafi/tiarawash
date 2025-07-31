@@ -71,6 +71,15 @@
                 <li class="nav-item">
                     <a href="<?= base_url('admin/booking') ?>" class="nav-link <?= isset($active) && $active == 'booking' ? 'active' : '' ?>">
                         <i class="bi bi-calendar-check"></i> Manajemen Booking
+                        <?php
+                        // Get pending payment count for badge
+                        $transaksiModel = new \App\Models\TransaksiModel();
+                        $pendingCount = $transaksiModel->where('status_pembayaran', 'belum_bayar')
+                            ->where('bukti_pembayaran IS NOT NULL')
+                            ->countAllResults();
+                        if ($pendingCount > 0): ?>
+                            <span class="badge bg-warning ms-2"><?= $pendingCount ?></span>
+                        <?php endif; ?>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -83,6 +92,7 @@
                         <i class="bi bi-receipt"></i> Transaksi
                     </a>
                 </li>
+
 
                 <!-- Inventaris -->
                 <li class="nav-item">

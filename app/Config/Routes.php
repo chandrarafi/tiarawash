@@ -5,19 +5,28 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
+// Public routes
 $routes->get('/', 'Home::index');
+$routes->get('booking', 'Home::booking'); // Public booking form
+$routes->post('booking/store', 'Booking::storePublic'); // Public booking submission
+$routes->post('booking/get-available-slots', 'Booking::getAvailableSlots'); // Get available time slots
 
-// Auth Routes
-$routes->get('auth', 'Auth::index');
-$routes->post('auth/login', 'Auth::login');
-$routes->get('auth/logout', 'Auth::logout');
+// Payment routes
+$routes->get('payment/(:segment)', 'Payment::index/$1'); // Payment page by booking code
+$routes->post('payment/process', 'Payment::process'); // Process payment
+$routes->get('payment/success/(:segment)', 'Payment::success/$1'); // Payment success page
 
-// Register Routes
-$routes->get('auth/register', 'Auth::register');
-$routes->post('auth/register', 'Auth::registerProcess');
-$routes->get('auth/verify', 'Auth::verify');
-$routes->post('auth/verify', 'Auth::verifyOTP');
-$routes->post('auth/resend-otp', 'Auth::resendOTP');
+// Authentication routes
+$routes->group('auth', function ($routes) {
+    $routes->get('/', 'Auth::index');
+    $routes->post('login', 'Auth::login');
+    $routes->get('logout', 'Auth::logout');
+    $routes->get('register', 'Auth::register');
+    $routes->post('register', 'Auth::registerProcess');
+    $routes->get('verify', 'Auth::verify');
+    $routes->post('verify-otp', 'Auth::verifyOTP');
+    $routes->post('resend-otp', 'Auth::resendOTP');
+});
 
 // Admin Routes
 $routes->group('admin', ['filter' => 'auth'], function ($routes) {
@@ -104,21 +113,25 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('/', 'Layanan::index');
         $routes->get('create', 'Layanan::create');
         $routes->post('store', 'Layanan::store');
-        $routes->get('edit/(:num)', 'Layanan::edit/$1');
-        $routes->post('update/(:num)', 'Layanan::update/$1');
-        $routes->get('delete/(:num)', 'Layanan::delete/$1');
+        $routes->get('edit/(:any)', 'Layanan::edit/$1');
+        $routes->post('update/(:any)', 'Layanan::update/$1');
+        $routes->get('delete/(:any)', 'Layanan::delete/$1');
+        $routes->get('foto/(:any)', 'Layanan::foto/$1');
         $routes->post('getLayananByJenis', 'Layanan::getLayananByJenis');
     });
 
     // Booking Management (admin & pimpinan)
     $routes->group('booking', ['filter' => 'role:admin,pimpinan'], function ($routes) {
         $routes->get('/', 'Booking::index');
-        $routes->get('create', 'Booking::create');
-        $routes->post('store', 'Booking::store');
+        $routes->get('create', 'Booking::adminCreate');
+        $routes->post('store', 'Booking::adminStore');
         $routes->get('show/(:num)', 'Booking::show/$1');
         $routes->get('edit/(:num)', 'Booking::edit/$1');
         $routes->post('update/(:num)', 'Booking::update/$1');
-        $routes->get('cancel/(:num)', 'Booking::cancel/$1');
+        $routes->delete('delete/(:num)', 'Booking::delete/$1');
+        $routes->delete('delete-transaction/(:num)', 'Booking::deleteTransaction/$1');
+        $routes->post('approve-payment/(:num)', 'Booking::approvePayment/$1');
+        $routes->post('reject-payment/(:num)', 'Booking::rejectPayment/$1');
     });
 
     // Antrian Management (admin & pimpinan)
@@ -129,6 +142,15 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('show/(:num)', 'Antrian::show/$1');
         $routes->post('updateStatus/(:num)', 'Antrian::updateStatus/$1');
         $routes->post('assignKaryawan/(:num)', 'Antrian::assignKaryawan/$1');
+    });
+
+    // Payment Management (admin & pimpinan)
+    $routes->group('payment', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('/', 'AdminPayment::index');
+        $routes->get('detail/(:num)', 'AdminPayment::detail/$1');
+        $routes->post('approve/(:num)', 'AdminPayment::approve/$1');
+        $routes->post('reject/(:num)', 'AdminPayment::reject/$1');
+        $routes->get('stats', 'AdminPayment::stats');
     });
 
     // Transaksi Management (admin & pimpinan)
@@ -155,32 +177,22 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     });
 });
 
-// Pelanggan Routes (untuk akses pelanggan)
-$routes->group('pelanggan', ['filter' => 'auth'], function ($routes) {
-    $routes->get('profile', 'Pelanggan::profile', ['filter' => 'role:pelanggan']);
-    $routes->post('updateProfile', 'Pelanggan::updateProfile', ['filter' => 'role:pelanggan']);
+// Pelanggan Routes (Customer) - Focus on monitoring/tracking only
+$routes->group('pelanggan', ['filter' => 'role:pelanggan'], function ($routes) {
+    $routes->get('dashboard', 'Pelanggan::dashboard');
+    $routes->get('profile', 'Pelanggan::profile');
 
-    // Kendaraan Routes untuk Pelanggan
-    $routes->group('kendaraan', ['filter' => 'role:pelanggan'], function ($routes) {
-        $routes->get('/', 'Kendaraan::myVehicles');
-        $routes->get('add', 'Kendaraan::addVehicle');
-        $routes->post('save', 'Kendaraan::saveVehicle');
-        $routes->get('edit/(:num)', 'Kendaraan::editVehicle/$1');
-        $routes->post('update/(:num)', 'Kendaraan::updateVehicle/$1');
-        $routes->get('delete/(:num)', 'Kendaraan::deleteVehicle/$1');
-    });
-
-    // Booking Routes untuk Pelanggan
-    $routes->group('booking', ['filter' => 'role:pelanggan'], function ($routes) {
-        $routes->get('create', 'Booking::createBooking');
-        $routes->post('store', 'Booking::storeBooking');
-        $routes->get('history', 'Booking::history');
+    // Monitoring Routes - No booking creation, only viewing
+    $routes->group('booking', function ($routes) {
         $routes->get('detail/(:num)', 'Booking::detail/$1');
+        $routes->get('history', 'Booking::history');
+        $routes->post('cancel/(:num)', 'Booking::cancel/$1');
+        $routes->post('process-payment/(:num)', 'Booking::processPayment/$1');
     });
 
-    // Transaksi Routes untuk Pelanggan
-    $routes->group('transaksi', ['filter' => 'role:pelanggan'], function ($routes) {
-        $routes->get('history', 'Transaksi::history');
-        $routes->get('detail/(:num)', 'Transaksi::detail/$1');
-    });
+    // Antrian monitoring
+    $routes->get('antrian', 'Pelanggan::antrian');
+
+    // Transaction monitoring
+    $routes->get('transaksi', 'Pelanggan::transaksi');
 });

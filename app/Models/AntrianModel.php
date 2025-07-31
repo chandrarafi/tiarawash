@@ -66,11 +66,11 @@ class AntrianModel extends Model
     {
         $builder = $this->db->table('antrian a');
         $builder->select('a.*, b.kode_booking, b.pelanggan_id, b.no_plat, b.jenis_kendaraan, 
-                          b.merk_kendaraan, b.layanan_id, p.nama_pelanggan, l.nama_layanan, 
+                          b.merk_kendaraan, p.nama_pelanggan, l.nama_layanan, l.harga, 
                           l.durasi_menit, k.namakaryawan');
         $builder->join('booking b', 'b.id = a.booking_id', 'left');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
-        $builder->join('layanan l', 'l.id = b.layanan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
         $builder->join('karyawan k', 'k.idkaryawan = a.karyawan_id', 'left');
 
         if ($id !== null) {
@@ -88,7 +88,7 @@ class AntrianModel extends Model
                           b.merk_kendaraan, p.nama_pelanggan, l.nama_layanan, k.namakaryawan');
         $builder->join('booking b', 'b.id = a.booking_id', 'left');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
-        $builder->join('layanan l', 'l.id = b.layanan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
         $builder->join('karyawan k', 'k.idkaryawan = a.karyawan_id', 'left');
         $builder->where('a.tanggal', $date);
         $builder->orderBy('a.status', 'ASC');

@@ -22,11 +22,11 @@ class PelangganModel extends Model
 
     // Validation
     protected $validationRules      = [
-        'kode_pelanggan'  => 'required',
+        'kode_pelanggan'  => 'permit_empty|is_unique[pelanggan.kode_pelanggan]',
         'user_id'         => 'permit_empty|numeric|integer',
         'nama_pelanggan'  => 'required|max_length[100]',
-        'no_hp'           => 'required|max_length[15]',
-        'alamat'          => 'required',
+        'no_hp'           => 'permit_empty|max_length[15]',
+        'alamat'          => 'permit_empty',
     ];
 
     protected $validationMessages   = [
@@ -42,11 +42,10 @@ class PelangganModel extends Model
             'max_length' => 'Nama Pelanggan maksimal 100 karakter',
         ],
         'no_hp' => [
-            'required' => 'Nomor HP harus diisi',
             'max_length' => 'Nomor HP maksimal 15 karakter',
         ],
         'alamat' => [
-            'required' => 'Alamat harus diisi',
+            // No validation messages needed since it's optional
         ],
     ];
 
@@ -55,7 +54,7 @@ class PelangganModel extends Model
 
     // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
+    protected $beforeInsert   = ['generateKodePelanggan'];
     protected $afterInsert    = [];
     protected $beforeUpdate   = [];
     protected $afterUpdate    = [];
@@ -63,6 +62,17 @@ class PelangganModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    /**
+     * Callback untuk generate kode pelanggan sebelum insert
+     */
+    protected function generateKodePelanggan(array $data)
+    {
+        if (!isset($data['data']['kode_pelanggan']) || empty($data['data']['kode_pelanggan'])) {
+            $data['data']['kode_pelanggan'] = $this->generateKode();
+        }
+        return $data;
+    }
 
     /**
      * Generate kode pelanggan baru dengan format PEL-XXXXX

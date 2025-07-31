@@ -311,7 +311,7 @@
                 verifyBtnText.html('<i class="fas fa-spinner fa-spin mr-2"></i>Memverifikasi...');
 
                 $.ajax({
-                    url: '<?= base_url('auth/verify') ?>',
+                    url: '<?= base_url('auth/verify-otp') ?>',
                     type: 'POST',
                     data: {
                         otp_code: otpCode

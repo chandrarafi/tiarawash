@@ -3,18 +3,21 @@
 namespace App\Controllers;
 
 use App\Models\UserModel;
+use App\Models\PelangganModel;
 use App\Models\OTPModel;
 use CodeIgniter\Email\Email;
 
 class Auth extends BaseController
 {
     protected $userModel;
+    protected $pelangganModel;
     protected $otpModel;
     protected $email;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
+        $this->pelangganModel = new PelangganModel();
         $this->otpModel = new OTPModel();
         $this->email = \Config\Services::email();
         // Load helper cookie
@@ -25,7 +28,25 @@ class Auth extends BaseController
     {
         // Jika sudah login, redirect ke dashboard
         if (session()->get('logged_in')) {
-            return redirect()->to(session()->get('redirect_url') ?? 'admin');
+            $redirectUrl = session()->get('redirect_url');
+
+            // Clear redirect_url to prevent loops
+            session()->remove('redirect_url');
+
+            // Determine redirect based on role
+            $role = session()->get('role');
+            $defaultRedirect = match ($role) {
+                'pelanggan' => 'pelanggan/dashboard',
+                'admin', 'pimpinan' => 'admin',
+                default => 'admin'
+            };
+
+            // Only use redirect_url if it's not an auth route to prevent loops
+            if ($redirectUrl && !str_contains($redirectUrl, '/auth')) {
+                return redirect()->to($redirectUrl);
+            }
+
+            return redirect()->to($defaultRedirect);
         }
 
         return view('auth/login');
@@ -42,9 +63,9 @@ class Auth extends BaseController
             ->orWhere('email', $username)
             ->first();
 
-
         if ($user) {
             // Debug log
+            log_message('info', 'User found for login: ' . $username . ', Status: ' . $user['status']);
 
             if ($user['status'] !== 'active') {
                 return $this->response->setJSON([
@@ -54,6 +75,7 @@ class Auth extends BaseController
             }
 
 
+            log_message('info', 'Attempting password verification for user: ' . $username);
             if (password_verify($password, $user['password'])) {
                 // Update last login
                 $this->userModel->update($user['id'], [
@@ -76,13 +98,30 @@ class Auth extends BaseController
                     $this->setRememberMeCookie($user['id']);
                 }
 
+                // Get redirect URL and clear it to prevent loops
+                $redirectUrl = session()->get('redirect_url');
+                session()->remove('redirect_url');
+
+                // Determine redirect based on role
+                $defaultRedirect = match ($user['role']) {
+                    'pelanggan' => site_url('pelanggan/dashboard'),
+                    'admin', 'pimpinan' => site_url('admin'),
+                    default => site_url('admin')
+                };
+
+                // Use redirect_url if it exists and is not an auth route
+                $finalRedirect = ($redirectUrl && !str_contains($redirectUrl, '/auth')) ? $redirectUrl : $defaultRedirect;
+
                 return $this->response->setJSON([
                     'status' => 'success',
                     'message' => 'Login berhasil',
-                    'redirect' => site_url('admin')
+                    'redirect' => $finalRedirect
                 ]);
+            } else {
+                log_message('error', 'Password verification failed for user: ' . $username);
             }
         } else {
+            log_message('error', 'User not found for login: ' . $username);
         }
 
         return $this->response->setJSON([
@@ -162,7 +201,9 @@ class Auth extends BaseController
             'email'    => 'required|valid_email|is_unique[users.email]',
             'username' => 'required|min_length[3]|max_length[50]|is_unique[users.username]',
             'password' => 'required|min_length[6]',
-            'confirm_password' => 'required|matches[password]'
+            'confirm_password' => 'required|matches[password]',
+            'phone'    => 'permit_empty|max_length[15]',
+            'address'  => 'permit_empty|max_length[500]'
         ];
 
         if (!$this->validate($rules)) {
@@ -186,13 +227,15 @@ class Auth extends BaseController
 
         // Send OTP email
         if ($this->sendOTPEmail($email, $otpCode, 'registration')) {
-            // Store registration data in session temporarily
+
             session()->set('registration_data', [
                 'name'     => $this->request->getPost('name'),
                 'email'    => $email,
                 'username' => $this->request->getPost('username'),
-                'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-                'role'     => 'pelanggan'
+                'password' => $this->request->getPost('password'), // Don't hash here, let UserModel handle it
+                'role'     => 'pelanggan',
+                'phone'    => $this->request->getPost('phone') ?? '',
+                'address'  => $this->request->getPost('address') ?? 'Belum diisi'
             ]);
 
             return $this->response->setJSON([
@@ -239,28 +282,80 @@ class Auth extends BaseController
 
         // Verify OTP
         if ($this->otpModel->verifyOTP($registrationData['email'], $otpCode, 'registration')) {
-            // Create user account
-            $userData = $registrationData;
-            $userData['status'] = 'active';
-            $userData['email_verified_at'] = date('Y-m-d H:i:s');
+            // Start database transaction
+            $db = \Config\Database::connect();
+            $db->transStart();
 
-            if ($this->userModel->insert($userData)) {
-                // Clear registration data from session
-                session()->remove('registration_data');
+            try {
+                // Create user account
+                $userData = $registrationData;
+                $userData['status'] = 'active';
+                $userData['email_verified_at'] = date('Y-m-d H:i:s');
 
-                // Log the user in
-                $user = $this->userModel->where('email', $userData['email'])->first();
-                $this->setUserSession($user);
+                if ($this->userModel->insert($userData)) {
+                    $userId = $this->userModel->getInsertID();
 
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'message' => 'Registrasi berhasil! Selamat datang di TiaraWash.',
-                    'redirect' => base_url('admin')
-                ]);
-            } else {
+                    // If user is pelanggan, also create pelanggan record
+                    if ($userData['role'] === 'pelanggan') {
+                        $pelangganData = [
+                            'kode_pelanggan' => $this->pelangganModel->generateKode(),
+                            'user_id' => $userId,
+                            'nama_pelanggan' => $userData['name'],
+                            'no_hp' => $userData['phone'], // Use session data
+                            'alamat' => $userData['address'] // Use session data
+                        ];
+
+                        if (!$this->pelangganModel->insert($pelangganData)) {
+                            log_message('error', 'Failed to create pelanggan record for user ID: ' . $userId);
+                            log_message('error', 'Pelanggan model errors: ' . json_encode($this->pelangganModel->errors()));
+                            throw new \Exception('Gagal membuat data pelanggan');
+                        }
+
+                        log_message('info', 'Pelanggan record created successfully with kode: ' . $pelangganData['kode_pelanggan']);
+                    }
+
+                    // Complete transaction
+                    $db->transComplete();
+
+                    if ($db->transStatus() === false) {
+                        throw new \Exception('Database transaction failed');
+                    }
+
+                    // Clear registration data from session
+                    session()->remove('registration_data');
+
+                    // Clear any existing redirect_url to prevent loops
+                    session()->remove('redirect_url');
+
+                    // Log the user in
+                    $user = $this->userModel->where('email', $userData['email'])->first();
+                    $this->setUserSession($user);
+
+                    // Determine redirect based on role
+                    $redirectUrl = match ($user['role']) {
+                        'pelanggan' => base_url('pelanggan/dashboard'),
+                        'admin', 'pimpinan' => base_url('admin'),
+                        default => base_url('admin')
+                    };
+
+                    return $this->response->setJSON([
+                        'status' => 'success',
+                        'message' => 'Registrasi berhasil! Selamat datang di TiaraWash.',
+                        'redirect' => $redirectUrl
+                    ]);
+                } else {
+                    log_message('error', 'Failed to create user account');
+                    log_message('error', 'User model errors: ' . json_encode($this->userModel->errors()));
+                    throw new \Exception('Gagal membuat akun pengguna');
+                }
+            } catch (\Exception $e) {
+                // Rollback transaction on error
+                $db->transRollback();
+                log_message('error', 'Registration transaction failed: ' . $e->getMessage());
+
                 return $this->response->setJSON([
                     'status' => 'error',
-                    'message' => 'Gagal membuat akun. Silakan coba lagi.'
+                    'message' => 'Gagal membuat akun. ' . $e->getMessage()
                 ]);
             }
         } else {

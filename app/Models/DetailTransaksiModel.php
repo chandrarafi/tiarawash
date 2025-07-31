@@ -32,11 +32,11 @@ class DetailTransaksiModel extends Model
     protected $validationRules = [
         'transaksi_id' => 'required|numeric|is_not_unique[transaksi.id]',
         'jenis_item'   => 'required|in_list[layanan,produk]',
-        'item_id'      => 'required|numeric',
-        'nama_item'    => 'required',
-        'harga'        => 'required|numeric',
-        'jumlah'       => 'required|integer',
-        'subtotal'     => 'required|numeric',
+        'item_id'      => 'required|max_length[50]', // Changed to allow string (kode_layanan)
+        'nama_item'    => 'required|max_length[100]',
+        'harga'        => 'required|decimal',
+        'jumlah'       => 'required|integer|greater_than[0]',
+        'subtotal'     => 'required|decimal',
     ];
 
     protected $validationMessages = [
