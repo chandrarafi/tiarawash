@@ -143,7 +143,7 @@ class Booking extends BaseController
             'jenis_kendaraan' => $jenisKendaraan,
             'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
             'layanan_id' => $layananId,
-            'status' => 'pending',
+            'status' => 'menunggu_konfirmasi',
             'catatan' => $this->request->getPost('catatan'),
             'user_id' => $userId
         ];
@@ -387,7 +387,7 @@ class Booking extends BaseController
                     'jenis_kendaraan' => $jenisKendaraan,
                     'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
                     'layanan_id' => $service['kode_layanan'],
-                    'status' => 'menunggu',
+                    'status' => 'menunggu_konfirmasi',
                     'payment_expires_at' => $paymentExpires,
                     'catatan' => $this->request->getPost('catatan'),
                     'user_id' => $userId,
@@ -485,16 +485,34 @@ class Booking extends BaseController
             return redirect()->to('auth');
         }
 
+        // Get all bookings with same kode_booking (for multi-service bookings)
+        $relatedBookings = [];
+        if ($booking['kode_booking']) {
+            $relatedBookings = $this->bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
+        }
+
         // Get antrian jika ada
         $antrian = $this->antrianModel->where('booking_id', $bookingId)->first();
 
-        // Get transaksi jika ada
-        $transaksi = $this->transaksiModel->where('booking_id', $bookingId)->first();
+        // Get transaksi jika ada (check all bookings with same kode_booking)
+        $transaksi = null;
+        if ($booking['kode_booking']) {
+            // Find transaction for any booking with the same kode_booking
+            $allRelatedBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
+            foreach ($allRelatedBookings as $relatedBooking) {
+                $foundTransaksi = $this->transaksiModel->where('booking_id', $relatedBooking['id'])->first();
+                if ($foundTransaksi) {
+                    $transaksi = $foundTransaksi;
+                    break; // Use the first transaction found for the booking group
+                }
+            }
+        }
 
         $data = [
             'title' => 'Detail Booking',
             'subtitle' => 'Informasi lengkap booking Anda',
             'booking' => $booking,
+            'relatedBookings' => $relatedBookings,
             'antrian' => $antrian,
             'transaksi' => $transaksi
         ];
@@ -519,8 +537,34 @@ class Booking extends BaseController
             return redirect()->to('pelanggan/dashboard')->with('error', 'Data pelanggan tidak ditemukan.');
         }
 
-        // Get booking history
-        $bookings = $this->bookingModel->getBookingsByPelanggan($pelanggan['kode_pelanggan']);
+        // Get booking history and group by kode_booking
+        $allBookings = $this->bookingModel->getBookingsByPelanggan($pelanggan['kode_pelanggan']);
+
+        // Group bookings by kode_booking
+        $groupedBookings = [];
+        foreach ($allBookings as $booking) {
+            $kodeBooking = $booking['kode_booking'];
+            if (!isset($groupedBookings[$kodeBooking])) {
+                $groupedBookings[$kodeBooking] = [
+                    'main_booking' => $booking,
+                    'services' => [],
+                    'total_harga' => 0,
+                    'service_count' => 0
+                ];
+            }
+
+            $groupedBookings[$kodeBooking]['services'][] = $booking;
+            $groupedBookings[$kodeBooking]['total_harga'] += (float)$booking['harga'];
+            $groupedBookings[$kodeBooking]['service_count']++;
+        }
+
+        // Convert to indexed array and sort by date
+        $bookings = array_values($groupedBookings);
+        usort($bookings, function ($a, $b) {
+            $dateTimeA = $a['main_booking']['tanggal'] . ' ' . $a['main_booking']['jam'];
+            $dateTimeB = $b['main_booking']['tanggal'] . ' ' . $b['main_booking']['jam'];
+            return strtotime($dateTimeB) - strtotime($dateTimeA);
+        });
 
         $data = [
             'title' => 'Riwayat Booking',
@@ -801,12 +845,53 @@ class Booking extends BaseController
                 ->select('l.durasi_menit as durasi')
                 ->where('booking.tanggal', $tanggal)
                 ->where('booking.status !=', 'dibatalkan')
+                ->where('booking.id_karyawan IS NOT NULL') // Only bookings with assigned karyawan
                 ->findAll();
 
             // Filter out past times for today
             $currentTime = date('H:i');
             $isToday = ($tanggal === date('Y-m-d'));
 
+            // Check if this is a simple request (like from pelanggan) - no total_durasi parameter
+            if (empty($totalDurasi)) {
+                // Return simple array of available slots like pelanggan expects
+                $availableSlots = $this->generateSimpleAvailableSlots($existingBookings, $totalKaryawan, $isToday, $currentTime);
+
+                // Convert to plain arrays to ensure JSON compatibility
+                $existingBookingsArray = [];
+                foreach ($existingBookings as $booking) {
+                    // Only include bookings with valid karyawan assignment
+                    if (!empty($booking['id_karyawan']) && !empty($booking['jam'])) {
+                        $existingBookingsArray[] = [
+                            'jam' => $booking['jam'],
+                            'layanan_id' => $booking['layanan_id'],
+                            'id_karyawan' => $booking['id_karyawan'],
+                            'durasi' => (int)($booking['durasi'] ?? 60)
+                        ];
+                    }
+                }
+
+                // Debug log
+                log_message('debug', "Processing date: $tanggal");
+                log_message('debug', "Total karyawan: $totalKaryawan");
+                log_message('debug', "Raw bookings: " . count($existingBookings));
+                log_message('debug', "Valid bookings: " . count($existingBookingsArray));
+                log_message('debug', "Available slots: " . count($availableSlots));
+
+
+
+                return $this->response->setJSON([
+                    'status' => 'success',
+                    'data' => $availableSlots,
+                    // Also include detailed data for admin karyawan count display
+                    'existing_bookings' => $existingBookingsArray,
+                    'total_karyawan' => (int)$totalKaryawan,
+                    'is_today' => $isToday,
+                    'current_time' => $isToday ? $currentTime : null
+                ]);
+            }
+
+            // Return complex data for admin (when total_durasi is provided)
             $response = [
                 'status' => 'success',
                 'existing_bookings' => $existingBookings,
@@ -826,6 +911,78 @@ class Booking extends BaseController
         }
     }
 
+    /**
+     * Generate simple available slots array (like pelanggan expects)
+     */
+    private function generateSimpleAvailableSlots($existingBookings, $totalKaryawan, $isToday, $currentTime)
+    {
+        $startHour = 8;
+        $endHour = 17;
+        $availableSlots = [];
+
+
+
+        // Generate 30-minute slots
+        for ($hour = $startHour; $hour < $endHour; $hour++) {
+            $slots = [
+                sprintf('%02d:00', $hour),
+                sprintf('%02d:30', $hour)
+            ];
+
+            foreach ($slots as $slot) {
+                // Skip past times for today
+                if ($isToday && $currentTime && $slot <= $currentTime) {
+                    continue;
+                }
+
+                // Count busy employees at this time
+                $busyKaryawanSet = [];
+                foreach ($existingBookings as $booking) {
+                    // Skip invalid bookings
+                    if (empty($booking['id_karyawan']) || empty($booking['jam'])) {
+                        continue;
+                    }
+
+                    $bookingStart = $booking['jam'];
+                    $bookingEnd = $this->addMinutesToTime($bookingStart, (int)($booking['durasi'] ?? 60));
+                    $slotEnd = $this->addMinutesToTime($slot, 60);
+
+                    if ($this->timesOverlap($slot, $slotEnd, $bookingStart, $bookingEnd)) {
+                        $busyKaryawanSet[$booking['id_karyawan']] = true;
+                    }
+                }
+
+                $availableKaryawan = $totalKaryawan - count($busyKaryawanSet);
+
+                // Log for debugging
+                log_message('debug', "Slot $slot - busy karyawan: " . count($busyKaryawanSet) . ", available: $availableKaryawan");
+
+                if ($availableKaryawan > 0) {
+                    $availableSlots[] = $slot;
+                }
+            }
+        }
+        return $availableSlots;
+    }
+
+    /**
+     * Helper method to add minutes to time string
+     */
+    private function addMinutesToTime($timeStr, $minutes)
+    {
+        $time = new \DateTime($timeStr);
+        $time->add(new \DateInterval('PT' . $minutes . 'M'));
+        return $time->format('H:i');
+    }
+
+    /**
+     * Helper method to check if times overlap
+     */
+    private function timesOverlap($start1, $end1, $start2, $end2)
+    {
+        return $start1 < $end2 && $end1 > $start2;
+    }
+
     // ================== ADMIN BOOKING METHODS ==================
 
     /**
@@ -838,37 +995,74 @@ class Booking extends BaseController
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get unique transactions with booking summary
-        $transactions = $this->db->query("
+        // Get all bookings grouped by kode_booking with optional transaction data
+        // Use a more compatible approach for MySQL strict mode
+        $allBookings = $this->db->query("
             SELECT 
+                b.kode_booking,
+                MAX(CASE WHEN b.id = min_booking.min_id THEN b.status END) as booking_status,
+                MIN(b.tanggal) as tanggal_booking,
+                MIN(b.jam) as jam_booking,
+                MAX(b.created_at) as created_at,
+                MAX(CASE WHEN b.id = min_booking.min_id THEN p.nama_pelanggan END) as nama_pelanggan,
+                GROUP_CONCAT(DISTINCT l.nama_layanan ORDER BY l.nama_layanan SEPARATOR ', ') as layanan_list,
+                COUNT(b.id) as jumlah_layanan,
+                SUM(l.harga) as total_harga_layanan,
+                MAX(CASE WHEN b.id = min_booking.min_id THEN k.namakaryawan END) as namakaryawan,
+                MIN(b.id) as first_booking_id,
                 t.no_transaksi,
                 t.status_pembayaran,
                 t.bukti_pembayaran,
-                t.total_harga,
+                t.total_harga as total_harga_transaksi,
                 t.metode_pembayaran,
                 t.created_at as tanggal_transaksi,
-                t.id as transaksi_id,
-                MIN(b.tanggal) as tanggal_booking,
-                MIN(b.jam) as jam_booking,
-                b.kode_booking,
-                p.nama_pelanggan,
-                GROUP_CONCAT(DISTINCT l.nama_layanan SEPARATOR ', ') as layanan_list,
-                COUNT(DISTINCT b.id) as jumlah_layanan,
-                k.namakaryawan
-            FROM transaksi t
-            LEFT JOIN booking b ON t.booking_id = b.id
+                t.id as transaksi_id
+            FROM booking b
+            INNER JOIN (
+                SELECT kode_booking, MIN(id) as min_id
+                FROM booking 
+                WHERE kode_booking IS NOT NULL
+                GROUP BY kode_booking
+            ) min_booking ON b.kode_booking = min_booking.kode_booking
             LEFT JOIN pelanggan p ON b.pelanggan_id = p.kode_pelanggan
             LEFT JOIN layanan l ON b.layanan_id = l.kode_layanan
             LEFT JOIN karyawan k ON b.id_karyawan = k.idkaryawan
-            WHERE t.no_transaksi IS NOT NULL
-            GROUP BY t.no_transaksi
-            ORDER BY t.created_at DESC
+            LEFT JOIN transaksi t ON t.booking_id = min_booking.min_id
+            WHERE b.kode_booking IS NOT NULL
+            GROUP BY b.kode_booking, 
+                     t.no_transaksi, t.status_pembayaran, t.bukti_pembayaran, 
+                     t.total_harga, t.metode_pembayaran, t.created_at, t.id
+            ORDER BY MAX(b.created_at) DESC
         ")->getResultArray();
+
+        // Process the data to get proper structure
+        $transactions = [];
+        foreach ($allBookings as $booking) {
+            $transactions[] = [
+                'kode_booking' => $booking['kode_booking'],
+                'booking_status' => $booking['booking_status'],
+                'tanggal_booking' => $booking['tanggal_booking'],
+                'jam_booking' => $booking['jam_booking'],
+                'created_at' => $booking['created_at'],
+                'nama_pelanggan' => $booking['nama_pelanggan'],
+                'layanan_list' => $booking['layanan_list'],
+                'jumlah_layanan' => $booking['jumlah_layanan'],
+                'namakaryawan' => $booking['namakaryawan'],
+                // Transaction data (null if no transaction)
+                'no_transaksi' => $booking['no_transaksi'],
+                'status_pembayaran' => $booking['status_pembayaran'] ?? 'belum_bayar',
+                'bukti_pembayaran' => $booking['bukti_pembayaran'],
+                'total_harga' => $booking['total_harga_transaksi'] ?? $booking['total_harga_layanan'],
+                'metode_pembayaran' => $booking['metode_pembayaran'] ?? '-',
+                'tanggal_transaksi' => $booking['tanggal_transaksi'] ?? $booking['created_at'],
+                'transaksi_id' => $booking['transaksi_id']
+            ];
+        }
 
         // Get statistics
         $stats = [
             'total_bookings' => $this->bookingModel->countAll(),
-            'pending_bookings' => $this->bookingModel->where('status', 'menunggu')->countAllResults(),
+            'pending_bookings' => $this->bookingModel->where('status', 'menunggu_konfirmasi')->countAllResults(),
             'confirmed_bookings' => $this->bookingModel->where('status', 'dikonfirmasi')->countAllResults(),
             'completed_bookings' => $this->bookingModel->where('status', 'selesai')->countAllResults(),
             'pending_payments' => $this->db->table('transaksi')->where('status_pembayaran', 'belum_bayar')->where('bukti_pembayaran IS NOT NULL')->countAllResults()
@@ -926,7 +1120,7 @@ class Booking extends BaseController
             'jam' => 'required',
             'no_plat' => 'required',
             'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
-            'layanan_id' => 'required',
+            'layanan_ids' => 'required',
             'id_karyawan' => 'permit_empty',
             'catatan' => 'permit_empty'
         ];
@@ -935,75 +1129,190 @@ class Booking extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $data = [
-            'pelanggan_id' => $this->request->getPost('pelanggan_id'),
-            'tanggal' => $this->request->getPost('tanggal'),
-            'jam' => $this->request->getPost('jam'),
-            'no_plat' => strtoupper($this->request->getPost('no_plat')),
-            'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
-            'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
-            'layanan_id' => $this->request->getPost('layanan_id'),
-            'id_karyawan' => $this->request->getPost('id_karyawan'),
-            'status' => 'dikonfirmasi', // Admin booking auto confirmed
-            'catatan' => $this->request->getPost('catatan')
-        ];
+        $layananIds = $this->request->getPost('layanan_ids');
+        if (empty($layananIds) || !is_array($layananIds)) {
+            return redirect()->back()->withInput()->with('error', 'Pilih minimal satu layanan');
+        }
 
-        if ($this->bookingModel->insert($data)) {
-            return redirect()->to('admin/booking')->with('success', 'Booking berhasil ditambahkan');
-        } else {
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan booking');
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            $kodeBooking = $this->bookingModel->generateNewKodeBooking();
+            $layananModel = new \App\Models\LayananModel();
+
+            // Calculate total duration for all services
+            $totalDurasi = 0;
+            $validServices = [];
+            foreach ($layananIds as $layananId) {
+                $layanan = $this->layananModel->find($layananId);
+                if ($layanan) {
+                    $validServices[] = $layanan;
+                    $totalDurasi += (int)$layanan['durasi_menit'];
+                }
+            }
+
+            if (empty($validServices)) {
+                throw new \Exception('Tidak ada layanan valid yang dipilih');
+            }
+
+            // Get ONE karyawan available for the entire booking duration
+            $sharedKaryawan = $this->bookingModel->getRandomAvailableKaryawan(
+                $this->request->getPost('tanggal'),
+                $this->request->getPost('jam'),
+                $totalDurasi
+            );
+
+            if (!$sharedKaryawan) {
+                throw new \Exception('Tidak ada karyawan yang tersedia untuk menangani semua layanan pada waktu tersebut');
+            }
+
+            $idKaryawan = $sharedKaryawan['idkaryawan'];
+
+            $totalHarga = 0;
+            $firstBookingId = null;
+
+            // Create booking for each valid service
+            foreach ($validServices as $layanan) {
+                $layananId = $layanan['kode_layanan'];
+
+                $bookingData = [
+                    'kode_booking' => $kodeBooking,
+                    'pelanggan_id' => $this->request->getPost('pelanggan_id'),
+                    'layanan_id' => $layananId,
+                    'tanggal' => $this->request->getPost('tanggal'),
+                    'jam' => $this->request->getPost('jam'),
+                    'no_plat' => strtoupper($this->request->getPost('no_plat')),
+                    'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
+                    'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
+                    'id_karyawan' => $idKaryawan,
+                    'status' => 'dikonfirmasi', // Admin bookings are auto-confirmed
+                    'catatan' => $this->request->getPost('catatan')
+                ];
+
+                $bookingId = $this->bookingModel->insert($bookingData);
+
+                if (!$bookingId) {
+                    throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $layanan['nama_layanan']);
+                }
+
+                if ($firstBookingId === null) {
+                    $firstBookingId = $bookingId;
+                }
+
+                $totalHarga += $layanan['harga'];
+            }
+
+            // Create transaction
+            $transaksiModel = new \App\Models\TransaksiModel();
+
+            // Generate no_transaksi
+            $noTransaksi = 'TRX-' . date('Ymd') . '-' . sprintf('%04d', rand(1000, 9999));
+
+            $transaksiData = [
+                'no_transaksi' => $noTransaksi,
+                'tanggal' => date('Y-m-d'),
+                'booking_id' => $firstBookingId,
+                'pelanggan_id' => $this->request->getPost('pelanggan_id'),
+                'layanan_id' => $layananIds[0], // Use first service
+                'no_plat' => $this->request->getPost('no_plat'),
+                'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
+                'total_harga' => $totalHarga,
+                'metode_pembayaran' => 'tunai', // Default for admin bookings
+                'status_pembayaran' => 'dibayar', // Admin bookings are paid
+                'catatan' => $this->request->getPost('catatan'),
+                'user_id' => session()->get('user_id')
+            ];
+
+            $transaksiId = $transaksiModel->insert($transaksiData);
+
+            if (!$transaksiId) {
+                throw new \Exception('Gagal menyimpan transaksi');
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Database transaction failed');
+            }
+
+            // Check if AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'success',
+                    'message' => 'Booking berhasil ditambahkan dengan ' . count($layananIds) . ' layanan'
+                ]);
+            }
+
+            return redirect()->to('admin/booking')->with('success', 'Booking berhasil ditambahkan dengan ' . count($layananIds) . ' layanan');
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Admin booking creation failed: ' . $e->getMessage());
+
+            // Check if AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Gagal menambahkan booking: ' . $e->getMessage()
+                ]);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan booking: ' . $e->getMessage());
         }
     }
 
     /**
-     * Show booking detail with payment info by transaction ID
+     * Show booking detail with payment info by booking ID
      */
-    public function show($transaksiId)
+    public function show($bookingId)
     {
         // Check admin permission
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        $transaksiModel = new \App\Models\TransaksiModel();
-
-        // Get transaction with booking details
-        $booking = $transaksiModel
-            ->select('transaksi.*, booking.kode_booking, booking.tanggal, booking.jam, booking.no_plat, booking.jenis_kendaraan, booking.merk_kendaraan, booking.status as booking_status, booking.catatan')
-            ->select('pelanggan.nama_pelanggan, pelanggan.no_hp, pelanggan.alamat')
-            ->select('layanan.nama_layanan, layanan.harga, layanan.durasi_menit')
-            ->select('karyawan.namakaryawan')
-            ->join('booking', 'booking.id = transaksi.booking_id', 'left')
-            ->join('pelanggan', 'pelanggan.kode_pelanggan = booking.pelanggan_id', 'left')
-            ->join('layanan', 'layanan.kode_layanan = booking.layanan_id', 'left')
-            ->join('karyawan', 'karyawan.idkaryawan = booking.id_karyawan', 'left')
-            ->find($transaksiId);
+        // Get main booking with details
+        $booking = $this->bookingModel->getBookingWithDetails($bookingId);
 
         if (!$booking) {
-            return redirect()->to('admin/booking')->with('error', 'Transaksi tidak ditemukan');
+            return redirect()->to('admin/booking')->with('error', 'Booking tidak ditemukan');
         }
 
         // Get all bookings with same kode_booking (multi-service)
         $relatedBookings = [];
         if ($booking['kode_booking']) {
-            $relatedBookings = $this->bookingModel
-                ->select('booking.*, layanan.nama_layanan, layanan.harga, layanan.durasi_menit')
-                ->join('layanan', 'layanan.kode_layanan = booking.layanan_id', 'left')
-                ->where('booking.kode_booking', $booking['kode_booking'])
-                ->orderBy('booking.jam', 'ASC')
-                ->findAll();
+            $relatedBookings = $this->bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
         }
 
-        // Add additional fields for compatibility
+        // Get antrian if exists
+        $antrian = $this->antrianModel->where('booking_id', $bookingId)->first();
+
+        // Get transaksi if exists (check all bookings with same kode_booking)
+        $transaksi = null;
+        if ($booking['kode_booking']) {
+            // Find transaction for any booking with the same kode_booking
+            $allRelatedBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
+            foreach ($allRelatedBookings as $relatedBooking) {
+                $foundTransaksi = $this->transaksiModel->where('booking_id', $relatedBooking['id'])->first();
+                if ($foundTransaksi) {
+                    $transaksi = $foundTransaksi;
+                    break; // Use the first transaction found for the booking group
+                }
+            }
+        }
+
+        // Add compatibility fields for admin view
         $booking['tanggal_booking'] = $booking['tanggal'];
         $booking['jam_booking'] = $booking['jam'];
-        $booking['transaksi_id'] = $booking['id'];
+        $booking['booking_status'] = $booking['status'];
 
         $data = [
-            'title' => 'Detail Transaksi',
+            'title' => 'Detail Booking',
             'subtitle' => 'Informasi lengkap booking dan pembayaran',
             'booking' => $booking,
-            'relatedBookings' => $relatedBookings
+            'relatedBookings' => $relatedBookings,
+            'antrian' => $antrian,
+            'transaksi' => $transaksi
         ];
 
         return view('admin/booking/show', $data);
@@ -1025,6 +1334,18 @@ class Booking extends BaseController
             return redirect()->to('admin/booking')->with('error', 'Booking tidak ditemukan');
         }
 
+        // Get all bookings with the same kode_booking (for multi-service)
+        $allBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
+
+        // Get services for all bookings with the same kode_booking
+        $bookingServices = [];
+        foreach ($allBookings as $b) {
+            $layanan = $this->layananModel->where('kode_layanan', $b['layanan_id'])->first();
+            if ($layanan) {
+                $bookingServices[] = $layanan;
+            }
+        }
+
         // Get related data for form
         $pelanggan = $this->pelangganModel->findAll();
         $layanan = $this->layananModel->findAll();
@@ -1034,6 +1355,7 @@ class Booking extends BaseController
             'title' => 'Edit Booking',
             'subtitle' => 'Ubah data booking',
             'booking' => $booking,
+            'booking_services' => $bookingServices,
             'pelanggan' => $pelanggan,
             'layanan' => $layanan,
             'karyawan' => $karyawan
@@ -1064,32 +1386,121 @@ class Booking extends BaseController
             'jam' => 'required',
             'no_plat' => 'required',
             'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
-            'layanan_id' => 'required',
             'id_karyawan' => 'permit_empty',
-            'status' => 'required|in_list[menunggu,dikonfirmasi,diproses,selesai,batal]'
+            'status' => 'required|in_list[menunggu_konfirmasi,dikonfirmasi,selesai,dibatalkan]'
         ];
 
         if (!$this->validate($rules)) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $data = [
-            'pelanggan_id' => $this->request->getPost('pelanggan_id'),
-            'tanggal' => $this->request->getPost('tanggal'),
-            'jam' => $this->request->getPost('jam'),
-            'no_plat' => strtoupper($this->request->getPost('no_plat')),
-            'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
-            'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
-            'layanan_id' => $this->request->getPost('layanan_id'),
-            'id_karyawan' => $this->request->getPost('id_karyawan'),
-            'status' => $this->request->getPost('status'),
-            'catatan' => $this->request->getPost('catatan')
-        ];
+        // Get selected services
+        $layananIds = $this->request->getPost('layanan_ids');
+        if (empty($layananIds)) {
+            return redirect()->back()->withInput()->with('error', 'Pilih minimal satu layanan');
+        }
 
-        if ($this->bookingModel->update($bookingId, $data)) {
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // Delete existing bookings with the same kode_booking
+            $this->bookingModel->where('kode_booking', $booking['kode_booking'])->delete();
+
+            // Get total duration for all selected services
+            $totalDurasi = 0;
+            $validServices = [];
+            foreach ($layananIds as $layananId) {
+                $layanan = $this->layananModel->where('kode_layanan', $layananId)->first();
+                if ($layanan) {
+                    $validServices[] = $layanan;
+                    $totalDurasi += (int)$layanan['durasi_menit'];
+                }
+            }
+
+            if (empty($validServices)) {
+                throw new \Exception('Tidak ada layanan valid yang dipilih');
+            }
+
+            // Get or assign karyawan
+            $idKaryawan = $this->request->getPost('id_karyawan');
+            if (empty($idKaryawan)) {
+                $tanggal = $this->request->getPost('tanggal');
+                $jam = $this->request->getPost('jam');
+                $availableKaryawan = $this->bookingModel->getRandomAvailableKaryawan($tanggal, $jam, $totalDurasi);
+                $idKaryawan = $availableKaryawan ? $availableKaryawan['idkaryawan'] : null;
+            }
+
+            // Calculate start time in minutes
+            list($hours, $minutes) = explode(':', $this->request->getPost('jam'));
+            $startTimeMinutes = ($hours * 60) + $minutes;
+
+            // Create new bookings for each selected service
+            foreach ($validServices as $index => $service) {
+                // Calculate jam for each service (sequential)
+                $serviceStartMinutes = $startTimeMinutes;
+                if ($index > 0) {
+                    // Add duration of all previous services
+                    for ($i = 0; $i < $index; $i++) {
+                        $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
+                    }
+                }
+
+                $serviceJam = sprintf(
+                    '%02d:%02d',
+                    floor($serviceStartMinutes / 60),
+                    $serviceStartMinutes % 60
+                );
+
+                $bookingData = [
+                    'kode_booking' => $booking['kode_booking'], // Keep the same kode_booking
+                    'pelanggan_id' => $this->request->getPost('pelanggan_id'),
+                    'tanggal' => $this->request->getPost('tanggal'),
+                    'jam' => $serviceJam,
+                    'no_plat' => strtoupper($this->request->getPost('no_plat')),
+                    'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
+                    'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
+                    'layanan_id' => $service['kode_layanan'],
+                    'id_karyawan' => $idKaryawan,
+                    'status' => $this->request->getPost('status'),
+                    'catatan' => $this->request->getPost('catatan'),
+                    'payment_expires_at' => $booking['payment_expires_at'], // Keep original expiry
+                    'user_id' => $booking['user_id'] // Keep original user
+                ];
+
+                if (!$this->bookingModel->insert($bookingData)) {
+                    throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan']);
+                }
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Gagal memperbarui booking');
+            }
+
+            // Check if AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'status' => 'success',
+                    'message' => 'Booking berhasil diperbarui'
+                ]);
+            }
+
             return redirect()->to('admin/booking')->with('success', 'Booking berhasil diperbarui');
-        } else {
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui booking');
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Update booking error: ' . $e->getMessage());
+
+            // Check if AJAX request
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Gagal memperbarui booking: ' . $e->getMessage()
+                ]);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui booking: ' . $e->getMessage());
         }
     }
 
@@ -1275,6 +1686,200 @@ class Booking extends BaseController
             return $this->response->setJSON([
                 'status' => 'error',
                 'message' => 'Gagal menolak pembayaran: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Confirm booking by kode_booking (for admin)
+     */
+    public function confirmBookingByCode($kodeBooking)
+    {
+        // Check admin permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak'
+            ]);
+        }
+
+        // Get all bookings with this kode_booking
+        $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
+
+        if (empty($bookings)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Booking tidak ditemukan'
+            ]);
+        }
+
+        // Check if booking is still pending
+        $firstBooking = $bookings[0];
+        if ($firstBooking['status'] !== 'menunggu_konfirmasi') {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Booking sudah dikonfirmasi atau dibatalkan sebelumnya'
+            ]);
+        }
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // Update all bookings with same kode_booking to confirmed
+            $this->bookingModel->where('kode_booking', $kodeBooking)
+                ->set(['status' => 'dikonfirmasi'])
+                ->update();
+
+            // Create antrian for the first booking (representing the whole booking session)
+            $antrianData = [
+                'booking_id' => $firstBooking['id'],
+                'tanggal' => $firstBooking['tanggal'],
+                'status' => 'menunggu'
+            ];
+
+            if ($this->antrianModel->insert($antrianData)) {
+                $antrianId = $this->antrianModel->getInsertID();
+                $antrian = $this->antrianModel->find($antrianId);
+                log_message('info', 'Antrian created for booking ' . $kodeBooking . ': ' . $antrian['nomor_antrian']);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Database transaction failed');
+            }
+
+            log_message('info', "Admin confirmed booking: {$kodeBooking}");
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Booking berhasil dikonfirmasi dan antrian telah dibuat'
+            ]);
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Booking confirmation failed: ' . $e->getMessage());
+
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal mengkonfirmasi booking: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Reject booking by kode_booking (for admin)
+     */
+    public function rejectBookingByCode($kodeBooking)
+    {
+        // Check admin permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak'
+            ]);
+        }
+
+        // Get all bookings with this kode_booking
+        $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
+
+        if (empty($bookings)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Booking tidak ditemukan'
+            ]);
+        }
+
+        // Check if booking is still pending
+        $firstBooking = $bookings[0];
+        if ($firstBooking['status'] !== 'menunggu_konfirmasi') {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Booking sudah diproses sebelumnya'
+            ]);
+        }
+
+        $alasan = $this->request->getPost('alasan') ?? 'Booking ditolak oleh admin';
+
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // Update all bookings with same kode_booking to rejected
+            $this->bookingModel->where('kode_booking', $kodeBooking)
+                ->set([
+                    'status' => 'dibatalkan',
+                    'catatan' => $alasan
+                ])
+                ->update();
+
+            // Also update related transaction if exists
+            $transaksiModel = new \App\Models\TransaksiModel();
+            $transaksi = $transaksiModel->where('booking_id', $firstBooking['id'])->first();
+
+            if ($transaksi) {
+                $transaksiModel->update($transaksi['id'], [
+                    'status_pembayaran' => 'batal',
+                    'catatan' => $alasan
+                ]);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Database transaction failed');
+            }
+
+            log_message('info', "Admin rejected booking: {$kodeBooking}. Reason: {$alasan}");
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Booking berhasil ditolak'
+            ]);
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Booking rejection failed: ' . $e->getMessage());
+
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal menolak booking: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get transaction by kode_booking (for receipt access from history)
+     */
+    public function getTransaction($kodeBooking)
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid request']);
+        }
+
+        // Get any booking with this kode_booking to find related transaction
+        $booking = $this->bookingModel->where('kode_booking', $kodeBooking)->first();
+
+        if (!$booking) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Booking tidak ditemukan'
+            ]);
+        }
+
+        // Find transaction for this booking
+        $transaksi = $this->transaksiModel->where('booking_id', $booking['id'])->first();
+
+        if ($transaksi) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'no_transaksi' => $transaksi['no_transaksi'],
+                'booking_id' => $booking['id']
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Transaksi tidak ditemukan',
+                'booking_id' => $booking['id']
             ]);
         }
     }

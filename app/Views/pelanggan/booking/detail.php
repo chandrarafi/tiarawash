@@ -18,15 +18,24 @@
                         <div class="text-end">
                             <?php
                             $statusColors = [
-                                'pending' => 'warning',
+                                'menunggu_konfirmasi' => 'warning',
                                 'dikonfirmasi' => 'info',
                                 'selesai' => 'success',
-                                'dibatalkan' => 'danger'
+                                'dibatalkan' => 'danger',
+                                'batal' => 'danger'
+                            ];
+                            $statusLabels = [
+                                'menunggu_konfirmasi' => 'Menunggu Konfirmasi',
+                                'dikonfirmasi' => 'Dikonfirmasi',
+                                'selesai' => 'Selesai',
+                                'dibatalkan' => 'Dibatalkan',
+                                'batal' => 'Dibatalkan'
                             ];
                             $statusColor = $statusColors[$booking['status']] ?? 'secondary';
+                            $statusLabel = $statusLabels[$booking['status']] ?? ucfirst($booking['status']);
                             ?>
                             <span class="badge bg-<?= $statusColor ?> fs-6 px-3 py-2">
-                                <?= ucfirst($booking['status']) ?>
+                                <?= $statusLabel ?>
                             </span>
                         </div>
                     </div>
@@ -55,21 +64,67 @@
                         <div class="col-md-6 mb-4">
                             <h5 class="text-success mb-3">
                                 <i class="fas fa-cogs me-2"></i>Informasi Layanan
+                                <?php if (!empty($relatedBookings) && count($relatedBookings) > 1): ?>
+                                    <span class="badge bg-success ms-2"><?= count($relatedBookings) ?> Layanan</span>
+                                <?php endif; ?>
                             </h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td class="text-muted">Layanan:</td>
-                                    <td class="fw-bold"><?= esc($booking['nama_layanan'] ?? 'N/A') ?></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Harga:</td>
-                                    <td class="text-success fw-bold">Rp <?= number_format($booking['harga'] ?? 0, 0, ',', '.') ?></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Durasi:</td>
-                                    <td><?= ($booking['durasi_menit'] ?? 0) ?> menit</td>
-                                </tr>
-                            </table>
+
+                            <?php if (!empty($relatedBookings) && count($relatedBookings) > 1): ?>
+                                <!-- Multiple Services -->
+                                <?php
+                                $totalHarga = 0;
+                                $totalDurasi = 0;
+                                ?>
+                                <div class="service-list">
+                                    <?php foreach ($relatedBookings as $service): ?>
+                                        <?php
+                                        $totalHarga += (float)$service['harga'];
+                                        $totalDurasi += (int)$service['durasi_menit'];
+                                        ?>
+                                        <div class="service-item mb-3 p-2 border rounded">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong><?= esc($service['nama_layanan']) ?></strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i><?= $service['durasi_menit'] ?> menit
+                                                        | <i class="fas fa-calendar me-1"></i><?= date('H:i', strtotime($service['jam'])) ?>
+                                                    </small>
+                                                </div>
+                                                <div class="text-success fw-bold">
+                                                    Rp <?= number_format($service['harga'], 0, ',', '.') ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="border-top pt-2 mt-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong>Total:</strong>
+                                        <div>
+                                            <span class="text-success fw-bold">Rp <?= number_format($totalHarga, 0, ',', '.') ?></span>
+                                            <br>
+                                            <small class="text-muted"><?= $totalDurasi ?> menit</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <!-- Single Service -->
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted">Layanan:</td>
+                                        <td class="fw-bold"><?= esc($booking['nama_layanan'] ?? 'N/A') ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Harga:</td>
+                                        <td class="text-success fw-bold">Rp <?= number_format($booking['harga'] ?? 0, 0, ',', '.') ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Durasi:</td>
+                                        <td><?= ($booking['durasi_menit'] ?? 0) ?> menit</td>
+                                    </tr>
+                                </table>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Informasi Kendaraan -->
@@ -110,6 +165,30 @@
                                 <tr>
                                     <td class="text-muted">Dibuat:</td>
                                     <td><?= date('d/m/Y H:i', strtotime($booking['created_at'])) ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Status:</td>
+                                    <td>
+                                        <?php
+                                        $statusColors = [
+                                            'menunggu_konfirmasi' => 'warning',
+                                            'dikonfirmasi' => 'info',
+                                            'selesai' => 'success',
+                                            'dibatalkan' => 'danger',
+                                            'batal' => 'danger'
+                                        ];
+                                        $statusLabels = [
+                                            'menunggu_konfirmasi' => 'Menunggu Konfirmasi',
+                                            'dikonfirmasi' => 'Dikonfirmasi',
+                                            'selesai' => 'Selesai',
+                                            'dibatalkan' => 'Dibatalkan',
+                                            'batal' => 'Dibatalkan'
+                                        ];
+                                        $statusColor = $statusColors[$booking['status']] ?? 'secondary';
+                                        $statusLabel = $statusLabels[$booking['status']] ?? ucfirst($booking['status']);
+                                        ?>
+                                        <span class="badge bg-<?= $statusColor ?>"><?= $statusLabel ?></span>
+                                    </td>
                                 </tr>
                             </table>
                         </div>
@@ -223,28 +302,78 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <!-- Payment Button -->
-                        <?php if ($booking['status'] === 'dikonfirmasi' && !$transaksi): ?>
-                            <button class="btn btn-success" onclick="showPaymentModal()">
-                                <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
-                            </button>
-                        <?php endif; ?>
-
-                        <!-- Cancel Button -->
-                        <?php if (in_array($booking['status'], ['pending', 'dikonfirmasi']) && !$transaksi): ?>
+                        <?php if ($booking['status'] === 'menunggu_konfirmasi'): ?>
+                            <!-- Booking belum dikonfirmasi -->
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Menunggu Konfirmasi</strong><br>
+                                <small>Booking Anda sedang menunggu konfirmasi dari admin. Anda dapat melakukan pembayaran setelah booking dikonfirmasi.</small>
+                            </div>
+                            <a href="<?= site_url('payment/' . $booking['kode_booking']) ?>" class="btn btn-success">
+                                <i class="fas fa-credit-card me-2"></i>Lanjutkan Pembayaran
+                            </a>
                             <button class="btn btn-outline-danger" onclick="cancelBooking()">
                                 <i class="fas fa-times me-2"></i>Batalkan Booking
                             </button>
-                        <?php endif; ?>
 
-                        <!-- Print/Download -->
-                        <?php if ($transaksi): ?>
-                            <button class="btn btn-outline-primary" onclick="printReceipt()">
-                                <i class="fas fa-print me-2"></i>Cetak Struk
+                        <?php elseif ($booking['status'] === 'dikonfirmasi' && !$transaksi): ?>
+                            <!-- Booking dikonfirmasi tapi belum bayar -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Booking Dikonfirmasi</strong><br>
+                                <small>Silakan lakukan pembayaran untuk menyelesaikan booking Anda.</small>
+                            </div>
+                            <a href="<?= site_url('payment/' . $booking['kode_booking']) ?>" class="btn btn-success">
+                                <i class="fas fa-credit-card me-2"></i>Bayar Sekarang
+                            </a>
+                            <button class="btn btn-outline-danger" onclick="cancelBooking()">
+                                <i class="fas fa-times me-2"></i>Batalkan Booking
                             </button>
+
+                        <?php elseif ($transaksi): ?>
+                            <!-- Booking sudah dibayar -->
+                            <div class="alert alert-success mb-3">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Pembayaran Berhasil</strong><br>
+                                <small>Booking Anda telah dikonfirmasi dan pembayaran berhasil. Silakan datang sesuai jadwal.</small>
+                            </div>
+                            <a href="<?= site_url('payment/success/' . $transaksi['no_transaksi']) ?>" target="_blank" class="btn btn-outline-primary">
+                                <i class="fas fa-receipt me-2"></i>Lihat Struk Pembayaran
+                            </a>
+
+                        <?php elseif ($booking['status'] === 'selesai'): ?>
+                            <!-- Booking selesai -->
+                            <div class="alert alert-success mb-3">
+                                <i class="fas fa-check-double me-2"></i>
+                                <strong>Layanan Selesai</strong><br>
+                                <small>Terima kasih telah menggunakan layanan kami!</small>
+                            </div>
+                            <?php if ($transaksi): ?>
+                                <a href="<?= site_url('payment/success/' . $transaksi['no_transaksi']) ?>" target="_blank" class="btn btn-outline-primary">
+                                    <i class="fas fa-receipt me-2"></i>Lihat Struk Pembayaran
+                                </a>
+                            <?php endif; ?>
+
+                        <?php elseif (in_array($booking['status'], ['dibatalkan', 'batal'])): ?>
+                            <!-- Booking dibatalkan -->
+                            <div class="alert alert-danger mb-3">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>Booking Dibatalkan</strong><br>
+                                <small>Booking ini telah dibatalkan.</small>
+                                <?php if ($booking['catatan']): ?>
+                                    <br><strong>Alasan:</strong> <?= esc($booking['catatan']) ?>
+                                <?php endif; ?>
+                            </div>
+
+                        <?php else: ?>
+                            <!-- Status tidak dikenali -->
+                            <div class="alert alert-secondary mb-3">
+                                <i class="fas fa-question-circle me-2"></i>
+                                <strong>Status: <?= ucfirst($booking['status']) ?></strong>
+                            </div>
                         <?php endif; ?>
 
-                        <!-- Back Button -->
+                        <!-- Back Button (always available) -->
                         <a href="<?= site_url('pelanggan/booking/history') ?>" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Kembali
                         </a>
@@ -255,120 +384,13 @@
     </div>
 </div>
 
-<!-- Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-credit-card me-2"></i>Proses Pembayaran
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="paymentForm">
-                <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <div class="display-6 fw-bold text-success">
-                            Rp <?= number_format($booking['harga'] ?? 0, 0, ',', '.') ?>
-                        </div>
-                        <small class="text-muted">Total Pembayaran</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="metode_pembayaran" class="form-label">Metode Pembayaran *</label>
-                        <select class="form-select" id="metode_pembayaran" name="metode_pembayaran" required>
-                            <option value="">-- Pilih Metode --</option>
-                            <option value="tunai">Tunai</option>
-                            <option value="kartu_kredit">Kartu Kredit</option>
-                            <option value="kartu_debit">Kartu Debit</option>
-                            <option value="e-wallet">E-Wallet (OVO, GoPay, DANA)</option>
-                            <option value="transfer">Transfer Bank</option>
-                        </select>
-                        <div class="invalid-feedback" id="metode_pembayaran-error"></div>
-                    </div>
-
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Pastikan metode pembayaran yang dipilih sesuai dengan yang akan Anda gunakan.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success" id="payBtn">
-                        <i class="fas fa-check me-2"></i>Konfirmasi Pembayaran
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- Payment modal removed - payment now handled through dedicated payment page -->
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // Show payment modal
-    function showPaymentModal() {
-        new bootstrap.Modal(document.getElementById('paymentModal')).show();
-    }
-
-    // Handle payment form submission
-    document.getElementById('paymentForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const payBtn = document.getElementById('payBtn');
-        const originalText = payBtn.innerHTML;
-
-        // Show loading
-        payBtn.disabled = true;
-        payBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
-
-        const formData = new FormData(this);
-
-        fetch('<?= site_url('pelanggan/booking/process-payment/' . $booking['id']) ?>', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Pembayaran Berhasil!',
-                        text: data.message,
-                        showConfirmButton: true,
-                        confirmButtonText: 'OK',
-                        confirmButtonColor: '#28a745'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Pembayaran Gagal',
-                        text: data.message || 'Terjadi kesalahan saat memproses pembayaran',
-                        confirmButtonColor: '#dc3545'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Terjadi kesalahan sistem. Silakan coba lagi.',
-                    confirmButtonColor: '#dc3545'
-                });
-            })
-            .finally(() => {
-                payBtn.disabled = false;
-                payBtn.innerHTML = originalText;
-                bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
-            });
-    });
+    // Payment is now handled through dedicated payment page
 
     // Cancel booking
     function cancelBooking() {
@@ -422,10 +444,7 @@
         });
     }
 
-    // Print receipt
-    function printReceipt() {
-        window.print();
-    }
+    // Receipt is now accessible through dedicated payment success page
 </script>
 
 <style>

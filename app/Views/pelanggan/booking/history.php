@@ -38,9 +38,9 @@
                         <div class="row mb-4">
                             <?php
                             $totalBookings = count($bookings);
-                            $pendingCount = count(array_filter($bookings, fn($b) => $b['status'] === 'pending'));
-                            $completedCount = count(array_filter($bookings, fn($b) => $b['status'] === 'selesai'));
-                            $cancelledCount = count(array_filter($bookings, fn($b) => $b['status'] === 'dibatalkan'));
+                            $pendingCount = count(array_filter($bookings, fn($b) => $b['main_booking']['status'] === 'menunggu_konfirmasi'));
+                            $completedCount = count(array_filter($bookings, fn($b) => $b['main_booking']['status'] === 'selesai'));
+                            $cancelledCount = count(array_filter($bookings, fn($b) => in_array($b['main_booking']['status'], ['dibatalkan', 'batal'])));
                             ?>
                             <div class="col-md-3 col-sm-6 mb-3">
                                 <div class="stats-card">
@@ -101,10 +101,11 @@
                             <div class="col-md-3">
                                 <select class="form-select" id="filterStatus">
                                     <option value="">Semua Status</option>
-                                    <option value="pending">Pending</option>
+                                    <option value="menunggu_konfirmasi">Menunggu Konfirmasi</option>
                                     <option value="dikonfirmasi">Dikonfirmasi</option>
                                     <option value="selesai">Selesai</option>
                                     <option value="dibatalkan">Dibatalkan</option>
+                                    <option value="batal">Batal</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -118,30 +119,40 @@
 
                         <!-- Booking List -->
                         <div class="row" id="bookingList">
-                            <?php foreach ($bookings as $booking): ?>
+                            <?php foreach ($bookings as $bookingGroup): ?>
+                                <?php $mainBooking = $bookingGroup['main_booking']; ?>
                                 <div class="col-lg-6 mb-4 booking-item"
-                                    data-status="<?= $booking['status'] ?>"
-                                    data-search="<?= strtolower($booking['kode_booking'] . ' ' . $booking['no_plat'] . ' ' . ($booking['nama_layanan'] ?? '')) ?>">
+                                    data-status="<?= $mainBooking['status'] ?>"
+                                    data-search="<?= strtolower($mainBooking['kode_booking'] . ' ' . $mainBooking['no_plat'] . ' ' . implode(' ', array_map(fn($s) => $s['nama_layanan'], $bookingGroup['services']))) ?>">
                                     <div class="booking-card">
                                         <div class="booking-header">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h6 class="booking-code"><?= esc($booking['kode_booking']) ?></h6>
+                                                    <h6 class="booking-code"><?= esc($mainBooking['kode_booking']) ?></h6>
                                                     <small class="text-muted">
                                                         <i class="fas fa-calendar me-1"></i>
-                                                        <?= date('d M Y, H:i', strtotime($booking['tanggal'] . ' ' . $booking['jam'])) ?>
+                                                        <?= date('d M Y, H:i', strtotime($mainBooking['tanggal'] . ' ' . $mainBooking['jam'])) ?>
                                                     </small>
                                                 </div>
                                                 <?php
                                                 $statusColors = [
-                                                    'pending' => 'warning',
+                                                    'menunggu_konfirmasi' => 'warning',
                                                     'dikonfirmasi' => 'info',
                                                     'selesai' => 'success',
-                                                    'dibatalkan' => 'danger'
+                                                    'dibatalkan' => 'danger',
+                                                    'batal' => 'danger'
                                                 ];
-                                                $statusColor = $statusColors[$booking['status']] ?? 'secondary';
+                                                $statusLabels = [
+                                                    'menunggu_konfirmasi' => 'Menunggu Konfirmasi',
+                                                    'dikonfirmasi' => 'Dikonfirmasi',
+                                                    'selesai' => 'Selesai',
+                                                    'dibatalkan' => 'Dibatalkan',
+                                                    'batal' => 'Dibatalkan'
+                                                ];
+                                                $statusColor = $statusColors[$mainBooking['status']] ?? 'secondary';
+                                                $statusLabel = $statusLabels[$mainBooking['status']] ?? ucfirst($mainBooking['status']);
                                                 ?>
-                                                <span class="badge bg-<?= $statusColor ?>"><?= ucfirst($booking['status']) ?></span>
+                                                <span class="badge bg-<?= $statusColor ?>"><?= $statusLabel ?></span>
                                             </div>
                                         </div>
 
@@ -150,32 +161,52 @@
                                                 <div class="col-8">
                                                     <div class="booking-service">
                                                         <i class="fas fa-cogs text-primary me-2"></i>
-                                                        <strong><?= esc($booking['nama_layanan'] ?? 'Layanan tidak ditemukan') ?></strong>
+                                                        <strong><?= $bookingGroup['service_count'] ?> Layanan</strong>
+                                                        <div class="mt-1">
+                                                            <?php foreach (array_slice($bookingGroup['services'], 0, 2) as $service): ?>
+                                                                <small class="d-block text-muted">• <?= esc($service['nama_layanan']) ?></small>
+                                                            <?php endforeach; ?>
+                                                            <?php if (count($bookingGroup['services']) > 2): ?>
+                                                                <small class="text-muted">• dan <?= count($bookingGroup['services']) - 2 ?> layanan lainnya</small>
+                                                            <?php endif; ?>
+                                                        </div>
                                                     </div>
-                                                    <div class="booking-vehicle">
+                                                    <div class="booking-vehicle mt-2">
                                                         <i class="fas fa-car text-success me-2"></i>
-                                                        <?= ucfirst($booking['jenis_kendaraan']) ?> -
-                                                        <strong><?= esc($booking['no_plat']) ?></strong>
-                                                        <?php if ($booking['merk_kendaraan']): ?>
-                                                            <small class="text-muted">(<?= esc($booking['merk_kendaraan']) ?>)</small>
+                                                        <?= ucfirst($mainBooking['jenis_kendaraan']) ?> -
+                                                        <strong><?= esc($mainBooking['no_plat']) ?></strong>
+                                                        <?php if ($mainBooking['merk_kendaraan']): ?>
+                                                            <small class="text-muted">(<?= esc($mainBooking['merk_kendaraan']) ?>)</small>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <?php if ($booking['harga']): ?>
-                                                        <div class="booking-price">
-                                                            <i class="fas fa-money-bill text-warning me-2"></i>
-                                                            <strong class="text-success">Rp <?= number_format($booking['harga'], 0, ',', '.') ?></strong>
-                                                        </div>
-                                                    <?php endif; ?>
+                                                    <div class="booking-price mt-2">
+                                                        <i class="fas fa-money-bill text-warning me-2"></i>
+                                                        <strong class="text-success">Rp <?= number_format($bookingGroup['total_harga'], 0, ',', '.') ?></strong>
+                                                    </div>
                                                 </div>
                                                 <div class="col-4 text-end">
                                                     <div class="booking-actions">
-                                                        <a href="<?= site_url('pelanggan/booking/detail/' . $booking['id']) ?>"
-                                                            class="btn btn-sm btn-outline-primary mb-1">
+                                                        <a href="<?= site_url('pelanggan/booking/detail/' . $mainBooking['id']) ?>"
+                                                            class="btn btn-sm btn-outline-primary mb-1" title="Lihat Detail">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <?php if (in_array($booking['status'], ['pending', 'dikonfirmasi'])): ?>
+
+                                                        <!-- Show receipt button for completed bookings or those with transactions -->
+                                                        <button class="btn btn-sm btn-outline-info mb-1"
+                                                            onclick="showReceipt('<?= esc($mainBooking['kode_booking']) ?>')" title="Lihat Struk">
+                                                            <i class="fas fa-receipt"></i>
+                                                        </button>
+
+                                                        <!-- Link to payment page if booking can access payment -->
+                                                        <?php if ($mainBooking['status'] === 'menunggu_konfirmasi'): ?>
+                                                            <a href="<?= site_url('payment/' . $mainBooking['kode_booking']) ?>"
+                                                                class="btn btn-sm btn-outline-success mb-1" title="Bayar">
+                                                                <i class="fas fa-credit-card"></i>
+                                                            </a>
+                                                        <?php endif; ?>
+                                                        <?php if (in_array($mainBooking['status'], ['menunggu_konfirmasi', 'dikonfirmasi'])): ?>
                                                             <button class="btn btn-sm btn-outline-danger mb-1"
-                                                                onclick="cancelBooking(<?= $booking['id'] ?>, '<?= esc($booking['kode_booking']) ?>')">
+                                                                onclick="cancelBooking(<?= $mainBooking['id'] ?>, '<?= esc($mainBooking['kode_booking']) ?>')" title="Batalkan">
                                                                 <i class="fas fa-times"></i>
                                                             </button>
                                                         <?php endif; ?>
@@ -184,11 +215,11 @@
                                             </div>
                                         </div>
 
-                                        <?php if ($booking['catatan']): ?>
+                                        <?php if ($mainBooking['catatan']): ?>
                                             <div class="booking-footer">
                                                 <small class="text-muted">
                                                     <i class="fas fa-sticky-note me-1"></i>
-                                                    <?= esc($booking['catatan']) ?>
+                                                    <?= esc($mainBooking['catatan']) ?>
                                                 </small>
                                             </div>
                                         <?php endif; ?>
@@ -283,6 +314,51 @@
     });
 
     // Cancel booking function
+    function showReceipt(kodeBooking) {
+        // Check if there's a transaction for this booking first
+        fetch(`<?= site_url('pelanggan/booking/get-transaction/') ?>${kodeBooking}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.no_transaksi) {
+                    // Redirect to payment success page with transaction number
+                    window.open(`<?= site_url('payment/success/') ?>${data.no_transaksi}`, '_blank');
+                } else {
+                    // Show booking receipt even without transaction
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Struk Booking',
+                        html: `
+                        <div class="text-start">
+                            <strong>Kode Booking:</strong> ${kodeBooking}<br>
+                            <small class="text-muted">Booking ini belum memiliki transaksi pembayaran.</small><br><br>
+                            <a href="<?= site_url('pelanggan/booking/detail/') ?>" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Lihat Detail Booking
+                            </a>
+                        </div>
+                    `,
+                        showConfirmButton: false,
+                        showCloseButton: true,
+                        width: '400px'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat mengambil data struk.',
+                    confirmButtonColor: '#dc3545'
+                });
+            });
+    }
+
     function cancelBooking(bookingId, kodeBooking) {
         Swal.fire({
             title: 'Batalkan Booking?',

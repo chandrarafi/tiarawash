@@ -295,6 +295,25 @@
                                         <?= ucfirst($transaksi['status_pembayaran']) ?>
                                     </span>
                                 </div>
+                                <?php if (isset($booking_details[0]['booking']['status'])): ?>
+                                    <div class="info-row">
+                                        <span class="info-label">Status Booking</span>
+                                        <span class="info-value">
+                                            <?php
+                                            $status = $booking_details[0]['booking']['status'];
+                                            $statusLabels = [
+                                                'menunggu_konfirmasi' => 'Menunggu Konfirmasi',
+                                                'dikonfirmasi' => 'Dikonfirmasi',
+                                                'selesai' => 'Selesai',
+                                                'dibatalkan' => 'Dibatalkan',
+                                                'batal' => 'Dibatalkan'
+                                            ];
+                                            $statusLabel = $statusLabels[$status] ?? ucfirst($status);
+                                            ?>
+                                            <i class="fas fa-calendar-check me-1"></i><?= $statusLabel ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="info-row">
                                     <span class="info-label">Metode Pembayaran</span>
                                     <span class="info-value"><?= ucfirst($transaksi['metode_pembayaran']) ?></span>
@@ -331,21 +350,58 @@
                             <!-- Service Details -->
                             <div class="receipt-section">
                                 <h5><i class="fas fa-cogs me-2"></i>Detail Layanan</h5>
-                                <?php foreach ($details as $detail): ?>
+
+                                <?php if (!empty($booking_details)): ?>
+                                    <!-- Show booking details for multi-service support -->
+                                    <?php foreach ($booking_details as $detail): ?>
+                                        <div class="service-detail">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong><?= esc($detail['layanan']['nama_layanan']) ?></strong>
+                                                    <div class="text-muted small">
+                                                        <i class="fas fa-clock me-1"></i><?= $detail['layanan']['durasi_menit'] ?> menit
+                                                        | <i class="fas fa-calendar me-1"></i><?= date('H:i', strtotime($detail['booking']['jam'])) ?>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <strong>Rp <?= number_format($detail['layanan']['harga'], 0, ',', '.') ?></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php elseif (!empty($details)): ?>
+                                    <!-- Fallback to original detail_transaksi table -->
+                                    <?php foreach ($details as $detail): ?>
+                                        <div class="service-detail">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong><?= esc($detail['nama_item']) ?></strong>
+                                                    <div class="text-muted small">
+                                                        Qty: <?= $detail['jumlah'] ?> × Rp <?= number_format($detail['harga'], 0, ',', '.') ?>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <strong>Rp <?= number_format($detail['subtotal'], 0, ',', '.') ?></strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <!-- Single service fallback -->
                                     <div class="service-detail">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong><?= esc($detail['nama_item']) ?></strong>
+                                                <strong><?= esc($transaksi['nama_layanan'] ?? 'Layanan') ?></strong>
                                                 <div class="text-muted small">
-                                                    Qty: <?= $detail['jumlah'] ?> × Rp <?= number_format($detail['harga'], 0, ',', '.') ?>
+                                                    Layanan cuci kendaraan
                                                 </div>
                                             </div>
                                             <div class="text-end">
-                                                <strong>Rp <?= number_format($detail['subtotal'], 0, ',', '.') ?></strong>
+                                                <strong>Rp <?= number_format($transaksi['total_harga'], 0, ',', '.') ?></strong>
                                             </div>
                                         </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php endif; ?>
 
                                 <div class="info-row mt-3">
                                     <span class="info-label"><strong>Total Pembayaran</strong></span>

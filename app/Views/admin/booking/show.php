@@ -14,7 +14,7 @@
         border: none;
         border-radius: 10px;
         box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
     }
 
     .info-card .card-header {
@@ -111,7 +111,8 @@
         border: none;
         border-radius: 10px;
         box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
-        margin-top: 1.5rem;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
     }
 
     .no-transaction {
@@ -147,10 +148,13 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h2 class="mb-1">
-                    <i class="fas fa-receipt me-2"></i>
-                    Detail Transaksi <?= esc($booking['no_transaksi'] ?? 'Booking') ?>
+                    <i class="fas fa-calendar-check me-2"></i>
+                    Detail Booking <?= esc($booking['kode_booking'] ?? 'N/A') ?>
                 </h2>
                 <p class="mb-0 opacity-75">
+                    <?php if ($transaksi): ?>
+                        Transaksi: <?= esc($transaksi['no_transaksi']) ?> |
+                    <?php endif; ?>
                     Informasi lengkap booking dan status pembayaran
                 </p>
             </div>
@@ -213,6 +217,39 @@
                             <?= esc($booking['namakaryawan'] ?? 'Belum ditentukan') ?>
                         </span>
                     </div>
+                    <div class="info-row">
+                        <span class="info-label">Status Booking</span>
+                        <span class="info-value">
+                            <?php
+                            $bookingStatusClass = '';
+                            $bookingStatusText = '';
+                            switch ($booking['booking_status']) {
+                                case 'menunggu_konfirmasi':
+                                    $bookingStatusClass = 'badge bg-warning text-dark';
+                                    $bookingStatusText = 'Menunggu Konfirmasi';
+                                    break;
+                                case 'dikonfirmasi':
+                                    $bookingStatusClass = 'badge bg-info';
+                                    $bookingStatusText = 'Dikonfirmasi';
+                                    break;
+                                case 'selesai':
+                                    $bookingStatusClass = 'badge bg-success';
+                                    $bookingStatusText = 'Selesai';
+                                    break;
+                                case 'dibatalkan':
+                                case 'batal':
+                                    $bookingStatusClass = 'badge bg-danger';
+                                    $bookingStatusText = 'Dibatalkan';
+                                    break;
+                                default:
+                                    $bookingStatusClass = 'badge bg-secondary';
+                                    $bookingStatusText = 'Tidak Diketahui';
+                                    break;
+                            }
+                            ?>
+                            <span class="badge <?= $bookingStatusClass ?>"><?= $bookingStatusText ?></span>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -273,7 +310,7 @@
         <!-- Right Column - Payment & Actions -->
         <div class="col-lg-4">
             <!-- Payment Information -->
-            <?php if ($booking['no_transaksi']): ?>
+            <?php if ($transaksi): ?>
                 <div class="info-card card">
                     <div class="card-header">
                         <i class="fas fa-credit-card me-2"></i>Informasi Pembayaran
@@ -282,18 +319,18 @@
                         <div class="info-row">
                             <span class="info-label">No. Transaksi</span>
                             <span class="info-value">
-                                <span class="badge bg-info"><?= esc($booking['no_transaksi']) ?></span>
+                                <span class="badge bg-info"><?= esc($transaksi['no_transaksi']) ?></span>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Total Harga</span>
                             <span class="info-value text-success fw-bold">
-                                Rp <?= number_format($booking['total_harga'] ?? 0, 0, ',', '.') ?>
+                                Rp <?= number_format($transaksi['total_harga'] ?? 0, 0, ',', '.') ?>
                             </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Metode Pembayaran</span>
-                            <span class="info-value"><?= ucfirst($booking['metode_pembayaran'] ?? 'Transfer') ?></span>
+                            <span class="info-value"><?= ucfirst($transaksi['metode_pembayaran'] ?? 'Transfer') ?></span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Status Pembayaran</span>
@@ -301,7 +338,7 @@
                                 <?php
                                 $statusClass = '';
                                 $statusText = '';
-                                switch ($booking['status_pembayaran']) {
+                                switch ($transaksi['status_pembayaran']) {
                                     case 'belum_bayar':
                                         $statusClass = 'badge-belum-bayar';
                                         $statusText = 'Belum Bayar';
@@ -321,66 +358,197 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Payment Proof -->
-                <?php if ($booking['bukti_pembayaran']): ?>
-                    <div class="info-card card">
-                        <div class="card-header">
-                            <i class="fas fa-image me-2"></i>Bukti Pembayaran
-                        </div>
-                        <div class="card-body">
-                            <div class="payment-proof-container">
-                                <?php
-                                $fileExtension = pathinfo($booking['bukti_pembayaran'], PATHINFO_EXTENSION);
-                                $isImage = in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png', 'gif']);
-                                ?>
-                                <?php if ($isImage): ?>
-                                    <img src="<?= base_url($booking['bukti_pembayaran']) ?>"
-                                        alt="Bukti Pembayaran"
-                                        class="payment-proof-image img-fluid"
-                                        onclick="viewProof('<?= base_url($booking['bukti_pembayaran']) ?>')">
-                                    <p class="mt-2 mb-0 small text-muted">Klik untuk memperbesar</p>
-                                <?php else: ?>
-                                    <div class="text-center">
-                                        <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
-                                        <br>
-                                        <a href="<?= base_url($booking['bukti_pembayaran']) ?>"
-                                            target="_blank"
-                                            class="btn btn-outline-primary">
-                                            <i class="fas fa-download me-1"></i>Unduh PDF
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Action Buttons -->
-                <?php if ($booking['status_pembayaran'] === 'belum_bayar' && $booking['bukti_pembayaran']): ?>
-                    <div class="action-card card">
-                        <div class="card-header">
-                            <i class="fas fa-cogs me-2"></i>Aksi Pembayaran
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-success"
-                                    onclick="approvePayment(<?= $booking['transaksi_id'] ?>)">
-                                    <i class="fas fa-check me-2"></i>Konfirmasi Pembayaran
-                                </button>
-                                <button class="btn btn-danger"
-                                    onclick="rejectPayment(<?= $booking['transaksi_id'] ?>)">
-                                    <i class="fas fa-times me-2"></i>Tolak Pembayaran
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                <?php endif; ?>
             <?php else: ?>
-                <div class="no-transaction">
-                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
-                    <h5>Belum Ada Transaksi</h5>
-                    <p class="text-muted mb-0">Booking ini belum memiliki transaksi pembayaran.</p>
+                <!-- Booking Information when no transaction -->
+                <div class="info-card card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-2"></i>Informasi Booking
+                    </div>
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Status Booking</span>
+                            <span class="info-value">
+                                <?php
+                                $bookingStatusClass = '';
+                                $bookingStatusText = '';
+                                switch ($booking['status']) {
+                                    case 'menunggu_konfirmasi':
+                                        $bookingStatusClass = 'badge bg-warning text-dark';
+                                        $bookingStatusText = 'Menunggu Konfirmasi';
+                                        break;
+                                    case 'dikonfirmasi':
+                                        $bookingStatusClass = 'badge bg-info';
+                                        $bookingStatusText = 'Dikonfirmasi';
+                                        break;
+                                    case 'selesai':
+                                        $bookingStatusClass = 'badge bg-success';
+                                        $bookingStatusText = 'Selesai';
+                                        break;
+                                    case 'dibatalkan':
+                                    case 'batal':
+                                        $bookingStatusClass = 'badge bg-danger';
+                                        $bookingStatusText = 'Dibatalkan';
+                                        break;
+                                    default:
+                                        $bookingStatusClass = 'badge bg-secondary';
+                                        $bookingStatusText = 'Tidak Diketahui';
+                                        break;
+                                }
+                                ?>
+                                <span class="<?= $bookingStatusClass ?>"><?= $bookingStatusText ?></span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status Transaksi</span>
+                            <span class="info-value">
+                                <span class="badge bg-secondary">Belum Ada Transaksi</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Payment Proof -->
+            <?php if ($transaksi && $transaksi['bukti_pembayaran']): ?>
+                <div class="info-card card">
+                    <div class="card-header">
+                        <i class="fas fa-image me-2"></i>Bukti Pembayaran
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-proof-container">
+                            <?php
+                            $fileExtension = pathinfo($transaksi['bukti_pembayaran'], PATHINFO_EXTENSION);
+                            $isImage = in_array(strtolower($fileExtension), ['jpg', 'jpeg', 'png', 'gif']);
+                            ?>
+                            <?php if ($isImage): ?>
+                                <img src="<?= base_url($transaksi['bukti_pembayaran']) ?>"
+                                    alt="Bukti Pembayaran"
+                                    class="payment-proof-image img-fluid"
+                                    onclick="viewProof('<?= base_url($transaksi['bukti_pembayaran']) ?>')">
+                                <p class="mt-2 mb-0 small text-muted">Klik untuk memperbesar</p>
+                            <?php else: ?>
+                                <div class="text-center">
+                                    <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
+                                    <br>
+                                    <a href="<?= base_url($transaksi['bukti_pembayaran']) ?>"
+                                        target="_blank"
+                                        class="btn btn-outline-primary">
+                                        <i class="fas fa-download me-1"></i>Unduh PDF
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Booking Status Actions Card -->
+            <?php if ($booking['booking_status'] === 'menunggu_konfirmasi'): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #007bff; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #cce7ff; border-bottom: 1px solid #99d6ff;">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-calendar-check me-2"></i>Konfirmasi Booking
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Booking menunggu konfirmasi!</strong> Silakan konfirmasi booking ini untuk melanjutkan proses.
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button class="btn btn-primary btn-lg me-md-2"
+                                onclick="confirmBookingFromDetail('<?= $booking['kode_booking'] ?>')">
+                                <i class="fas fa-check me-2"></i>Konfirmasi Booking
+                            </button>
+                            <button class="btn btn-danger btn-lg"
+                                onclick="rejectBookingFromDetail('<?= $booking['kode_booking'] ?>')">
+                                <i class="fas fa-times me-2"></i>Tolak Booking
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Payment Actions Card -->
+            <?php if ($transaksi && $transaksi['status_pembayaran'] === 'belum_bayar' && $transaksi['bukti_pembayaran']): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #ffc107; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #fff3cd; border-bottom: 1px solid #ffeaa7;">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Pembayaran
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Perhatian!</strong> Pelanggan telah mengupload bukti pembayaran. Silakan periksa dan konfirmasi pembayaran.
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button class="btn btn-success btn-lg me-md-2"
+                                onclick="approvePayment(<?= $transaksi['id'] ?>)">
+                                <i class="fas fa-check me-2"></i>Konfirmasi Pembayaran
+                            </button>
+                            <button class="btn btn-danger btn-lg"
+                                onclick="rejectPayment(<?= $transaksi['id'] ?>)">
+                                <i class="fas fa-times me-2"></i>Tolak Pembayaran
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($transaksi && $transaksi['status_pembayaran'] === 'belum_bayar'): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #17a2b8; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #d1ecf1; border-bottom: 1px solid #bee5eb;">
+                        <h6 class="m-0 font-weight-bold text-info">
+                            <i class="fas fa-clock me-2"></i>Status Pembayaran
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Menunggu pelanggan mengupload bukti pembayaran.
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($transaksi && $transaksi['status_pembayaran'] === 'dibayar'): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #28a745; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #d4edda; border-bottom: 1px solid #c3e6cb;">
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-check-circle me-2"></i>Pembayaran Terkonfirmasi
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Pembayaran telah dikonfirmasi. Booking siap diproses.
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($transaksi && $transaksi['status_pembayaran'] === 'batal'): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #dc3545; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #f8d7da; border-bottom: 1px solid #f5c6cb;">
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-times-circle me-2"></i>Pembayaran Ditolak
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-times-circle me-2"></i>
+                            Pembayaran telah ditolak atau dibatalkan.
+                        </div>
+                    </div>
+                </div>
+            <?php elseif (!$transaksi): ?>
+                <div class="card shadow mb-4" style="border-left: 4px solid #6c757d; margin-bottom: 2rem !important;">
+                    <div class="card-header py-3" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                        <h6 class="m-0 font-weight-bold text-muted">
+                            <i class="fas fa-info-circle me-2"></i>Status Transaksi
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-light mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Belum ada transaksi untuk booking ini.
+                        </div>
+                    </div>
                 </div>
             <?php endif; ?>
         </div>
@@ -422,6 +590,120 @@
                             'X-Requested-With': 'XMLHttpRequest',
                             'Content-Type': 'application/json'
                         }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: data.message,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message,
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat memproses permintaan',
+                            icon: 'error'
+                        });
+                    });
+            }
+        });
+    }
+
+    function confirmBookingFromDetail(kodeBooking) {
+        Swal.fire({
+            title: 'Konfirmasi Booking',
+            text: 'Apakah Anda yakin ingin mengkonfirmasi booking ini?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Konfirmasi',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`<?= site_url('admin/booking/confirm-booking/') ?>${kodeBooking}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: data.message,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message,
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat memproses permintaan',
+                            icon: 'error'
+                        });
+                    });
+            }
+        });
+    }
+
+    function rejectBookingFromDetail(kodeBooking) {
+        Swal.fire({
+            title: 'Tolak Booking',
+            input: 'textarea',
+            inputLabel: 'Alasan Penolakan',
+            inputPlaceholder: 'Masukkan alasan mengapa booking ditolak...',
+            inputAttributes: {
+                'aria-label': 'Alasan penolakan booking'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Tolak',
+            cancelButtonText: 'Batal',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Alasan penolakan harus diisi!'
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('alasan', result.value);
+
+                fetch(`<?= site_url('admin/booking/reject-booking/') ?>${kodeBooking}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
                     })
                     .then(response => response.json())
                     .then(data => {

@@ -125,6 +125,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('/', 'Booking::index');
         $routes->get('create', 'Booking::adminCreate');
         $routes->post('store', 'Booking::adminStore');
+        $routes->post('available-slots', 'Booking::getAvailableSlots');
         $routes->get('show/(:num)', 'Booking::show/$1');
         $routes->get('edit/(:num)', 'Booking::edit/$1');
         $routes->post('update/(:num)', 'Booking::update/$1');
@@ -132,6 +133,8 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->delete('delete-transaction/(:num)', 'Booking::deleteTransaction/$1');
         $routes->post('approve-payment/(:num)', 'Booking::approvePayment/$1');
         $routes->post('reject-payment/(:num)', 'Booking::rejectPayment/$1');
+        $routes->post('confirm-booking/(:segment)', 'Booking::confirmBookingByCode/$1');
+        $routes->post('reject-booking/(:segment)', 'Booking::rejectBookingByCode/$1');
     });
 
     // Antrian Management (admin & pimpinan)
@@ -186,6 +189,7 @@ $routes->group('pelanggan', ['filter' => 'role:pelanggan'], function ($routes) {
     $routes->group('booking', function ($routes) {
         $routes->get('detail/(:num)', 'Booking::detail/$1');
         $routes->get('history', 'Booking::history');
+        $routes->get('get-transaction/(:segment)', 'Booking::getTransaction/$1');
         $routes->post('cancel/(:num)', 'Booking::cancel/$1');
         $routes->post('process-payment/(:num)', 'Booking::processPayment/$1');
     });

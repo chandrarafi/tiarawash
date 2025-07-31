@@ -179,7 +179,7 @@
     <div class="table-card card">
         <div class="card-header">
             <h5 class="card-title mb-0">
-                <i class="fas fa-table me-2"></i>Daftar Transaksi Booking
+                <i class="fas fa-table me-2"></i>Daftar Booking & Transaksi
             </h5>
         </div>
         <div class="card-body">
@@ -197,14 +197,15 @@
                     <table class="table table-hover" id="bookingTable">
                         <thead>
                             <tr>
-                                <th width="5%">No</th>
-                                <th width="15%">No Transaksi</th>
-                                <th width="15%">Pelanggan</th>
-                                <th width="12%">Tanggal</th>
-                                <th width="20%">Layanan</th>
-                                <th width="12%">Total</th>
-                                <th width="10%">Status</th>
-                                <th width="11%">Aksi</th>
+                                <th width="4%">No</th>
+                                <th width="13%">Kode Booking</th>
+                                <th width="13%">Pelanggan</th>
+                                <th width="11%">Tanggal</th>
+                                <th width="18%">Layanan</th>
+                                <th width="10%">Total</th>
+                                <th width="9%">Status Bayar</th>
+                                <th width="9%">Status Booking</th>
+                                <th width="13%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -214,18 +215,26 @@
                                     <td><?= $no++ ?></td>
                                     <td>
                                         <div>
-                                            <strong class="text-primary"><?= esc($item['no_transaksi']) ?></strong>
+                                            <strong class="text-primary"><?= esc($item['kode_booking']) ?></strong>
                                             <br>
-                                            <small class="text-muted">
-                                                <?= date('d/m/Y H:i', strtotime($item['tanggal_transaksi'])) ?>
-                                            </small>
+                                            <?php if ($item['no_transaksi']): ?>
+                                                <small class="text-success">
+                                                    <i class="fas fa-receipt me-1"></i><?= esc($item['no_transaksi']) ?>
+                                                </small>
+                                            <?php else: ?>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock me-1"></i>Belum ada transaksi
+                                                </small>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td>
                                         <div>
                                             <strong><?= esc($item['nama_pelanggan'] ?? 'Guest') ?></strong>
                                             <br>
-                                            <small class="text-muted"><?= esc($item['kode_booking']) ?></small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i><?= date('d/m/Y H:i', strtotime($item['created_at'])) ?>
+                                            </small>
                                         </div>
                                     </td>
                                     <td>
@@ -270,50 +279,93 @@
                                         <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                                     </td>
                                     <td>
-                                        <div class="btn-group-vertical btn-group-sm" role="group">
-                                            <!-- Detail Button -->
-                                            <a href="<?= site_url('admin/booking/show/' . $item['transaksi_id']) ?>"
-                                                class="btn btn-outline-primary btn-sm" title="Lihat Detail">
-                                                <i class="fas fa-eye"></i> Detail
+                                        <?php
+                                        $bookingStatusClass = '';
+                                        $bookingStatusText = '';
+                                        switch ($item['booking_status']) {
+                                            case 'menunggu_konfirmasi':
+                                                $bookingStatusClass = 'badge bg-warning text-dark';
+                                                $bookingStatusText = 'Menunggu Konfirmasi';
+                                                break;
+                                            case 'dikonfirmasi':
+                                                $bookingStatusClass = 'badge bg-info';
+                                                $bookingStatusText = 'Dikonfirmasi';
+                                                break;
+                                            case 'selesai':
+                                                $bookingStatusClass = 'badge bg-success';
+                                                $bookingStatusText = 'Selesai';
+                                                break;
+                                            case 'dibatalkan':
+                                            case 'batal':
+                                                $bookingStatusClass = 'badge bg-danger';
+                                                $bookingStatusText = 'Dibatalkan';
+                                                break;
+                                            default:
+                                                $bookingStatusClass = 'badge bg-secondary';
+                                                $bookingStatusText = 'Tidak Diketahui';
+                                                break;
+                                        }
+                                        ?>
+                                        <span class="badge <?= $bookingStatusClass ?>"><?= $bookingStatusText ?></span>
+                                    </td>
+                                    <td>
+                                        <!-- Detail Button - prioritize booking detail over transaction -->
+                                        <?php
+                                        // Get first booking ID for this kode_booking to show detail
+                                        $bookingModel = new \App\Models\BookingModel();
+                                        $firstBooking = $bookingModel->where('kode_booking', $item['kode_booking'])->first();
+                                        ?>
+                                        <?php if ($firstBooking): ?>
+                                            <a href="<?= site_url('admin/booking/show/' . $firstBooking['id']) ?>"
+                                                class="btn btn-outline-primary btn-sm me-1 mb-1" title="Lihat Detail Booking">
+                                                <i class="fas fa-eye"></i>
                                             </a>
+                                        <?php endif; ?>
 
-                                            <!-- Edit Button - based on booking ID from kode_booking -->
-                                            <?php if (!empty($item['kode_booking'])): ?>
-                                                <?php
-                                                // Get first booking ID for this kode_booking to enable edit
-                                                $bookingModel = new \App\Models\BookingModel();
-                                                $firstBooking = $bookingModel->where('kode_booking', $item['kode_booking'])->first();
-                                                ?>
-                                                <?php if ($firstBooking): ?>
-                                                    <a href="<?= site_url('admin/booking/edit/' . $firstBooking['id']) ?>"
-                                                        class="btn btn-outline-info btn-sm" title="Edit Booking">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </a>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
+                                        <!-- Konfirmasi Booking Button - only show if booking is waiting for confirmation -->
+                                        <?php if ($item['booking_status'] === 'menunggu_konfirmasi'): ?>
+                                            <button class="btn btn-outline-success btn-sm me-1 mb-1"
+                                                onclick="confirmBooking('<?= $item['kode_booking'] ?>')"
+                                                title="Konfirmasi Booking">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm me-1 mb-1"
+                                                onclick="rejectBooking('<?= $item['kode_booking'] ?>')"
+                                                title="Tolak Booking">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        <?php endif; ?>
 
-                                            <!-- Payment Actions -->
-                                            <?php if ($item['status_pembayaran'] === 'belum_bayar' && $item['bukti_pembayaran']): ?>
-                                                <button class="btn btn-outline-success btn-sm"
-                                                    onclick="approvePayment(<?= $item['transaksi_id'] ?>)"
-                                                    title="Konfirmasi Pembayaran">
-                                                    <i class="fas fa-check"></i> Konfirmasi
-                                                </button>
+                                        <!-- Payment Actions -->
+                                        <?php if ($item['transaksi_id'] && $item['status_pembayaran'] === 'belum_bayar' && $item['bukti_pembayaran']): ?>
+                                            <button class="btn btn-outline-success btn-sm me-1 mb-1"
+                                                onclick="approvePayment(<?= $item['transaksi_id'] ?>)"
+                                                title="Setujui Pembayaran">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm me-1 mb-1"
+                                                onclick="rejectPayment(<?= $item['transaksi_id'] ?>)"
+                                                title="Tolak Pembayaran">
+                                                <i class="fas fa-times-circle"></i>
+                                            </button>
+                                        <?php endif; ?>
 
-                                                <button class="btn btn-outline-danger btn-sm"
-                                                    onclick="rejectPayment(<?= $item['transaksi_id'] ?>)"
-                                                    title="Tolak Pembayaran">
-                                                    <i class="fas fa-times"></i> Tolak
-                                                </button>
-                                            <?php endif; ?>
+                                        <!-- Edit Button -->
+                                        <?php if ($firstBooking && in_array($item['booking_status'], ['menunggu_konfirmasi', 'dikonfirmasi'])): ?>
+                                            <a href="<?= site_url('admin/booking/edit/' . $firstBooking['id']) ?>"
+                                                class="btn btn-outline-info btn-sm me-1 mb-1" title="Edit Booking">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        <?php endif; ?>
 
-                                            <!-- Delete Button -->
-                                            <button class="btn btn-outline-secondary btn-sm"
+                                        <!-- Delete Button - only show if has transaction -->
+                                        <?php if ($item['transaksi_id']): ?>
+                                            <button class="btn btn-outline-secondary btn-sm me-1 mb-1"
                                                 onclick="deleteTransaction(<?= $item['transaksi_id'] ?>)"
                                                 title="Hapus Transaksi">
-                                                <i class="fas fa-trash"></i> Hapus
+                                                <i class="fas fa-trash"></i>
                                             </button>
-                                        </div>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -456,6 +508,120 @@
                 formData.append('alasan', result.value);
 
                 fetch(`<?= site_url('admin/booking/reject-payment/') ?>${transaksiId}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: data.message,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message,
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat memproses permintaan',
+                            icon: 'error'
+                        });
+                    });
+            }
+        });
+    }
+
+    function confirmBooking(kodeBooking) {
+        Swal.fire({
+            title: 'Konfirmasi Booking',
+            text: 'Apakah Anda yakin ingin mengkonfirmasi booking ini?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Konfirmasi',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`<?= site_url('admin/booking/confirm-booking/') ?>${kodeBooking}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: data.message,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: data.message,
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Terjadi kesalahan saat memproses permintaan',
+                            icon: 'error'
+                        });
+                    });
+            }
+        });
+    }
+
+    function rejectBooking(kodeBooking) {
+        Swal.fire({
+            title: 'Tolak Booking',
+            input: 'textarea',
+            inputLabel: 'Alasan Penolakan',
+            inputPlaceholder: 'Masukkan alasan mengapa booking ditolak...',
+            inputAttributes: {
+                'aria-label': 'Alasan penolakan booking'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Tolak',
+            cancelButtonText: 'Batal',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Alasan penolakan harus diisi!'
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('alasan', result.value);
+
+                fetch(`<?= site_url('admin/booking/reject-booking/') ?>${kodeBooking}`, {
                         method: 'POST',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'

@@ -270,7 +270,7 @@
             document.getElementById('slot-message').textContent = 'Memuat slot yang tersedia...';
 
             // Fetch available slots
-            fetch('<?= site_url('pelanggan/booking/get-available-slots') ?>', {
+            fetch('<?= site_url('booking/get-available-slots') ?>', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',

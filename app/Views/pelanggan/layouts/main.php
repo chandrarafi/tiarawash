@@ -389,23 +389,14 @@
 
             <div class="menu-section">
                 <div class="menu-section-title">Monitoring</div>
-                <a href="<?= site_url('pelanggan/antrian') ?>" class="menu-item <?= (strpos(current_url(), 'pelanggan/antrian') !== false) ? 'active' : '' ?>">
-                    <i class="fas fa-list-ol"></i>
-                    Status Antrian
-                </a>
+
                 <a href="<?= site_url('pelanggan/booking/history') ?>" class="menu-item <?= (strpos(current_url(), 'pelanggan/booking/history') !== false) ? 'active' : '' ?>">
                     <i class="fas fa-history"></i>
                     Riwayat Booking
                 </a>
             </div>
 
-            <div class="menu-section">
-                <div class="menu-section-title">Transaksi</div>
-                <a href="<?= site_url('pelanggan/transaksi') ?>" class="menu-item <?= (strpos(current_url(), 'pelanggan/transaksi') !== false) ? 'active' : '' ?>">
-                    <i class="fas fa-receipt"></i>
-                    Riwayat Transaksi
-                </a>
-            </div>
+
         </div>
     </div>
 

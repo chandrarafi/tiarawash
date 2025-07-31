@@ -45,7 +45,7 @@ class BookingModel extends Model
         'merk_kendaraan'  => 'permit_empty|max_length[50]',
         'layanan_id'      => 'required|is_not_unique[layanan.kode_layanan]',
         'catatan'         => 'permit_empty',
-        'status'          => 'permit_empty|in_list[menunggu,diproses,selesai,batal]',
+        'status'          => 'permit_empty|in_list[menunggu_konfirmasi,dikonfirmasi,selesai,dibatalkan,batal]',
         'id_karyawan'     => 'permit_empty|max_length[20]|is_not_unique[karyawan.idkaryawan]'
     ];
 
@@ -81,22 +81,27 @@ class BookingModel extends Model
     {
         // Only generate if kode_booking is not provided or empty
         if (empty($data['data']['kode_booking'])) {
-            $prefix = 'BK';
-            $date = date('Ymd');
-            $lastBooking = $this->orderBy('id', 'DESC')->first();
-
-            $number = 1;
-            if ($lastBooking) {
-                $lastKode = $lastBooking['kode_booking'];
-                if (preg_match('/[A-Z]+-[0-9]+-([0-9]+)/', $lastKode, $matches)) {
-                    $number = (int)$matches[1] + 1;
-                }
-            }
-
-            $data['data']['kode_booking'] = $prefix . '-' . $date . '-' . sprintf('%03d', $number);
+            $data['data']['kode_booking'] = $this->generateNewKodeBooking();
         }
 
         return $data;
+    }
+
+    public function generateNewKodeBooking()
+    {
+        $prefix = 'BK';
+        $date = date('Ymd');
+        $lastBooking = $this->orderBy('id', 'DESC')->first();
+
+        $number = 1;
+        if ($lastBooking) {
+            $lastKode = $lastBooking['kode_booking'];
+            if (preg_match('/[A-Z]+-[0-9]+-([0-9]+)/', $lastKode, $matches)) {
+                $number = (int)$matches[1] + 1;
+            }
+        }
+
+        return $prefix . '-' . $date . '-' . sprintf('%03d', $number);
     }
 
     public function getBookingWithDetails($id = null)
@@ -116,10 +121,15 @@ class BookingModel extends Model
 
     public function getBookingsByPelanggan($pelangganId)
     {
-        return $this->where('pelanggan_id', $pelangganId)
-            ->orderBy('tanggal', 'DESC')
-            ->orderBy('jam', 'DESC')
-            ->findAll();
+        $builder = $this->db->table('booking b');
+        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->where('b.pelanggan_id', $pelangganId);
+        $builder->orderBy('b.tanggal', 'DESC');
+        $builder->orderBy('b.jam', 'DESC');
+
+        return $builder->get()->getResultArray();
     }
 
     public function getBookingsByDate($date)
@@ -127,6 +137,18 @@ class BookingModel extends Model
         return $this->where('tanggal', $date)
             ->orderBy('jam', 'ASC')
             ->findAll();
+    }
+
+    public function getBookingsByKodeBooking($kodeBooking)
+    {
+        $builder = $this->db->table('booking b');
+        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->where('b.kode_booking', $kodeBooking);
+        $builder->orderBy('b.jam', 'ASC');
+
+        return $builder->get()->getResultArray();
     }
 
     /**
@@ -219,7 +241,7 @@ class BookingModel extends Model
      */
     public function cancelExpiredBookings()
     {
-        $expiredBookings = $this->where('status', 'menunggu')
+        $expiredBookings = $this->where('status', 'menunggu_konfirmasi')
             ->where('payment_expires_at <', date('Y-m-d H:i:s'))
             ->where('payment_expires_at IS NOT NULL')
             ->findAll();

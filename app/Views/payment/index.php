@@ -619,11 +619,41 @@
                 <div class="col-lg-8">
                     <div class="payment-card">
                         <div class="payment-header">
-                            <h2>
-                                <i class="fas fa-credit-card me-2"></i>
-                                Pembayaran Booking
-                            </h2>
-                            <p class="mb-0 opacity-75">Kode Booking: <strong><?= esc($kode_booking) ?></strong></p>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h2>
+                                        <i class="fas fa-credit-card me-2"></i>
+                                        Pembayaran Booking
+                                    </h2>
+                                    <p class="mb-0 opacity-75">Kode Booking: <strong><?= esc($kode_booking) ?></strong></p>
+                                </div>
+                                <div>
+                                    <?php if (isset($booking_details[0]['booking']['status'])): ?>
+                                        <?php
+                                        $status = $booking_details[0]['booking']['status'];
+                                        $statusColors = [
+                                            'menunggu_konfirmasi' => 'warning',
+                                            'dikonfirmasi' => 'info',
+                                            'selesai' => 'success',
+                                            'dibatalkan' => 'danger',
+                                            'batal' => 'danger'
+                                        ];
+                                        $statusLabels = [
+                                            'menunggu_konfirmasi' => 'Menunggu Konfirmasi',
+                                            'dikonfirmasi' => 'Dikonfirmasi',
+                                            'selesai' => 'Selesai',
+                                            'dibatalkan' => 'Dibatalkan',
+                                            'batal' => 'Dibatalkan'
+                                        ];
+                                        $statusColor = $statusColors[$status] ?? 'secondary';
+                                        $statusLabel = $statusLabels[$status] ?? ucfirst($status);
+                                        ?>
+                                        <span class="badge bg-<?= $statusColor ?> fs-6 px-3 py-2">
+                                            <?= $statusLabel ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="payment-body">

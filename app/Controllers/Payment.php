@@ -364,6 +364,28 @@ class Payment extends BaseController
         // Add karyawan name to transaksi data
         $transaksi['nama_karyawan'] = $karyawanName;
 
+        // Get all booking details for multi-service support
+        $bookingDetails = [];
+        if (isset($transaksi['booking_id'])) {
+            $bookingModel = new \App\Models\BookingModel();
+            $booking = $bookingModel->find($transaksi['booking_id']);
+
+            if ($booking && $booking['kode_booking']) {
+                // Get all bookings with the same kode_booking
+                $allBookings = $bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
+
+                foreach ($allBookings as $bookingItem) {
+                    $layanan = $this->layananModel->find($bookingItem['layanan_id']);
+                    if ($layanan) {
+                        $bookingDetails[] = [
+                            'booking' => $bookingItem,
+                            'layanan' => $layanan
+                        ];
+                    }
+                }
+            }
+        }
+
         // Generate QR Code for payment info
         $qrData = $this->generatePaymentQRData($transaksi);
         $qrCodeImage = $this->generateQRCode($qrData);
@@ -372,6 +394,7 @@ class Payment extends BaseController
             'title' => 'Pembayaran Berhasil - TiaraWash',
             'transaksi' => $transaksi,
             'details' => $details,
+            'booking_details' => $bookingDetails,
             'qr_code' => $qrCodeImage
         ];
 
