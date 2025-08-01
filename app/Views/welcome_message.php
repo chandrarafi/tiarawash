@@ -804,7 +804,9 @@
 
                 <div class="col-lg-6 text-center" data-aos="fade-left">
                     <div class="floating">
-                        <i class="fas fa-car" style="font-size: 15rem; color: rgba(255,255,255,0.2);"></i>
+                        <img src="<?= base_url('images/hero.png') ?>"
+                            alt="TiaraWash Car Washing Service"
+                            style="max-width: 100%; height: auto; max-height: 500px; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));">
                     </div>
                 </div>
             </div>
@@ -921,45 +923,38 @@
 
             <div class="row g-4">
                 <?php
-                $vehicleTypes = [
-                    'motor' => ['icon' => 'fas fa-motorcycle', 'title' => 'Cuci Motor Premium', 'delay' => 100],
-                    'mobil' => ['icon' => 'fas fa-car', 'title' => 'Cuci Mobil Premium', 'delay' => 200],
-                    'lainnya' => ['icon' => 'fas fa-truck', 'title' => 'Cuci Kendaraan Lainnya', 'delay' => 300]
-                ];
-
-                foreach ($vehicleTypes as $type => $config):
-                    $services = $grouped_services[$type] ?? [];
-                    if (empty($services)) continue;
-
-                    // Get the first service for display (you can modify this logic)
-                    $featuredService = $services[0];
-                    $minPrice = min(array_column($services, 'harga'));
+                $delay = 100;
+                foreach ($services as $service):
+                    // Set vehicle icon based on type
+                    $vehicleIcons = [
+                        'motor' => 'fas fa-motorcycle',
+                        'mobil' => 'fas fa-car',
+                        'lainnya' => 'fas fa-truck'
+                    ];
+                    $icon = $vehicleIcons[strtolower($service['jenis_kendaraan'])] ?? 'fas fa-car-wash';
                 ?>
-
-                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="<?= $config['delay'] ?>">
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="<?= $delay ?>">
                         <div class="service-card">
                             <div class="service-image">
-                                <?php if (!empty($featuredService['foto'])): ?>
-                                    <img src="<?= base_url('uploads/layanan/' . $featuredService['foto']); ?>"
-                                        alt="<?= esc($featuredService['nama_layanan']) ?>"
-                                        style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                                <?php if (!empty($service['foto'])): ?>
+                                    <img src="<?= base_url('uploads/layanan/' . $service['foto']); ?>"
+                                        alt="<?= esc($service['nama_layanan']) ?>"
+                                        style="width: 100%; height: 250px; object-fit: cover;">
                                 <?php else: ?>
-                                    <i class="<?= $config['icon'] ?>"></i>
+                                    <i class="<?= $icon ?>"></i>
                                 <?php endif; ?>
                             </div>
                             <div class="service-content">
-                                <h3 class="service-title"><?= $config['title'] ?></h3>
+                                <h3 class="service-title"><?= esc($service['nama_layanan']) ?></h3>
                                 <p class="service-description">
-                                    <?= esc($featuredService['deskripsi']) ?>
+                                    <?= esc($service['deskripsi']) ?>
                                 </p>
-                                <div class="service-price">Mulai Rp <?= number_format($minPrice, 0, ',', '.') ?></div>
+                                <div class="service-price">Rp <?= number_format($service['harga'], 0, ',', '.') ?></div>
                                 <ul class="service-features">
-                                    <?php foreach (array_slice($services, 0, 4) as $service): ?>
-                                        <li><?= esc($service['nama_layanan']) ?> (<?= $service['durasi_menit'] ?> menit)</li>
-                                    <?php endforeach; ?>
-                                    <?php if (count($services) > 4): ?>
-                                        <li>Dan <?= count($services) - 4 ?> layanan lainnya</li>
-                                    <?php endif; ?>
+                                    <li>Jenis Kendaraan: <?= ucfirst($service['jenis_kendaraan']) ?></li>
+                                    <li>Durasi: <?= $service['durasi_menit'] ?> menit</li>
+                                    <li>Status: <?= ucfirst($service['status']) ?></li>
+                                    <li>Kode Layanan: <?= $service['kode_layanan'] ?></li>
                                 </ul>
                                 <a href="<?= site_url('booking') ?>" class="btn-primary-custom w-100">
                                     <i class="fas fa-calendar-plus me-2"></i>Booking Sekarang
@@ -967,8 +962,10 @@
                             </div>
                         </div>
                     </div>
-
-                <?php endforeach; ?>
+                <?php
+                    $delay += 100; // Increment delay for staggered animation
+                endforeach;
+                ?>
             </div>
         </div>
     </section>
