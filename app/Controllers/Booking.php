@@ -1944,4 +1944,326 @@ class Booking extends BaseController
             ]);
         }
     }
+
+    /**
+     * Laporan Booking Pertanggan
+     */
+    public function laporan()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+        $tanggal_filter = $this->request->getGet('tanggal');
+
+        // Build query for booking data with proper GROUP BY compliance
+        $builder = $this->db->table('booking b');
+        $builder->select('
+            b.kode_booking,
+            MIN(b.pelanggan_id) as pelanggan_id,
+            MIN(p.nama_pelanggan) as nama_pelanggan,
+            MIN(b.tanggal) as tanggal,
+            MIN(b.jam) as jam,
+            MIN(b.jenis_kendaraan) as jenis_kendaraan,
+            MIN(b.merk_kendaraan) as merk_kendaraan,
+            MIN(b.no_plat) as no_plat,
+            GROUP_CONCAT(DISTINCT l.nama_layanan ORDER BY l.nama_layanan SEPARATOR ", ") as layanan,
+            MIN(b.status) as status,
+            MIN(k.namakaryawan) as namakaryawan,
+            MIN(b.id) as first_booking_id
+        ');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
+        $builder->where('b.kode_booking IS NOT NULL');
+
+        // Apply date filters
+        if ($tanggal_filter) {
+            $builder->where('b.tanggal', $tanggal_filter);
+        } else {
+            $builder->where('MONTH(b.tanggal)', $bulan);
+            $builder->where('YEAR(b.tanggal)', $tahun);
+        }
+
+        $builder->groupBy('b.kode_booking');
+        $builder->orderBy('MIN(b.tanggal)', 'ASC');
+        $builder->orderBy('MIN(b.jam)', 'ASC');
+
+        $bookings = $builder->get()->getResultArray();
+
+        // Prepare data for view
+        $data = [
+            'title' => 'Laporan Booking Pertanggan',
+            'subtitle' => 'Laporan booking pelanggan untuk admin dan pimpinan',
+            'active' => 'laporan-booking',
+            'bookings' => $bookings,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'tanggal_filter' => $tanggal_filter,
+            'total_booking' => count($bookings),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        return view('admin/booking/laporan', $data);
+    }
+
+    /**
+     * Export Laporan Booking ke PDF
+     */
+    public function exportPDF()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+        $tanggal_filter = $this->request->getGet('tanggal');
+
+        // Build query for booking data with proper GROUP BY compliance
+        $builder = $this->db->table('booking b');
+        $builder->select('
+            b.kode_booking,
+            MIN(b.pelanggan_id) as pelanggan_id,
+            MIN(p.nama_pelanggan) as nama_pelanggan,
+            MIN(b.tanggal) as tanggal,
+            MIN(b.jam) as jam,
+            MIN(b.jenis_kendaraan) as jenis_kendaraan,
+            MIN(b.merk_kendaraan) as merk_kendaraan,
+            MIN(b.no_plat) as no_plat,
+            GROUP_CONCAT(DISTINCT l.nama_layanan ORDER BY l.nama_layanan SEPARATOR ", ") as layanan,
+            MIN(b.status) as status,
+            MIN(k.namakaryawan) as namakaryawan,
+            MIN(b.id) as first_booking_id
+        ');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
+        $builder->where('b.kode_booking IS NOT NULL');
+
+        // Apply date filters
+        if ($tanggal_filter) {
+            $builder->where('b.tanggal', $tanggal_filter);
+        } else {
+            $builder->where('MONTH(b.tanggal)', $bulan);
+            $builder->where('YEAR(b.tanggal)', $tahun);
+        }
+
+        $builder->groupBy('b.kode_booking');
+        $builder->orderBy('MIN(b.tanggal)', 'ASC');
+        $builder->orderBy('MIN(b.jam)', 'ASC');
+
+        $bookings = $builder->get()->getResultArray();
+
+        // Prepare data for PDF
+        $data = [
+            'bookings' => $bookings,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'tanggal_filter' => $tanggal_filter,
+            'total_booking' => count($bookings),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        // Generate PDF
+        require_once ROOTPATH . 'vendor/autoload.php';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml(view('admin/booking/laporan_pdf', $data));
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // Set filename
+        if ($tanggal_filter) {
+            $filename = 'Laporan_Booking_' . date('d-m-Y', strtotime($tanggal_filter)) . '.pdf';
+        } else {
+            $filename = 'Laporan_Booking_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
+        }
+
+        // Output PDF
+        $dompdf->stream($filename, array('Attachment' => false));
+    }
+
+    /**
+     * Laporan Booking Perbulan (Data Booking PerBulan)
+     */
+    public function laporanPerbulan()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Build query untuk laporan perbulan
+        $builder = $this->db->table('booking b');
+        $builder->select('
+            b.kode_booking,
+            MIN(b.pelanggan_id) as idpelanggan,
+            MIN(p.nama_pelanggan) as nama_pelanggan,
+            MIN(b.tanggal) as tanggal,
+            MIN(b.jam) as jam,
+            MIN(b.no_plat) as noplat,
+            MIN(b.jenis_kendaraan) as jenis_kendaraan,
+            MIN(b.merk_kendaraan) as merk_kendaraan,
+            GROUP_CONCAT(DISTINCT l.nama_layanan ORDER BY l.nama_layanan SEPARATOR ", ") as layanan,
+            MIN(b.status) as status
+        ');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->where('b.kode_booking IS NOT NULL');
+        $builder->where('MONTH(b.tanggal)', $bulan);
+        $builder->where('YEAR(b.tanggal)', $tahun);
+        $builder->groupBy('b.kode_booking');
+        $builder->orderBy('MIN(b.tanggal)', 'ASC');
+        $builder->orderBy('MIN(b.jam)', 'ASC');
+
+        $bookings = $builder->get()->getResultArray();
+
+        // Prepare data for view
+        $data = [
+            'title' => 'Laporan Data Booking PerBulan',
+            'subtitle' => 'Laporan booking pelanggan perbulan untuk admin dan pimpinan',
+            'active' => 'laporan-booking-perbulan',
+            'bookings' => $bookings,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'total_booking' => count($bookings),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        return view('admin/booking/laporan_perbulan', $data);
+    }
+
+    /**
+     * Export Laporan Perbulan ke PDF
+     */
+    public function exportPerbulanPDF()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Build query untuk laporan perbulan
+        $builder = $this->db->table('booking b');
+        $builder->select('
+            b.kode_booking,
+            MIN(b.pelanggan_id) as idpelanggan,
+            MIN(p.nama_pelanggan) as nama_pelanggan,
+            MIN(b.tanggal) as tanggal,
+            MIN(b.jam) as jam,
+            MIN(b.no_plat) as noplat,
+            MIN(b.jenis_kendaraan) as jenis_kendaraan,
+            MIN(b.merk_kendaraan) as merk_kendaraan,
+            GROUP_CONCAT(DISTINCT l.nama_layanan ORDER BY l.nama_layanan SEPARATOR ", ") as layanan,
+            MIN(b.status) as status
+        ');
+        $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
+        $builder->where('b.kode_booking IS NOT NULL');
+        $builder->where('MONTH(b.tanggal)', $bulan);
+        $builder->where('YEAR(b.tanggal)', $tahun);
+        $builder->groupBy('b.kode_booking');
+        $builder->orderBy('MIN(b.tanggal)', 'ASC');
+        $builder->orderBy('MIN(b.jam)', 'ASC');
+
+        $bookings = $builder->get()->getResultArray();
+
+        // Prepare data for PDF
+        $data = [
+            'bookings' => $bookings,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'total_booking' => count($bookings),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        // Generate PDF
+        require_once ROOTPATH . 'vendor/autoload.php';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml(view('admin/booking/laporan_perbulan_pdf', $data));
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // Set filename
+        $filename = 'Laporan_Booking_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
+
+        // Output PDF
+        $dompdf->stream($filename, array('Attachment' => false));
+    }
 }

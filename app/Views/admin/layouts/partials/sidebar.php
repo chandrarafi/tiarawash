@@ -87,11 +87,7 @@
                         <i class="bi bi-list-ol"></i> Antrian Cucian
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="<?= base_url('admin/transaksi') ?>" class="nav-link <?= isset($active) && $active == 'transaksi' ? 'active' : '' ?>">
-                        <i class="bi bi-receipt"></i> Transaksi
-                    </a>
-                </li>
+
 
 
                 <!-- Inventaris -->
@@ -125,6 +121,32 @@
                 <li class="nav-item">
                     <a class="nav-link <?= isset($active) && $active == 'laporan-transaksi' ? 'active' : '' ?>" href="<?= base_url('admin/transaksi/report') ?>">
                         <i class="bi bi-graph-up"></i> Laporan Transaksi
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-booking' ? 'active' : '' ?>" href="<?= base_url('admin/booking/laporan') ?>">
+                        <i class="bi bi-calendar-week"></i> Laporan Booking
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-booking-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/booking/laporan-perbulan') ?>">
+                        <i class="bi bi-calendar-month"></i> Laporan Booking PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-perlengkapan-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/perlengkapan/laporan-perbulan') ?>">
+                        <i class="bi bi-box-seam"></i> Laporan Perlengkapan PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-keuangan-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/keuangan/laporan-perbulan') ?>">
+                        <i class="bi bi-cash-stack"></i> Laporan Keuangan PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-keuangan-pertahun' ? 'active' : '' ?>" href="<?= base_url('admin/keuangan/laporan-pertahun') ?>">
+                        <i class="bi bi-calendar-year"></i> Laporan Keuangan PerTahun
                     </a>
                 </li>
 
@@ -165,6 +187,31 @@
                 <li class="nav-item">
                     <a class="nav-link <?= isset($active) && $active == 'laporan-pembelian' ? 'active' : '' ?>" href="<?= base_url('admin/pembelian/laporan') ?>">
                         <i class="bi bi-file-earmark-bar-graph"></i> Laporan Pembelian
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-booking' ? 'active' : '' ?>" href="<?= base_url('admin/booking/laporan') ?>">
+                        <i class="bi bi-calendar-week"></i> Laporan Booking
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-booking-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/booking/laporan-perbulan') ?>">
+                        <i class="bi bi-calendar-month"></i> Laporan Booking PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-perlengkapan-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/perlengkapan/laporan-perbulan') ?>">
+                        <i class="bi bi-box-seam"></i> Laporan Perlengkapan PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-keuangan-perbulan' ? 'active' : '' ?>" href="<?= base_url('admin/keuangan/laporan-perbulan') ?>">
+                        <i class="bi bi-cash-stack"></i> Laporan Keuangan PerBulan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-keuangan-pertahun' ? 'active' : '' ?>" href="<?= base_url('admin/keuangan/laporan-pertahun') ?>">
+                        <i class="bi bi-calendar-year"></i> Laporan Keuangan PerTahun
                     </a>
                 </li>
 

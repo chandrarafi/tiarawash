@@ -135,6 +135,10 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->post('reject-payment/(:num)', 'Booking::rejectPayment/$1');
         $routes->post('confirm-booking/(:segment)', 'Booking::confirmBookingByCode/$1');
         $routes->post('reject-booking/(:segment)', 'Booking::rejectBookingByCode/$1');
+        $routes->get('laporan', 'Booking::laporan');
+        $routes->get('export-pdf', 'Booking::exportPDF');
+        $routes->get('laporan-perbulan', 'Booking::laporanPerbulan');
+        $routes->get('export-perbulan-pdf', 'Booking::exportPerbulanPDF');
     });
 
     // Antrian Management (admin & pimpinan)
@@ -145,6 +149,30 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('show/(:num)', 'Antrian::show/$1');
         $routes->post('updateStatus/(:num)', 'Antrian::updateStatus/$1');
         $routes->post('assignKaryawan/(:num)', 'Antrian::assignKaryawan/$1');
+    });
+
+    // Perlengkapan Management (hanya admin)
+    $routes->group('perlengkapan', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('/', 'Perlengkapan::index');
+        $routes->get('create', 'Perlengkapan::create');
+        $routes->get('edit/(:any)', 'Perlengkapan::edit/$1');
+        $routes->post('getPerlengkapan', 'Perlengkapan::getPerlengkapan');
+        $routes->get('getById/(:any)', 'Perlengkapan::getById/$1');
+        $routes->post('save', 'Perlengkapan::save');
+        $routes->post('update', 'Perlengkapan::update');
+        $routes->delete('delete/(:any)', 'Perlengkapan::delete/$1');
+        $routes->post('updateStok', 'Perlengkapan::updateStok');
+        $routes->get('getStokMenipis', 'Perlengkapan::getStokMenipis');
+        $routes->get('laporan-perbulan', 'Perlengkapan::laporanPerbulan');
+        $routes->get('export-perbulan-pdf', 'Perlengkapan::exportPerbulanPDF');
+    });
+
+    // Keuangan Management (admin & pimpinan)
+    $routes->group('keuangan', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('laporan-perbulan', 'Keuangan::laporanPerbulan');
+        $routes->get('laporan-pertahun', 'Keuangan::laporanPertahun');
+        $routes->get('export-perbulan-pdf', 'Keuangan::exportPerbulanPDF');
+        $routes->get('export-pertahun-pdf', 'Keuangan::exportPertahunPDF');
     });
 
     // Payment Management (admin & pimpinan)
@@ -178,7 +206,23 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->post('update/(:num)', 'Kendaraan::update/$1');
         $routes->get('delete/(:num)', 'Kendaraan::delete/$1');
     });
+
+    // Antrian Management (admin & pimpinan)
+    $routes->group('antrian', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('/', 'Antrian::index');
+        $routes->get('create', 'Antrian::create');
+        $routes->post('store', 'Antrian::store');
+        $routes->get('show/(:num)', 'Antrian::show/$1');
+        $routes->post('update-status/(:num)', 'Antrian::updateStatus/$1');
+        $routes->post('assign-karyawan/(:num)', 'Antrian::assignKaryawan/$1');
+        $routes->post('auto-assign/(:num)', 'Antrian::autoAssign/$1');
+        $routes->get('realtime-data', 'Antrian::getRealtimeData');
+        $routes->get('karyawan-dashboard', 'Antrian::karyawanDashboard');
+    });
 });
+
+// Public Routes (no authentication needed)
+$routes->get('antrian-display', 'Antrian::publicDisplay');
 
 // Pelanggan Routes (Customer) - Focus on monitoring/tracking only
 $routes->group('pelanggan', ['filter' => 'role:pelanggan'], function ($routes) {

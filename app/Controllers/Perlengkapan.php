@@ -325,4 +325,117 @@ class Perlengkapan extends BaseController
             'count' => count($stokMenipis)
         ]);
     }
+
+    /**
+     * Laporan Data Perlengkapan PerBulan
+     */
+    public function laporanPerbulan()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Build query untuk laporan perbulan
+        $builder = $this->perlengkapanModel->builder();
+        $builder->where('MONTH(created_at)', $bulan);
+        $builder->where('YEAR(created_at)', $tahun);
+        $builder->orderBy('id', 'ASC');
+
+        $perlengkapan = $builder->get()->getResultArray();
+
+        // Prepare data for view
+        $data = [
+            'title' => 'Laporan Data Perlengkapan PerBulan',
+            'subtitle' => 'Laporan perlengkapan perbulan untuk admin dan pimpinan',
+            'active' => 'laporan-perlengkapan-perbulan',
+            'perlengkapan' => $perlengkapan,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'total_items' => count($perlengkapan),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        return view('admin/perlengkapan/laporan_perbulan', $data);
+    }
+
+    /**
+     * Export Laporan Perlengkapan PerBulan ke PDF
+     */
+    public function exportPerbulanPDF()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Build query untuk laporan perbulan
+        $builder = $this->perlengkapanModel->builder();
+        $builder->where('MONTH(created_at)', $bulan);
+        $builder->where('YEAR(created_at)', $tahun);
+        $builder->orderBy('id', 'ASC');
+
+        $perlengkapan = $builder->get()->getResultArray();
+
+        // Prepare data for PDF
+        $data = [
+            'perlengkapan' => $perlengkapan,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'total_items' => count($perlengkapan),
+            'nama_bulan' => [
+                '01' => 'Januari',
+                '02' => 'Februari',
+                '03' => 'Maret',
+                '04' => 'April',
+                '05' => 'Mei',
+                '06' => 'Juni',
+                '07' => 'Juli',
+                '08' => 'Agustus',
+                '09' => 'September',
+                '10' => 'Oktober',
+                '11' => 'November',
+                '12' => 'Desember'
+            ]
+        ];
+
+        // Generate PDF
+        require_once ROOTPATH . 'vendor/autoload.php';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml(view('admin/perlengkapan/laporan_perbulan_pdf', $data));
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // Set filename
+        $filename = 'Laporan_Perlengkapan_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
+
+        // Output PDF
+        $dompdf->stream($filename, array('Attachment' => false));
+    }
 }
