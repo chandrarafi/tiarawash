@@ -151,7 +151,7 @@
                 <?php foreach ($laporan_detail as $index => $item): ?>
                     <tr>
                         <td><?= sprintf('%02d', $index + 1) ?></td>
-                        <td><?= date('d', strtotime($item['tanggal'])) ?></td>
+                        <td><?= date('d/m/Y', strtotime($item['tanggal'])) ?></td>
                         <td>Rp. <?= number_format($item['uang_masuk'], 0, ',', '.') ?></td>
                         <td>Rp. <?= number_format($item['uang_keluar'], 0, ',', '.') ?></td>
                     </tr>
