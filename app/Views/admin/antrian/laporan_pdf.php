@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Booking Pertanggal</title>
+    <title>Laporan Antrian</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,8 +22,6 @@
         .header table {
             width: 100%;
         }
-
-
 
         .header .company-info {
             text-align: center;
@@ -56,13 +54,13 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         .data-table th,
         .data-table td {
             border: 1px solid #000;
-            padding: 4px;
+            padding: 3px;
             text-align: center;
         }
 
@@ -84,39 +82,8 @@
             width: 100%;
         }
 
-        .signature .left {
-            text-align: left;
-        }
-
         .signature .right {
             text-align: right;
-        }
-
-        .badge {
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
-            font-weight: bold;
-        }
-
-        .badge-warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .badge-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .badge-danger {
-            background-color: #f8d7da;
-            color: #721c24;
         }
     </style>
 </head>
@@ -157,79 +124,43 @@
 
     <!-- Report Title -->
     <div class="report-title">
-        Laporan Booking Pertanggal
+        Laporan Antrian
     </div>
 
     <!-- Filter Info -->
     <div class="filter-info">
-        <strong>Tanggal:</strong>
-        <?php if (isset($tanggal_filter) && $tanggal_filter): ?>
-            <?= date('d/m/Y', strtotime($tanggal_filter)) ?>
-        <?php else: ?>
-            <?= $nama_bulan[$bulan] ?> <?= $tahun ?>
-        <?php endif; ?>
+        <strong>Tanggal :</strong> <?= $tanggal_cetak ?>
     </div>
 
     <!-- Data Table -->
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 4%;">No</th>
-                <th style="width: 12%;">Kode Booking</th>
-                <th style="width: 15%;">ID Pelanggan</th>
-                <th style="width: 8%;">Jam</th>
-                <th style="width: 10%;">No Plat</th>
-                <th style="width: 12%;">Jenis Kendaraan</th>
-                <th style="width: 12%;">Merk Kendaraan</th>
-                <th style="width: 17%;">Layanan</th>
-                <th style="width: 10%;">Status</th>
+                <th style="width: 5%;">No</th>
+                <th style="width: 12%;">nomor antrian</th>
+                <th style="width: 12%;">idbooking</th>
+                <th style="width: 15%;">tanggal</th>
+                <th style="width: 10%;">jam mulai</th>
+                <th style="width: 10%;">jam selesai</th>
+                <th style="width: 10%;">status</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (!empty($bookings)): ?>
-                <?php foreach ($bookings as $index => $booking): ?>
+            <?php if (!empty($antrian)): ?>
+                <?php foreach ($antrian as $index => $item): ?>
                     <tr>
-                        <td><?= $index + 1 ?></td>
-                        <td><?= esc($booking['kode_booking']) ?></td>
-                        <td style="text-align: left; padding-left: 8px;"><?= esc($booking['nama_pelanggan'] ?? $booking['pelanggan_id']) ?></td>
-                        <td><?= date('H:i', strtotime($booking['jam'])) ?></td>
-                        <td><?= esc($booking['no_plat']) ?></td>
-                        <td><?= ucfirst(esc($booking['jenis_kendaraan'])) ?></td>
-                        <td><?= esc($booking['merk_kendaraan'] ?? '-') ?></td>
-                        <td style="text-align: left; padding-left: 8px;"><?= esc($booking['layanan']) ?></td>
-                        <td>
-                            <?php
-                            $statusClass = '';
-                            $statusText = '';
-                            switch ($booking['status']) {
-                                case 'menunggu_konfirmasi':
-                                    $statusClass = 'warning';
-                                    $statusText = 'Menunggu';
-                                    break;
-                                case 'dikonfirmasi':
-                                    $statusClass = 'info';
-                                    $statusText = 'Dikonfirmasi';
-                                    break;
-                                case 'selesai':
-                                    $statusClass = 'success';
-                                    $statusText = 'Selesai';
-                                    break;
-                                case 'dibatalkan':
-                                case 'batal':
-                                    $statusClass = 'danger';
-                                    $statusText = 'Dibatalkan';
-                                    break;
-                                default:
-                                    $statusText = ucfirst($booking['status']);
-                            }
-                            ?>
-                            <span class="badge badge-<?= $statusClass ?>"><?= $statusText ?></span>
-                        </td>
+                        <td><?= sprintf('%02d', $index + 1) ?></td>
+                        <td><?= esc($item['nomor_antrian']) ?></td>
+                        <td><?= esc($item['kode_booking'] ?? $item['booking_id']) ?></td>
+                        <td><?= $item['tanggal'] ? date('d/m/Y', strtotime($item['tanggal'])) : '-' ?></td>
+                        <td><?= esc($item['jam_mulai'] ?? $item['jam'] ?? '-') ?></td>
+                        <td><?= esc($item['jam_selesai'] ?? '-') ?></td>
+                        <td><?= esc($item['status']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="9">Tidak ada data booking</td>
+                    <td colspan="7">Tidak ada data antrian</td>
                 </tr>
             <?php endif; ?>
         </tbody>
@@ -239,11 +170,9 @@
     <div class="signature">
         <table>
             <tr>
-                <td class="left">
-                    <strong>Total Booking: <?= $total_booking ?></strong>
-                </td>
+                <td style="width: 50%;"></td>
                 <td class="right">
-                    <p>Padang, <?= date('d-m-Y') ?></p>
+                    <p>Padang,<?= date('d-m-Y') ?></p>
                     <br><br><br>
                     <p><strong>Pimpinan</strong></p>
                 </td>

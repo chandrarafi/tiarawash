@@ -692,7 +692,7 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/booking/create') ?>">
+                                        <a class="dropdown-item-custom" href="<?= site_url('booking') ?>">
                                             <i class="fas fa-calendar-plus"></i>
                                             Booking Baru
                                         </a>
@@ -703,12 +703,7 @@
                                             Riwayat Booking
                                         </a>
                                     </li>
-                                    <li>
-                                        <a class="dropdown-item-custom" href="<?= site_url('pelanggan/profile') ?>">
-                                            <i class="fas fa-user-cog"></i>
-                                            Profil Saya
-                                        </a>
-                                    </li>
+
                                 <?php elseif ($user['role'] === 'admin' || $user['role'] === 'pimpinan'): ?>
                                     <li>
                                         <a class="dropdown-item-custom" href="<?= site_url('admin/dashboard') ?>">
@@ -734,22 +729,8 @@
                                     <hr class="dropdown-divider-custom">
                                 </li>
 
-                                <li>
-                                    <a class="dropdown-item-custom" href="#" onclick="handleNotifications()">
-                                        <i class="fas fa-bell"></i>
-                                        Notifikasi
-                                        <?php if (isset($user['unread_notifications']) && $user['unread_notifications'] > 0): ?>
-                                            <span class="badge bg-danger ms-auto"><?= $user['unread_notifications'] ?></span>
-                                        <?php endif; ?>
-                                    </a>
-                                </li>
 
-                                <li>
-                                    <a class="dropdown-item-custom" href="#" onclick="handleSettings()">
-                                        <i class="fas fa-cog"></i>
-                                        Pengaturan
-                                    </a>
-                                </li>
+
 
                                 <li>
                                     <hr class="dropdown-divider-custom">

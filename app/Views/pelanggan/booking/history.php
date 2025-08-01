@@ -14,7 +14,7 @@
                                 <small class="opacity-75">Semua booking layanan cuci kendaraan Anda</small>
                             </div>
                         </div>
-                        <a href="<?= site_url('pelanggan/booking/create') ?>" class="btn btn-light">
+                        <a href="<?= site_url('booking') ?>" class="btn btn-light">
                             <i class="fas fa-plus me-2"></i>Booking Baru
                         </a>
                     </div>
@@ -29,7 +29,7 @@
                             </div>
                             <h5 class="text-muted mb-3">Belum Ada Booking</h5>
                             <p class="text-muted mb-4">Anda belum memiliki riwayat booking. Mulai booking layanan cuci kendaraan sekarang!</p>
-                            <a href="<?= site_url('pelanggan/booking/create') ?>" class="btn btn-primary">
+                            <a href="<?= site_url('booking') ?>" class="btn btn-primary">
                                 <i class="fas fa-calendar-plus me-2"></i>Buat Booking Pertama
                             </a>
                         </div>

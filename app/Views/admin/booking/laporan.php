@@ -59,9 +59,9 @@
                                 <div class="col-md-4">
                                     <label>&nbsp;</label><br>
                                     <button type="submit" class="btn btn-primary">Filter</button>
-                                    <button type="button" onclick="printReport()" class="btn btn-success">
+                                    <!-- <button type="button" onclick="printReport()" class="btn btn-success">
                                         <i class="fas fa-print"></i> Cetak Browser
-                                    </button>
+                                    </button> -->
                                     <a href="<?= site_url('admin/booking/export-pdf?' . http_build_query(['bulan' => $bulan, 'tahun' => $tahun, 'tanggal' => $tanggal_filter])) ?>"
                                         class="btn btn-danger" target="_blank">
                                         <i class="fas fa-file-pdf"></i> Export PDF
@@ -93,7 +93,7 @@
                                     <div class="col-2"></div>
                                 </div>
                                 <hr style="border-top: 2px solid #000; margin: 20px 0;">
-                                <h3 class="text-center mb-3"><strong>Laporan Booking Pertanggan</strong></h3>
+                                <h3 class="text-center mb-3"><strong>Laporan Booking Pertanggal</strong></h3>
                             </div>
 
                             <!-- Filter Info -->

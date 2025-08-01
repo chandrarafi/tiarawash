@@ -51,7 +51,9 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->post('store', 'Karyawan::store');
         $routes->get('edit/(:segment)', 'Karyawan::edit/$1');
         $routes->post('update/(:segment)', 'Karyawan::update/$1');
+        $routes->put('update/(:segment)', 'Karyawan::update/$1');
         $routes->get('delete/(:segment)', 'Karyawan::delete/$1');
+        $routes->delete('delete/(:segment)', 'Karyawan::delete/$1');
         $routes->get('getKaryawan', 'Karyawan::getKaryawan');
         $routes->get('getNewId', 'Karyawan::getNewId');
         $routes->get('getById/(:segment)', 'Karyawan::getKaryawanById/$1');
@@ -115,7 +117,9 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->post('store', 'Layanan::store');
         $routes->get('edit/(:any)', 'Layanan::edit/$1');
         $routes->post('update/(:any)', 'Layanan::update/$1');
+        $routes->put('update/(:any)', 'Layanan::update/$1');
         $routes->get('delete/(:any)', 'Layanan::delete/$1');
+        $routes->delete('delete/(:any)', 'Layanan::delete/$1');
         $routes->get('foto/(:any)', 'Layanan::foto/$1');
         $routes->post('getLayananByJenis', 'Layanan::getLayananByJenis');
     });
@@ -173,6 +177,34 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('laporan-pertahun', 'Keuangan::laporanPertahun');
         $routes->get('export-perbulan-pdf', 'Keuangan::exportPerbulanPDF');
         $routes->get('export-pertahun-pdf', 'Keuangan::exportPertahunPDF');
+    });
+
+    // Pelanggan Laporan (admin & pimpinan)
+    $routes->group('pelanggan', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('laporan', 'Pelanggan::laporan');
+        $routes->get('export-pdf', 'Pelanggan::exportPDF');
+    });
+
+    // Karyawan Laporan (admin & pimpinan)
+    $routes->group('karyawan', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('laporan', 'Karyawan::laporan');
+        $routes->get('export-pdf', 'Karyawan::exportPDF');
+    });
+
+    // Antrian Laporan (admin & pimpinan)
+    $routes->group('antrian', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('laporan', 'Antrian::laporan');
+        $routes->get('export-pdf', 'Antrian::exportPDF');
+    });
+
+    // Transaksi Laporan (admin & pimpinan)
+    $routes->group('transaksi', ['filter' => 'role:admin,pimpinan'], function ($routes) {
+        $routes->get('laporan-pertanggal', 'Transaksi::laporanPertanggal');
+        $routes->get('laporan-perbulan', 'Transaksi::laporanPerbulan');
+        $routes->get('laporan-pertahun', 'Transaksi::laporanPertahun');
+        $routes->get('export-pertanggal-pdf', 'Transaksi::exportPertanggalPDF');
+        $routes->get('export-perbulan-pdf', 'Transaksi::exportPerbulanPDF');
+        $routes->get('export-pertahun-pdf', 'Transaksi::exportPertahunPDF');
     });
 
     // Payment Management (admin & pimpinan)

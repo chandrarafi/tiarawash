@@ -330,4 +330,75 @@ class Karyawan extends BaseController
             'data' => $karyawan
         ]);
     }
+
+    /**
+     * Laporan Data Karyawan
+     */
+    public function laporan()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
+
+        // Build query untuk laporan karyawan
+        $karyawan = $this->karyawanModel->orderBy('idkaryawan', 'ASC')->findAll();
+
+        // Prepare data for view
+        $data = [
+            'title' => 'Laporan Data Karyawan',
+            'subtitle' => 'Laporan data karyawan untuk admin dan pimpinan',
+            'active' => 'laporan-karyawan',
+            'karyawan' => $karyawan,
+            'tanggal_cetak' => $tanggal_cetak,
+            'total_karyawan' => count($karyawan)
+        ];
+
+        return view('admin/karyawan/laporan', $data);
+    }
+
+    /**
+     * Export Laporan Karyawan ke PDF
+     */
+    public function exportPDF()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
+
+        // Build query untuk laporan karyawan
+        $karyawan = $this->karyawanModel->orderBy('idkaryawan', 'ASC')->findAll();
+
+        // Prepare data for PDF
+        $data = [
+            'karyawan' => $karyawan,
+            'tanggal_cetak' => $tanggal_cetak,
+            'total_karyawan' => count($karyawan)
+        ];
+
+        // Generate PDF
+        require_once ROOTPATH . 'vendor/autoload.php';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml(view('admin/karyawan/laporan_pdf', $data));
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // Set filename
+        $filename = 'Laporan_Data_Karyawan_' . str_replace('/', '-', $tanggal_cetak) . '.pdf';
+
+        // Output PDF
+        $dompdf->stream($filename, array('Attachment' => false));
+    }
 }

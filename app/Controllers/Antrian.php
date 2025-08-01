@@ -497,4 +497,85 @@ class Antrian extends BaseController
         // NOTE: Transaksi sudah ada dari saat booking, jadi tidak perlu buat transaksi baru
         // Customer sudah bayar di muka saat booking
     }
+
+    /**
+     * Laporan Antrian
+     */
+    public function laporan()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
+
+        // Build query untuk laporan antrian dengan join
+        $builder = $this->antrianModel->builder();
+        $builder->select('antrian.*, b.kode_booking, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
+        $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
+        $builder->orderBy('antrian.id', 'ASC');
+
+        $antrian = $builder->get()->getResultArray();
+
+        // Prepare data for view
+        $data = [
+            'title' => 'Laporan Antrian',
+            'subtitle' => 'Laporan antrian untuk admin dan pimpinan',
+            'active' => 'laporan-antrian',
+            'antrian' => $antrian,
+            'tanggal_cetak' => $tanggal_cetak,
+            'total_antrian' => count($antrian)
+        ];
+
+        return view('admin/antrian/laporan', $data);
+    }
+
+    /**
+     * Export Laporan Antrian ke PDF
+     */
+    public function exportPDF()
+    {
+        // Check admin/pimpinan permission
+        if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
+            return redirect()->to('auth')->with('error', 'Akses ditolak');
+        }
+
+        // Get filter parameters
+        $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
+
+        // Build query untuk laporan antrian dengan join
+        $builder = $this->antrianModel->builder();
+        $builder->select('antrian.*, b.kode_booking, b.tanggal, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
+        $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
+        $builder->orderBy('antrian.id', 'ASC');
+
+        $antrian = $builder->get()->getResultArray();
+
+        // Prepare data for PDF
+        $data = [
+            'antrian' => $antrian,
+            'tanggal_cetak' => $tanggal_cetak,
+            'total_antrian' => count($antrian)
+        ];
+
+        // Generate PDF
+        require_once ROOTPATH . 'vendor/autoload.php';
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml(view('admin/antrian/laporan_pdf', $data));
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        // Set filename
+        $filename = 'Laporan_Antrian_' . str_replace('/', '-', $tanggal_cetak) . '.pdf';
+
+        // Output PDF
+        $dompdf->stream($filename, array('Attachment' => false));
+    }
 }

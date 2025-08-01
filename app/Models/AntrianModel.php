@@ -48,18 +48,184 @@ class AntrianModel extends Model
 
     protected function generateNomorAntrian(array $data)
     {
+        // Always generate if nomor_antrian is empty
         if (empty($data['data']['nomor_antrian'])) {
             $tanggal = isset($data['data']['tanggal']) ? $data['data']['tanggal'] : date('Y-m-d');
             $formattedDate = date('Ymd', strtotime($tanggal));
 
-            // Hitung jumlah antrian pada tanggal yang sama
-            $count = $this->where('tanggal', $tanggal)->countAllResults();
-            $number = $count + 1;
+            // Format: A + YYYYMMDD + 3-digit sequence (001, 002, 003, etc.)
+            $prefix = 'A' . $formattedDate;
 
-            $data['data']['nomor_antrian'] = 'A' . $formattedDate . sprintf('%03d', $number);
+            // Generate using a more direct approach with database locking
+            $newNomorAntrian = $this->generateUniqueNomorAntrian($prefix, $tanggal);
+            $data['data']['nomor_antrian'] = $newNomorAntrian;
+
+            log_message('info', "Generated nomor_antrian: {$newNomorAntrian} for date: {$tanggal}");
         }
 
         return $data;
+    }
+
+    /**
+     * Generate unique nomor_antrian with database locking for concurrency safety
+     */
+    private function generateUniqueNomorAntrian($prefix, $tanggal)
+    {
+        $db = \Config\Database::connect();
+
+        // Use database transaction with locking to prevent race conditions
+        $db->transStart();
+
+        try {
+            // Lock the table for reading to prevent concurrent inserts
+            $query = "SELECT nomor_antrian FROM {$this->table} 
+                     WHERE DATE(tanggal) = ? 
+                     AND nomor_antrian LIKE ? 
+                     AND LENGTH(nomor_antrian) = 12 
+                     ORDER BY nomor_antrian DESC 
+                     LIMIT 1 
+                     FOR UPDATE";
+
+            $result = $db->query($query, [
+                date('Y-m-d', strtotime($tanggal)),
+                $prefix . '%'
+            ]);
+
+            $lastRecord = $result->getRowArray();
+
+            $nextSequence = 1; // Start from 001
+
+            if ($lastRecord && !empty($lastRecord['nomor_antrian'])) {
+                $nomorAntrian = $lastRecord['nomor_antrian'];
+                // Extract the last 3 digits for sequence
+                if (strlen($nomorAntrian) === 12 && substr($nomorAntrian, 0, 9) === $prefix) {
+                    $lastSequence = (int) substr($nomorAntrian, -3);
+                    $nextSequence = $lastSequence + 1;
+                }
+            }
+
+            // Ensure sequence doesn't exceed 999
+            if ($nextSequence > 999) {
+                $nextSequence = 1;
+            }
+
+            // Generate the nomor_antrian
+            $newNomorAntrian = $prefix . sprintf('%03d', $nextSequence);
+
+            // Double-check uniqueness within the same transaction
+            $checkQuery = "SELECT COUNT(*) as count FROM {$this->table} WHERE nomor_antrian = ?";
+            $checkResult = $db->query($checkQuery, [$newNomorAntrian]);
+            $count = $checkResult->getRowArray()['count'];
+
+            if ($count > 0) {
+                // If somehow still exists, try a few more numbers
+                for ($i = 1; $i <= 10; $i++) {
+                    $testSequence = $nextSequence + $i;
+                    if ($testSequence > 999) $testSequence = 1;
+
+                    $testNomor = $prefix . sprintf('%03d', $testSequence);
+                    $testResult = $db->query($checkQuery, [$testNomor]);
+                    $testCount = $testResult->getRowArray()['count'];
+
+                    if ($testCount === 0) {
+                        $newNomorAntrian = $testNomor;
+                        break;
+                    }
+                }
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Transaction failed while generating nomor_antrian');
+            }
+
+            return $newNomorAntrian;
+        } catch (\Exception $e) {
+            $db->transRollback();
+
+            // Emergency fallback - use timestamp-based unique number
+            $timestamp = time();
+            $uniqueSequence = ($timestamp % 999) + 1;
+            $fallbackNomor = $prefix . sprintf('%03d', $uniqueSequence);
+
+            log_message('error', 'Error in generateUniqueNomorAntrian: ' . $e->getMessage() . '. Using fallback: ' . $fallbackNomor);
+
+            return $fallbackNomor;
+        }
+    }
+
+    /**
+     * Clean up invalid nomor_antrian records
+     */
+    public function cleanupInvalidRecords()
+    {
+        try {
+            $db = \Config\Database::connect();
+
+            // Find records with invalid nomor_antrian format
+            $query = "SELECT id, nomor_antrian, tanggal 
+                     FROM antrian 
+                     WHERE LENGTH(nomor_antrian) < 12 
+                     OR nomor_antrian NOT LIKE 'A%'";
+
+            $invalidRecords = $db->query($query)->getResultArray();
+
+            $cleanedCount = 0;
+            foreach ($invalidRecords as $record) {
+                log_message('warning', "Found invalid nomor_antrian: {$record['nomor_antrian']} (ID: {$record['id']})");
+
+                // Generate a proper nomor_antrian for this record using direct database query
+                $tanggal = $record['tanggal'];
+                $formattedDate = date('Ymd', strtotime($tanggal));
+                $prefix = 'A' . $formattedDate;
+
+                // Find the highest sequence for this date (excluding the current invalid record)
+                $lastQuery = "SELECT nomor_antrian 
+                             FROM antrian 
+                             WHERE DATE(tanggal) = ? 
+                             AND nomor_antrian LIKE ? 
+                             AND LENGTH(nomor_antrian) = 12 
+                             AND id != ?
+                             ORDER BY nomor_antrian DESC 
+                             LIMIT 1";
+
+                $lastResult = $db->query($lastQuery, [
+                    date('Y-m-d', strtotime($tanggal)),
+                    $prefix . '%',
+                    $record['id']
+                ])->getRowArray();
+
+                $nextSequence = 1;
+                if ($lastResult && !empty($lastResult['nomor_antrian'])) {
+                    $lastSequence = (int) substr($lastResult['nomor_antrian'], -3);
+                    $nextSequence = $lastSequence + 1;
+                }
+
+                if ($nextSequence > 999) $nextSequence = 1;
+
+                $newNomor = $prefix . sprintf('%03d', $nextSequence);
+
+                // Directly update using raw SQL to avoid model callbacks
+                $updateQuery = "UPDATE antrian SET nomor_antrian = ? WHERE id = ?";
+                $db->query($updateQuery, [$newNomor, $record['id']]);
+
+                log_message('info', "Updated invalid record ID {$record['id']} from '{$record['nomor_antrian']}' to '{$newNomor}'");
+                $cleanedCount++;
+            }
+
+            return [
+                'success' => true,
+                'cleaned_count' => $cleanedCount,
+                'message' => "Cleaned up {$cleanedCount} invalid records"
+            ];
+        } catch (\Exception $e) {
+            log_message('error', 'Error cleaning up invalid records: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 
     /**

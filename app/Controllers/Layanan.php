@@ -330,6 +330,31 @@ class Layanan extends BaseController
                 log_message('debug', 'New photo uploaded successfully: ' . $fotoName);
             }
 
+            // Validate input first
+            $rules = $this->layananModel->getValidationRulesForEdit($kode);
+
+            // Remove foto validation if no file uploaded
+            if (!$foto || !$foto->isValid()) {
+                unset($rules['foto']);
+            }
+
+            // Prepare data for validation
+            $validationData = [
+                'kode_layanan' => $postData['kode_layanan'],
+                'nama_layanan' => $postData['nama_layanan'],
+                'jenis_kendaraan' => $postData['jenis_kendaraan'] ?? 'motor',
+                'harga' => (int)($postData['harga'] ?? 0),
+                'durasi_menit' => (int)($postData['durasi_menit'] ?? 60),
+                'deskripsi' => $postData['deskripsi'] ?? '',
+                'status' => $postData['status'] ?? 'aktif'
+            ];
+
+            if (!$this->validate($rules, $validationData)) {
+                $response['message'] = 'Validasi gagal';
+                $response['errors'] = $this->validator->getErrors();
+                return $this->response->setJSON($response);
+            }
+
             // Prepare data for update
             $data = [
                 'kode_layanan' => $postData['kode_layanan'],
@@ -345,7 +370,8 @@ class Layanan extends BaseController
             // Debug: Log the data being updated
             log_message('debug', 'Data to update: ' . json_encode($data));
 
-            // Use model update method
+            // Use model update method (skip validation since we already validated)
+            $this->layananModel->skipValidation();
             if ($this->layananModel->update($kode, $data)) {
                 $response['status'] = true;
                 $response['message'] = 'Layanan berhasil diperbarui';
@@ -370,6 +396,11 @@ class Layanan extends BaseController
 
     public function delete($kode = null)
     {
+        // Check if this is an AJAX/API request
+        if ($this->request->isAJAX() || $this->request->getMethod() === 'delete') {
+            return $this->deleteAjax($kode);
+        }
+
         $layanan = $this->layananModel->find($kode);
 
         if (!$layanan) {
@@ -385,6 +416,37 @@ class Layanan extends BaseController
 
         session()->setFlashdata('success', 'Layanan berhasil dihapus');
         return redirect()->to('/admin/layanan');
+    }
+
+    private function deleteAjax($kode = null)
+    {
+        $layanan = $this->layananModel->find($kode);
+
+        if (!$layanan) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Layanan dengan kode ' . $kode . ' tidak ditemukan'
+            ])->setStatusCode(404);
+        }
+
+        try {
+            // Delete foto file if exists
+            if ($layanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $layanan['foto'])) {
+                unlink(FCPATH . 'uploads/layanan/' . $layanan['foto']);
+            }
+
+            $this->layananModel->delete($kode);
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Layanan berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal menghapus layanan: ' . $e->getMessage()
+            ])->setStatusCode(500);
+        }
     }
 
     public function getLayananByJenis()

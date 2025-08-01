@@ -612,12 +612,15 @@ class Booking extends BaseController
                 'status' => 'menunggu'
             ];
 
-            if ($this->antrianModel->insert($antrianData)) {
-                $antrianId = $this->antrianModel->getInsertID();
-                $antrian = $this->antrianModel->find($antrianId);
-
-                log_message('info', 'Antrian created for booking ' . $bookingId . ': ' . $antrian['nomor_antrian']);
+            if (!$this->antrianModel->insert($antrianData)) {
+                $errors = $this->antrianModel->errors();
+                log_message('error', 'Failed to create antrian: ' . json_encode($errors));
+                throw new \Exception('Gagal membuat antrian: ' . json_encode($errors));
             }
+
+            $antrianId = $this->antrianModel->getInsertID();
+            $antrian = $this->antrianModel->find($antrianId);
+            log_message('info', 'Antrian created for booking ' . $bookingId . ': ' . $antrian['nomor_antrian']);
 
             $db->transComplete();
 
@@ -1738,11 +1741,15 @@ class Booking extends BaseController
                 'status' => 'menunggu'
             ];
 
-            if ($this->antrianModel->insert($antrianData)) {
-                $antrianId = $this->antrianModel->getInsertID();
-                $antrian = $this->antrianModel->find($antrianId);
-                log_message('info', 'Antrian created for booking ' . $kodeBooking . ': ' . $antrian['nomor_antrian']);
+            if (!$this->antrianModel->insert($antrianData)) {
+                $errors = $this->antrianModel->errors();
+                log_message('error', 'Failed to create antrian: ' . json_encode($errors));
+                throw new \Exception('Gagal membuat antrian: ' . json_encode($errors));
             }
+
+            $antrianId = $this->antrianModel->getInsertID();
+            $antrian = $this->antrianModel->find($antrianId);
+            log_message('info', 'Antrian created for booking ' . $kodeBooking . ': ' . $antrian['nomor_antrian']);
 
             $db->transComplete();
 
@@ -1997,7 +2004,7 @@ class Booking extends BaseController
 
         // Prepare data for view
         $data = [
-            'title' => 'Laporan Booking Pertanggan',
+            'title' => 'Laporan Booking Pertanggal',
             'subtitle' => 'Laporan booking pelanggan untuk admin dan pimpinan',
             'active' => 'laporan-booking',
             'bookings' => $bookings,

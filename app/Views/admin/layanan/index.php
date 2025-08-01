@@ -109,7 +109,7 @@
                                                     <i class="bi bi-pencil-square"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                    data-toggle="modal" data-target="#deleteModal"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal"
                                                     data-kode="<?= $item['kode_layanan']; ?>"
                                                     data-name="<?= $item['nama_layanan']; ?>" title="Hapus">
                                                     <i class="bi bi-trash"></i>
@@ -133,15 +133,13 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="deleteModalLabel">Konfirmasi Hapus</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Apakah Anda yakin ingin menghapus layanan <span id="layananName" class="font-weight-bold"></span>?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 <a href="#" id="confirmDelete" class="btn btn-danger">Hapus</a>
             </div>
         </div>
@@ -154,12 +152,25 @@
     $(document).ready(function() {
         $('#dataTable').DataTable();
 
-        $('.btn-delete').on('click', function() {
+        // Handle delete button clicks
+        $(document).on('click', '.btn-delete', function() {
             const kode = $(this).data('kode');
             const name = $(this).data('name');
 
             $('#layananName').text(name);
             $('#confirmDelete').attr('href', '<?= base_url('admin/layanan/delete/'); ?>' + kode);
+        });
+
+        // Handle confirm delete click with better UX
+        $(document).on('click', '#confirmDelete', function(e) {
+            e.preventDefault();
+            const deleteUrl = $(this).attr('href');
+
+            // Show loading state
+            $(this).html('<i class="bi bi-hourglass"></i> Menghapus...').prop('disabled', true);
+
+            // Redirect to delete URL
+            window.location.href = deleteUrl;
         });
     });
 </script>
