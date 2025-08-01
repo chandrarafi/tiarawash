@@ -37,15 +37,15 @@ class Transaksi extends BaseController
         $builder->select('
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
-            "" as nama_karyawan,
+            COALESCE(k.namakaryawan, "-") as nama_karyawan,
             b.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
         $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
-
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
         $builder->where('t.tanggal', $tanggalFilter);
         $builder->where('t.status_pembayaran', 'dibayar');
         $builder->orderBy('t.no_transaksi', 'ASC');
@@ -87,7 +87,7 @@ class Transaksi extends BaseController
             DATE(t.tanggal) as tanggal,
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
-            "" as nama_karyawan,
+            COALESCE(k.namakaryawan, "-") as nama_karyawan,
             b.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
@@ -95,6 +95,7 @@ class Transaksi extends BaseController
         ');
         $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
         $builder->where('MONTH(t.tanggal)', $bulan);
         $builder->where('YEAR(t.tanggal)', $tahun);
         $builder->where('t.status_pembayaran', 'dibayar');
@@ -217,15 +218,15 @@ class Transaksi extends BaseController
         $builder->select('
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
-            "" as nama_karyawan,
+            COALESCE(k.namakaryawan, "-") as nama_karyawan,
             b.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
         $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
-
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
         $builder->where('t.tanggal', $tanggalFilter);
         $builder->where('t.status_pembayaran', 'dibayar');
         $builder->orderBy('t.no_transaksi', 'ASC');
@@ -278,7 +279,7 @@ class Transaksi extends BaseController
             DATE(t.tanggal) as tanggal,
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
-            "" as nama_karyawan,
+            COALESCE(k.namakaryawan, "-") as nama_karyawan,
             b.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
@@ -286,6 +287,7 @@ class Transaksi extends BaseController
         ');
         $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
         $builder->where('MONTH(t.tanggal)', $bulan);
         $builder->where('YEAR(t.tanggal)', $tahun);
         $builder->where('t.status_pembayaran', 'dibayar');
