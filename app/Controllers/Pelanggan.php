@@ -95,8 +95,11 @@ class Pelanggan extends BaseController
                 ->like('tanggal', $currentMonth, 'after')
                 ->countAllResults();
 
-            // Total transaksi
-            $stats['total_transaksi'] = $transaksiModel->where('pelanggan_id', $pelangganId)->countAllResults();
+            // Total transaksi (via JOIN dengan booking)
+            $stats['total_transaksi'] = $transaksiModel
+                ->join('booking', 'booking.id = transaksi.booking_id', 'left')
+                ->where('booking.pelanggan_id', $pelangganId)
+                ->countAllResults();
         }
 
         // Get recent bookings
@@ -112,12 +115,12 @@ class Pelanggan extends BaseController
         // Get recent transactions
         $recentTransactions = [];
         if ($pelangganId) {
-            // Fix: Use kode_layanan instead of id for join
-            // Since layanan table uses kode_layanan as primary key and transaksi.layanan_id should be VARCHAR
+            // Get recent transactions via normalized JOIN
             $recentTransactions = $transaksiModel
-                ->select('transaksi.*, layanan.nama_layanan')
-                ->join('layanan', 'layanan.kode_layanan = transaksi.layanan_id', 'left')
-                ->where('transaksi.pelanggan_id', $pelangganId)
+                ->select('transaksi.*, booking.pelanggan_id, layanan.nama_layanan, layanan.jenis_kendaraan')
+                ->join('booking', 'booking.id = transaksi.booking_id', 'left')
+                ->join('layanan', 'layanan.kode_layanan = booking.layanan_id', 'left')
+                ->where('booking.pelanggan_id', $pelangganId)
                 ->orderBy('transaksi.created_at', 'DESC')
                 ->limit(5)
                 ->findAll();
@@ -144,7 +147,7 @@ class Pelanggan extends BaseController
         foreach ($recentBookings as $booking) {
             $recentActivities[] = [
                 'type' => 'booking',
-                'title' => 'Booking ' . ucfirst($booking['jenis_kendaraan']),
+                'title' => 'Booking ' . ucfirst($booking['jenis_kendaraan'] ?? 'kendaraan'),
                 'description' => 'Booking untuk layanan ' . ($booking['nama_layanan'] ?? 'Unknown'),
                 'time' => $booking['created_at'],
                 'status' => $booking['status'],
@@ -157,7 +160,7 @@ class Pelanggan extends BaseController
         foreach ($recentTransactions as $transaction) {
             $recentActivities[] = [
                 'type' => 'transaction',
-                'title' => 'Pembayaran ' . ucfirst($transaction['jenis_kendaraan']),
+                'title' => 'Pembayaran ' . ucfirst($transaction['jenis_kendaraan'] ?? 'kendaraan'),
                 'description' => 'Pembayaran untuk ' . ($transaction['nama_layanan'] ?? 'layanan') . ' sebesar Rp ' . number_format($transaction['total_harga'], 0, ',', '.'),
                 'time' => $transaction['created_at'],
                 'status' => $transaction['status_pembayaran'],
@@ -182,7 +185,7 @@ class Pelanggan extends BaseController
             'totalBookings' => $stats['total_booking'] ?? 0,
             'pendingBookings' => $pelangganId ? $bookingModel->where('pelanggan_id', $pelangganId)->where('status', 'pending')->countAllResults() : 0,
             'completedBookings' => $pelangganId ? $bookingModel->where('pelanggan_id', $pelangganId)->where('status', 'selesai')->countAllResults() : 0,
-            'totalSpent' => $pelangganId ? ($transaksiModel->selectSum('total_harga')->where('pelanggan_id', $pelangganId)->where('status_pembayaran', 'dibayar')->get()->getRow()->total_harga ?? 0) : 0,
+            'totalSpent' => $pelangganId ? ($transaksiModel->selectSum('transaksi.total_harga')->join('booking', 'booking.id = transaksi.booking_id', 'left')->where('booking.pelanggan_id', $pelangganId)->where('transaksi.status_pembayaran', 'dibayar')->get()->getRow()->total_harga ?? 0) : 0,
             'recentBookings' => $recentBookings ?? [],
             'recentTransactions' => $recentTransactions ?? [],
             'activeServices' => $activeServices ?? [],

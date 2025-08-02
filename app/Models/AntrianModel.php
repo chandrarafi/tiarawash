@@ -234,14 +234,14 @@ class AntrianModel extends Model
     public function getAntrianWithDetails($id = null)
     {
         $builder = $this->db->table('antrian a');
-        $builder->select('a.*, b.kode_booking, b.pelanggan_id, b.no_plat, b.jenis_kendaraan, 
+        $builder->select('a.*, b.kode_booking, b.pelanggan_id, b.no_plat, l.jenis_kendaraan, 
                           b.merk_kendaraan, b.tanggal as booking_tanggal, b.jam as booking_jam,
                           p.nama_pelanggan, p.no_hp, l.nama_layanan, l.harga, l.durasi_menit, 
-                          k.namakaryawan, k.nohp as karyawan_hp');
+                          k.namakaryawan, k.nohp as karyawan_hp, b.id_karyawan as karyawan_id');
         $builder->join('booking b', 'b.id = a.booking_id', 'left');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
-        $builder->join('karyawan k', 'k.idkaryawan = a.karyawan_id', 'left');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
 
         if ($id !== null) {
             $builder->where('a.id', $id);
@@ -257,14 +257,14 @@ class AntrianModel extends Model
     public function getAntrianByDate($date)
     {
         $builder = $this->db->table('antrian a');
-        $builder->select('a.id, a.nomor_antrian, a.status, a.jam_mulai, a.jam_selesai, a.karyawan_id,
-                          b.kode_booking, b.pelanggan_id, b.no_plat, b.jenis_kendaraan, 
+        $builder->select('a.id, a.nomor_antrian, a.status, a.jam_mulai, a.jam_selesai, b.id_karyawan as karyawan_id,
+                          b.kode_booking, b.pelanggan_id, b.no_plat, l.jenis_kendaraan, 
                           b.merk_kendaraan, b.tanggal as booking_tanggal, b.jam as booking_jam,
                           p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit, k.namakaryawan');
         $builder->join('booking b', 'b.id = a.booking_id', 'left');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
-        $builder->join('karyawan k', 'k.idkaryawan = a.karyawan_id', 'left');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
         $builder->where('a.tanggal', $date);
 
         // Order by priority: diproses first, then menunggu, then others
@@ -301,12 +301,12 @@ class AntrianModel extends Model
     public function getAntrianByKaryawan($karyawanId, $status = null, $date = null)
     {
         $builder = $this->db->table('antrian a');
-        $builder->select('a.*, b.kode_booking, b.no_plat, b.jenis_kendaraan, 
-                          p.nama_pelanggan, l.nama_layanan, l.durasi_menit');
+        $builder->select('a.*, b.kode_booking, b.no_plat, l.jenis_kendaraan, 
+                          p.nama_pelanggan, l.nama_layanan, l.durasi_menit, b.id_karyawan as karyawan_id');
         $builder->join('booking b', 'b.id = a.booking_id', 'left');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
-        $builder->where('a.karyawan_id', $karyawanId);
+        $builder->where('b.id_karyawan', $karyawanId);
 
         if ($status !== null) {
             $builder->where('a.status', $status);
@@ -376,7 +376,12 @@ class AntrianModel extends Model
         $data = ['status' => $status];
 
         if ($status == 'diproses' && $karyawanId) {
-            $data['karyawan_id'] = $karyawanId;
+            // Update id_karyawan in booking table instead of antrian
+            $antrian = $this->find($id);
+            if ($antrian && $antrian['booking_id']) {
+                $bookingModel = new \App\Models\BookingModel();
+                $bookingModel->update($antrian['booking_id'], ['id_karyawan' => $karyawanId]);
+            }
             $data['jam_mulai'] = date('H:i:s');
         }
 
@@ -471,7 +476,8 @@ class AntrianModel extends Model
                           COUNT(*) as total_antrian,
                           SUM(CASE WHEN a.status = "diproses" THEN 1 ELSE 0 END) as sedang_diproses,
                           SUM(CASE WHEN a.status = "selesai" THEN 1 ELSE 0 END) as selesai');
-        $builder->join('karyawan k', 'k.idkaryawan = a.karyawan_id', 'right');
+        $builder->join('booking b', 'b.id = a.booking_id', 'left');
+        $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'right');
         $builder->where('a.tanggal', $date);
         $builder->orWhere('a.tanggal IS NULL');
         $builder->groupBy('k.idkaryawan, k.namakaryawan');

@@ -36,11 +36,11 @@ class AdminPayment extends BaseController
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get pending payments with related data
+        // Get pending payments with related data (NORMALIZED)
         $pendingPayments = $this->transaksiModel
             ->select('transaksi.*, pelanggan.nama_pelanggan, booking.kode_booking, booking.no_plat, booking.tanggal as booking_tanggal, booking.jam as booking_jam')
-            ->join('pelanggan', 'pelanggan.kode_pelanggan = transaksi.pelanggan_id', 'left')
             ->join('booking', 'booking.id = transaksi.booking_id', 'left')
+            ->join('pelanggan', 'pelanggan.kode_pelanggan = booking.pelanggan_id', 'left')
             ->where('transaksi.status_pembayaran', 'belum_bayar')
             ->where('transaksi.bukti_pembayaran IS NOT NULL')
             ->orderBy('transaksi.created_at', 'DESC')
@@ -81,9 +81,16 @@ class AdminPayment extends BaseController
             return redirect()->to('admin/payment')->with('error', 'Transaksi tidak ditemukan');
         }
 
-        // Get related data
-        $pelanggan = $this->pelangganModel->where('kode_pelanggan', $transaksi['pelanggan_id'])->first();
+        // Get related data via normalized method
+        $transaksiDetails = $this->transaksiModel->getTransaksiWithDetails($transaksiId);
+
+        // Extract data from normalized result
         $booking = $this->bookingModel->find($transaksi['booking_id']);
+        $pelanggan = null;
+
+        if ($booking && isset($booking['pelanggan_id'])) {
+            $pelanggan = $this->pelangganModel->where('kode_pelanggan', $booking['pelanggan_id'])->first();
+        }
 
         // Get all bookings with same kode_booking (for multi-service)
         $allBookings = [];

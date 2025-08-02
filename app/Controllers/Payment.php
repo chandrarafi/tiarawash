@@ -195,14 +195,14 @@ class Payment extends BaseController
                 log_message('info', 'Payment proof uploaded, setting status to dibayar');
             }
 
-            // Create main transaction
+            // Create main transaction - normalized data structure
             $transaksiData = [
                 'tanggal' => date('Y-m-d'),
                 'booking_id' => $firstBooking['id'], // Reference to first booking
-                'pelanggan_id' => $pelangganId,
+                // 'pelanggan_id' => $pelangganId, // REMOVED: redundant, use booking.pelanggan_id
                 'layanan_id' => $firstBooking['layanan_id'], // Main service
-                'no_plat' => $firstBooking['no_plat'],
-                'jenis_kendaraan' => $firstBooking['jenis_kendaraan'],
+                // 'no_plat' => $firstBooking['no_plat'], // REMOVED: redundant, use booking.no_plat
+                // 'jenis_kendaraan' => $firstBooking['jenis_kendaraan'], // REMOVED: redundant, use layanan.jenis_kendaraan
                 'total_harga' => $totalHarga,
                 'metode_pembayaran' => $metodePembayaran,
                 'status_pembayaran' => $statusPembayaran,
@@ -308,19 +308,32 @@ class Payment extends BaseController
             if ($basicTransaksi) {
                 log_message('info', 'Basic transaksi found, manually building data');
 
-                // Manually get related data
+                // Get related data via normalized method
+                $transaksiWithDetails = $this->transaksiModel->getTransaksiWithDetails($transaksi['id']);
+
                 $pelanggan = null;
                 $layanan = null;
                 $user = null;
 
-                if ($basicTransaksi['pelanggan_id']) {
-                    $pelangganModel = new \App\Models\PelangganModel();
-                    $pelanggan = $pelangganModel->where('kode_pelanggan', $basicTransaksi['pelanggan_id'])->first();
-                }
+                // Extract data from normalized result
+                if ($transaksiWithDetails) {
+                    if ($transaksiWithDetails['nama_pelanggan']) {
+                        $pelanggan = [
+                            'kode_pelanggan' => $transaksiWithDetails['pelanggan_id'],
+                            'nama_pelanggan' => $transaksiWithDetails['nama_pelanggan'],
+                            'no_hp' => $transaksiWithDetails['pelanggan_hp'],
+                            'alamat' => $transaksiWithDetails['pelanggan_alamat']
+                        ];
+                    }
 
-                if ($basicTransaksi['layanan_id']) {
-                    $layananModel = new \App\Models\LayananModel();
-                    $layanan = $layananModel->where('kode_layanan', $basicTransaksi['layanan_id'])->first();
+                    if ($transaksiWithDetails['nama_layanan']) {
+                        $layanan = [
+                            'kode_layanan' => $basicTransaksi['booking_id'], // Use booking_id as reference
+                            'nama_layanan' => $transaksiWithDetails['nama_layanan'],
+                            'harga' => $transaksiWithDetails['layanan_harga'],
+                            'jenis_kendaraan' => $transaksiWithDetails['jenis_kendaraan']
+                        ];
+                    }
                 }
 
                 if ($basicTransaksi['user_id']) {

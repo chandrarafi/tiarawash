@@ -98,7 +98,7 @@ class Booking extends BaseController
             'tanggal' => 'required|valid_date',
             'jam' => 'required',
             'no_plat' => 'required|max_length[20]',
-            'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
+            // 'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]', // REMOVED: redundant
             'merk_kendaraan' => 'permit_empty|max_length[50]',
             'catatan' => 'permit_empty'
         ];
@@ -114,7 +114,18 @@ class Booking extends BaseController
         // Cek ketersediaan slot
         $tanggal = $this->request->getPost('tanggal');
         $jam = $this->request->getPost('jam');
-        $jenisKendaraan = $this->request->getPost('jenis_kendaraan');
+        $layananId = $this->request->getPost('layanan_id');
+
+        // Get layanan data to check jenis_kendaraan
+        $layanan = $this->layananModel->find($layananId);
+        if (!$layanan) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Layanan tidak ditemukan'
+            ]);
+        }
+
+        $jenisKendaraan = $layanan['jenis_kendaraan'];
 
         if (!$this->bookingModel->checkSlotAvailability($tanggal, $jam, $jenisKendaraan)) {
             return $this->response->setJSON([
@@ -123,16 +134,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get layanan data
-        $layananId = $this->request->getPost('layanan_id');
-        $layanan = $this->layananModel->find($layananId);
-
-        if (!$layanan) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Layanan tidak ditemukan'
-            ]);
-        }
+        // Layanan data already retrieved above for slot checking
 
         // Prepare booking data
         $bookingData = [
@@ -140,7 +142,7 @@ class Booking extends BaseController
             'tanggal' => $tanggal,
             'jam' => $jam,
             'no_plat' => strtoupper($this->request->getPost('no_plat')),
-            'jenis_kendaraan' => $jenisKendaraan,
+            // 'jenis_kendaraan' => $jenisKendaraan, // REMOVED: redundant, use layanan.jenis_kendaraan
             'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
             'layanan_id' => $layananId,
             'status' => 'menunggu_konfirmasi',

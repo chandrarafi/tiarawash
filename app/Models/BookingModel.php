@@ -18,7 +18,7 @@ class BookingModel extends Model
         'tanggal',
         'jam',
         'no_plat',
-        'jenis_kendaraan',
+        // 'jenis_kendaraan', // REMOVED: redundant, use layanan.jenis_kendaraan via JOIN
         'merk_kendaraan',
         'layanan_id',
         'status',
@@ -41,7 +41,7 @@ class BookingModel extends Model
         'tanggal'         => 'required|valid_date',
         'jam'             => 'required',
         'no_plat'         => 'required|max_length[20]',
-        'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
+        // 'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]', // REMOVED: redundant
         'merk_kendaraan'  => 'permit_empty|max_length[50]',
         'layanan_id'      => 'required|is_not_unique[layanan.kode_layanan]',
         'catatan'         => 'permit_empty',
@@ -60,10 +60,7 @@ class BookingModel extends Model
         'no_plat' => [
             'required' => 'Nomor plat kendaraan harus diisi',
         ],
-        'jenis_kendaraan' => [
-            'required' => 'Jenis kendaraan harus diisi',
-            'in_list' => 'Jenis kendaraan tidak valid',
-        ],
+        // REMOVED: jenis_kendaraan validation - data comes from layanan table
         'layanan_id' => [
             'required' => 'Layanan harus dipilih',
             'numeric' => 'ID layanan tidak valid',
@@ -107,7 +104,7 @@ class BookingModel extends Model
     public function getBookingWithDetails($id = null)
     {
         $builder = $this->db->table('booking b');
-        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit');
+        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit, l.jenis_kendaraan');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
 
@@ -122,7 +119,7 @@ class BookingModel extends Model
     public function getBookingsByPelanggan($pelangganId)
     {
         $builder = $this->db->table('booking b');
-        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit');
+        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit, l.jenis_kendaraan');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
         $builder->where('b.pelanggan_id', $pelangganId);
@@ -142,7 +139,7 @@ class BookingModel extends Model
     public function getBookingsByKodeBooking($kodeBooking)
     {
         $builder = $this->db->table('booking b');
-        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit');
+        $builder->select('b.*, p.nama_pelanggan, l.nama_layanan, l.harga, l.durasi_menit, l.jenis_kendaraan');
         $builder->join('pelanggan p', 'p.kode_pelanggan = b.pelanggan_id', 'left');
         $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left');
         $builder->where('b.kode_booking', $kodeBooking);
@@ -157,16 +154,18 @@ class BookingModel extends Model
     public function checkSlotAvailability($tanggal, $jam, $jenisKendaraan = null)
     {
         // Check if there's already a booking at this time
-        $builder = $this->where('tanggal', $tanggal)
-            ->where('jam', $jam)
-            ->where('status !=', 'dibatalkan');
+        $builder = $this->db->table('booking b')
+            ->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left')
+            ->where('b.tanggal', $tanggal)
+            ->where('b.jam', $jam)
+            ->where('b.status !=', 'dibatalkan');
 
-        // Optional: filter by vehicle type if provided
+        // Optional: filter by vehicle type if provided (from layanan table)
         if ($jenisKendaraan) {
-            $builder->where('jenis_kendaraan', $jenisKendaraan);
+            $builder->where('l.jenis_kendaraan', $jenisKendaraan);
         }
 
-        $existingBooking = $builder->first();
+        $existingBooking = $builder->get()->getRowArray();
 
         // If no existing booking found, slot is available
         return $existingBooking === null;
