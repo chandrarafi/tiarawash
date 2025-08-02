@@ -1333,7 +1333,7 @@ class Booking extends BaseController
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        $booking = $this->bookingModel->find($bookingId);
+        $booking = $this->bookingModel->getBookingWithDetails($bookingId);
 
         if (!$booking) {
             return redirect()->to('admin/booking')->with('error', 'Booking tidak ditemukan');
@@ -1390,7 +1390,6 @@ class Booking extends BaseController
             'tanggal' => 'required|valid_date',
             'jam' => 'required',
             'no_plat' => 'required',
-            'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
             'id_karyawan' => 'permit_empty',
             'status' => 'required|in_list[menunggu_konfirmasi,dikonfirmasi,selesai,dibatalkan]'
         ];
@@ -1463,7 +1462,6 @@ class Booking extends BaseController
                     'tanggal' => $this->request->getPost('tanggal'),
                     'jam' => $serviceJam,
                     'no_plat' => strtoupper($this->request->getPost('no_plat')),
-                    'jenis_kendaraan' => $this->request->getPost('jenis_kendaraan'),
                     'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
                     'layanan_id' => $service['kode_layanan'],
                     'id_karyawan' => $idKaryawan,
