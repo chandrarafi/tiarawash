@@ -1408,8 +1408,29 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Delete existing bookings with the same kode_booking
-            $this->bookingModel->where('kode_booking', $booking['kode_booking'])->delete();
+            // Get existing bookings with the same kode_booking
+            $existingBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
+
+            // Check which bookings have transactions (cannot be deleted)
+            $bookingsWithTransactions = [];
+            $bookingsWithoutTransactions = [];
+
+            foreach ($existingBookings as $existingBooking) {
+                $hasTransaction = $this->db->table('transaksi')
+                    ->where('booking_id', $existingBooking['id'])
+                    ->countAllResults() > 0;
+
+                if ($hasTransaction) {
+                    $bookingsWithTransactions[] = $existingBooking;
+                } else {
+                    $bookingsWithoutTransactions[] = $existingBooking;
+                }
+            }
+
+            // Delete bookings without transactions
+            foreach ($bookingsWithoutTransactions as $bookingToDelete) {
+                $this->bookingModel->delete($bookingToDelete['id']);
+            }
 
             // Get total duration for all selected services
             $totalDurasi = 0;
@@ -1439,7 +1460,9 @@ class Booking extends BaseController
             list($hours, $minutes) = explode(':', $this->request->getPost('jam'));
             $startTimeMinutes = ($hours * 60) + $minutes;
 
-            // Create new bookings for each selected service
+            // Update/Create bookings for each selected service
+            $updatedBookingCount = 0;
+
             foreach ($validServices as $index => $service) {
                 // Calculate jam for each service (sequential)
                 $serviceStartMinutes = $startTimeMinutes;
@@ -1471,8 +1494,30 @@ class Booking extends BaseController
                     'user_id' => $booking['user_id'] // Keep original user
                 ];
 
-                if (!$this->bookingModel->insert($bookingData)) {
-                    throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan']);
+                // Try to update existing booking with transaction first
+                $updated = false;
+                if ($updatedBookingCount < count($bookingsWithTransactions)) {
+                    $existingBooking = $bookingsWithTransactions[$updatedBookingCount];
+                    if ($this->bookingModel->update($existingBooking['id'], $bookingData)) {
+                        $updated = true;
+                        $updatedBookingCount++;
+                    }
+                }
+
+                // If no existing booking to update, create new one
+                if (!$updated) {
+                    if (!$this->bookingModel->insert($bookingData)) {
+                        throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan']);
+                    }
+                }
+            }
+
+            // Handle remaining bookings with transactions that don't have corresponding services
+            if ($updatedBookingCount < count($bookingsWithTransactions)) {
+                // Log warning for remaining bookings with transactions
+                for ($i = $updatedBookingCount; $i < count($bookingsWithTransactions); $i++) {
+                    $remainingBooking = $bookingsWithTransactions[$i];
+                    log_message('warning', "Booking ID {$remainingBooking['id']} has transaction but no corresponding service in update. Keeping existing data.");
                 }
             }
 

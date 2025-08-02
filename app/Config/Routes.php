@@ -133,6 +133,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('show/(:num)', 'Booking::show/$1');
         $routes->get('edit/(:num)', 'Booking::edit/$1');
         $routes->post('update/(:num)', 'Booking::update/$1');
+        $routes->put('update/(:num)', 'Booking::update/$1');
         $routes->delete('delete/(:num)', 'Booking::delete/$1');
         $routes->delete('delete-transaction/(:num)', 'Booking::deleteTransaction/$1');
         $routes->post('approve-payment/(:num)', 'Booking::approvePayment/$1');

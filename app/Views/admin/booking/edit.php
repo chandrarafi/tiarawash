@@ -1687,7 +1687,6 @@
             formData.append('tanggal', $('#tanggal').val());
             formData.append('jam', $('#jam').val());
             formData.append('no_plat', $('#no_plat').val());
-            formData.append('jenis_kendaraan', $('#jenis_kendaraan').val());
             formData.append('merk_kendaraan', $('#merk_kendaraan').val());
             formData.append('catatan', $('#catatan').val());
             formData.append('status', $('#status').val());
