@@ -43,9 +43,10 @@ class Transaksi extends BaseController
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
-        $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('pelanggan p', 'b.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'LEFT');
         $builder->where('t.tanggal', $tanggalFilter);
         $builder->where('t.status_pembayaran', 'dibayar');
         $builder->orderBy('t.no_transaksi', 'ASC');
@@ -93,9 +94,10 @@ class Transaksi extends BaseController
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
-        $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('pelanggan p', 'b.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'LEFT');
         $builder->where('MONTH(t.tanggal)', $bulan);
         $builder->where('YEAR(t.tanggal)', $tahun);
         $builder->where('t.status_pembayaran', 'dibayar');
@@ -224,9 +226,10 @@ class Transaksi extends BaseController
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
-        $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('pelanggan p', 'b.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'LEFT');
         $builder->where('t.tanggal', $tanggalFilter);
         $builder->where('t.status_pembayaran', 'dibayar');
         $builder->orderBy('t.no_transaksi', 'ASC');
@@ -285,9 +288,10 @@ class Transaksi extends BaseController
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
         ');
-        $builder->join('pelanggan p', 't.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('booking b', 't.booking_id = b.id', 'LEFT');
+        $builder->join('pelanggan p', 'b.pelanggan_id = p.kode_pelanggan', 'LEFT');
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'LEFT');
+        $builder->join('layanan l', 'l.kode_layanan = b.layanan_id', 'LEFT');
         $builder->where('MONTH(t.tanggal)', $bulan);
         $builder->where('YEAR(t.tanggal)', $tahun);
         $builder->where('t.status_pembayaran', 'dibayar');
