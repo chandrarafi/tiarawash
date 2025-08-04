@@ -38,7 +38,7 @@ class Transaksi extends BaseController
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
             COALESCE(k.namakaryawan, "-") as nama_karyawan,
-            b.jenis_kendaraan,
+            l.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
@@ -88,7 +88,7 @@ class Transaksi extends BaseController
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
             COALESCE(k.namakaryawan, "-") as nama_karyawan,
-            b.jenis_kendaraan,
+            l.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
@@ -219,7 +219,7 @@ class Transaksi extends BaseController
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
             COALESCE(k.namakaryawan, "-") as nama_karyawan,
-            b.jenis_kendaraan,
+            l.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga
@@ -280,7 +280,7 @@ class Transaksi extends BaseController
             t.no_transaksi as kode_transaksi,
             p.nama_pelanggan,
             COALESCE(k.namakaryawan, "-") as nama_karyawan,
-            b.jenis_kendaraan,
+            l.jenis_kendaraan,
             b.no_plat,
             "Cuci Mobil" as jenis_jasa,
             t.total_harga as harga

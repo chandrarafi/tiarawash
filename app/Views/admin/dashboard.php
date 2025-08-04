@@ -9,7 +9,7 @@
                 <div class="d-md-flex align-items-center justify-content-between">
                     <div>
                         <h4 class="mb-1">Selamat datang kembali, Administrator!</h4>
-                        <p class="text-secondary mb-md-0">Berikut adalah ringkasan statistik sistem Anda hari ini</p>
+                        <p class="text-secondary mb-md-0">Berikut adalah ringkasan operasional car wash Anda hari ini</p>
                     </div>
                     <div class="d-flex mt-3 mt-md-0">
                         <button class="btn btn-sm btn-primary px-3">
@@ -29,9 +29,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs text-uppercase mb-1 text-primary fw-bold">Total Pengguna</div>
+                        <div class="text-xs text-uppercase mb-1 text-primary fw-bold">Total Booking</div>
                         <div class="d-flex align-items-center">
-                            <div class="h3 mb-0 fw-bold" id="totalUsers">0</div>
+                            <div class="h3 mb-0 fw-bold" id="totalBookings">0</div>
                             <div class="ms-2 badge bg-success-soft text-success px-2 rounded-pill">
                                 <i class="bi bi-arrow-up me-1"></i>12%
                             </div>
@@ -41,7 +41,7 @@
                         </div>
                     </div>
                     <div class="icon">
-                        <i class="bi bi-people-fill"></i>
+                        <i class="bi bi-car-front-fill"></i>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -57,19 +57,19 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs text-uppercase mb-1 text-success fw-bold">Pengguna Aktif</div>
+                        <div class="text-xs text-uppercase mb-1 text-success fw-bold">Antrian Aktif</div>
                         <div class="d-flex align-items-center">
-                            <div class="h3 mb-0 fw-bold" id="activeUsers">0</div>
+                            <div class="h3 mb-0 fw-bold" id="activeQueues">0</div>
                             <div class="ms-2 badge bg-success-soft text-success px-2 rounded-pill">
                                 <i class="bi bi-arrow-up me-1"></i>8%
                             </div>
                         </div>
                         <div class="mt-2 text-secondary small">
-                            <span class="fw-bold">8%</span> meningkat dibanding bulan lalu
+                            <span class="fw-bold">8%</span> meningkat dibanding minggu lalu
                         </div>
                     </div>
                     <div class="icon">
-                        <i class="bi bi-person-check-fill"></i>
+                        <i class="bi bi-hourglass-split"></i>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -85,24 +85,24 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs text-uppercase mb-1 text-warning fw-bold">Admin</div>
+                        <div class="text-xs text-uppercase mb-1 text-warning fw-bold">Pendapatan Hari Ini</div>
                         <div class="d-flex align-items-center">
-                            <div class="h3 mb-0 fw-bold" id="adminUsers">0</div>
-                            <div class="ms-2 badge bg-secondary-soft text-secondary px-2 rounded-pill">
-                                <i class="bi bi-dash me-1"></i>0%
+                            <div class="h3 mb-0 fw-bold" id="todayRevenue">Rp 0</div>
+                            <div class="ms-2 badge bg-warning-soft text-warning px-2 rounded-pill">
+                                <i class="bi bi-arrow-up me-1"></i>15%
                             </div>
                         </div>
                         <div class="mt-2 text-secondary small">
-                            Tetap stabil dibanding bulan lalu
+                            <span class="fw-bold">15%</span> meningkat dari kemarin
                         </div>
                     </div>
                     <div class="icon">
-                        <i class="bi bi-shield-lock-fill"></i>
+                        <i class="bi bi-currency-dollar"></i>
                     </div>
                 </div>
                 <div class="mt-3">
                     <div class="progress">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
             </div>
@@ -113,19 +113,19 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="text-xs text-uppercase mb-1 text-danger fw-bold">Pengguna Tidak Aktif</div>
+                        <div class="text-xs text-uppercase mb-1 text-danger fw-bold">Booking Dibatalkan</div>
                         <div class="d-flex align-items-center">
-                            <div class="h3 mb-0 fw-bold" id="inactiveUsers">0</div>
+                            <div class="h3 mb-0 fw-bold" id="cancelledBookings">0</div>
                             <div class="ms-2 badge bg-danger-soft text-danger px-2 rounded-pill">
                                 <i class="bi bi-arrow-down me-1"></i>5%
                             </div>
                         </div>
                         <div class="mt-2 text-secondary small">
-                            <span class="fw-bold">5%</span> menurun dari bulan lalu
+                            <span class="fw-bold">5%</span> menurun dari minggu lalu
                         </div>
                     </div>
                     <div class="icon">
-                        <i class="bi bi-person-x-fill"></i>
+                        <i class="bi bi-x-circle-fill"></i>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -144,7 +144,7 @@
     <div class="col-xl-8 col-lg-7 mb-4">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold">Statistik Pengguna</h6>
+                <h6 class="mb-0 fw-bold">Statistik Booking & Pendapatan</h6>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle px-3" type="button" id="chartRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         30 Hari Terakhir
@@ -161,28 +161,28 @@
                 </div>
             </div>
             <div class="card-body">
-                <div id="userStatsChart" style="height: 320px;"></div>
+                <div id="bookingStatsChart" style="height: 320px;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Users -->
+    <!-- Recent Bookings -->
     <div class="col-xl-4 col-lg-5 mb-4">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold">Pengguna Terbaru</h6>
-                <a href="<?= site_url('admin/users') ?>" class="btn btn-sm btn-primary">
-                    <i class="bi bi-people me-1"></i> Lihat Semua
+                <h6 class="mb-0 fw-bold">Booking Terbaru</h6>
+                <a href="<?= site_url('admin/booking') ?>" class="btn btn-sm btn-primary">
+                    <i class="bi bi-car-front me-1"></i> Lihat Semua
                 </a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0" id="recentUsers">
+                    <table class="table table-hover mb-0" id="recentBookings">
                         <thead>
                             <tr>
-                                <th>Username</th>
-                                <th>Nama</th>
-                                <th>Role</th>
+                                <th>Kode</th>
+                                <th>Pelanggan</th>
+                                <th>Layanan</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -210,56 +210,56 @@
                     <div class="list-group-item border-0 py-3">
                         <div class="d-flex align-items-center">
                             <div class="bg-gradient-primary rounded-circle text-white p-2 me-3">
-                                <i class="bi bi-person-plus"></i>
+                                <i class="bi bi-car-front"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div class="fw-bold">Pengguna Baru</div>
+                                    <div class="fw-bold">Booking Baru</div>
                                     <small class="text-muted">30 menit lalu</small>
                                 </div>
-                                <div class="small text-secondary">Admin baru ditambahkan - admin2</div>
+                                <div class="small text-secondary">Honda Civic - B 1234 ABC booking cuci komplit</div>
                             </div>
                         </div>
                     </div>
                     <div class="list-group-item border-0 py-3">
                         <div class="d-flex align-items-center">
                             <div class="bg-gradient-success rounded-circle text-white p-2 me-3">
-                                <i class="bi bi-pencil"></i>
+                                <i class="bi bi-check-circle"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div class="fw-bold">Pembaruan Data</div>
+                                    <div class="fw-bold">Cuci Selesai</div>
+                                    <small class="text-muted">1 jam lalu</small>
+                                </div>
+                                <div class="small text-secondary">Toyota Avanza - D 5678 EFG cuci selesai</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-gradient-warning rounded-circle text-white p-2 me-3">
+                                <i class="bi bi-currency-dollar"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="fw-bold">Pembayaran Diterima</div>
                                     <small class="text-muted">2 jam lalu</small>
                                 </div>
-                                <div class="small text-secondary">Profil user123 diperbarui</div>
+                                <div class="small text-secondary">Pembayaran Rp 35.000 untuk cuci dan wax</div>
                             </div>
                         </div>
                     </div>
                     <div class="list-group-item border-0 py-3">
                         <div class="d-flex align-items-center">
                             <div class="bg-gradient-danger rounded-circle text-white p-2 me-3">
-                                <i class="bi bi-trash"></i>
+                                <i class="bi bi-x-circle"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div class="fw-bold">Penghapusan</div>
-                                    <small class="text-muted">1 hari lalu</small>
+                                    <div class="fw-bold">Booking Dibatalkan</div>
+                                    <small class="text-muted">3 jam lalu</small>
                                 </div>
-                                <div class="small text-secondary">Pengguna test123 dihapus</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item border-0 py-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-gradient-info rounded-circle text-white p-2 me-3">
-                                <i class="bi bi-key"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <div class="fw-bold">Akses</div>
-                                    <small class="text-muted">2 hari lalu</small>
-                                </div>
-                                <div class="small text-secondary">manager123 mendapatkan akses baru</div>
+                                <div class="small text-secondary">Suzuki Ertiga - B 9999 XYZ dibatalkan pelanggan</div>
                             </div>
                         </div>
                     </div>
@@ -289,10 +289,10 @@
                         <div class="flex-grow-1">
                             <label class="w-100 mb-0" for="task1">
                                 <div class="d-flex justify-content-between">
-                                    <span class="fw-bold">Verifikasi pengguna baru</span>
+                                    <span class="fw-bold">Konfirmasi booking menunggu</span>
                                     <span class="badge bg-success rounded-pill">Tinggi</span>
                                 </div>
-                                <div class="text-secondary small my-1">Pastikan semua data valid</div>
+                                <div class="text-secondary small my-1">5 booking memerlukan konfirmasi</div>
                                 <div class="progress mt-1" style="height: 5px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
@@ -310,16 +310,16 @@
                         <div class="flex-grow-1">
                             <label class="w-100 mb-0" for="task2">
                                 <div class="d-flex justify-content-between">
-                                    <span class="fw-bold">Update kebijakan privasi</span>
+                                    <span class="fw-bold">Update stok perlengkapan</span>
                                     <span class="badge bg-warning rounded-pill">Sedang</span>
                                 </div>
-                                <div class="text-secondary small my-1">Pembaruan regulasi baru</div>
+                                <div class="text-secondary small my-1">Shampo dan wax hampir habis</div>
                                 <div class="progress mt-1" style="height: 5px;">
                                     <div class="progress-bar bg-warning" role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">Tugas untuk: Admin</small>
-                                    <small class="text-muted">Deadline: 20 Des 2023</small>
+                                    <small class="text-muted">Tugas untuk: Staff</small>
+                                    <small class="text-muted">Deadline: Minggu ini</small>
                                 </div>
                             </label>
                         </div>
@@ -331,16 +331,16 @@
                         <div class="flex-grow-1">
                             <label class="w-100 mb-0" for="task3">
                                 <div class="d-flex justify-content-between">
-                                    <span class="fw-bold">Backup database</span>
+                                    <span class="fw-bold">Maintenance peralatan</span>
                                     <span class="badge bg-danger rounded-pill">Penting</span>
                                 </div>
-                                <div class="text-secondary small my-1">Backup mingguan database utama</div>
+                                <div class="text-secondary small my-1">Vacuum dan jet cleaner perlu servis</div>
                                 <div class="progress mt-1" style="height: 5px;">
                                     <div class="progress-bar bg-danger" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <small class="text-muted">Tugas untuk: Admin</small>
-                                    <small class="text-muted">Deadline: 18 Des 2023</small>
+                                    <small class="text-muted">Tugas untuk: Teknisi</small>
+                                    <small class="text-muted">Deadline: Besok</small>
                                 </div>
                             </label>
                         </div>
@@ -557,7 +557,7 @@
         }
 
         /* Chart adjustments */
-        #userStatsChart {
+        #bookingStatsChart {
             height: 250px !important;
         }
 
@@ -577,115 +577,22 @@
 <script>
     $(document).ready(function() {
         // Load dashboard data
-        $.ajax({
-            url: '<?= site_url('admin/getUsers') ?>',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.data) {
-                    // Count total users
-                    $('#totalUsers').text(response.recordsTotal);
+        loadDashboardStats();
 
-                    // Count active users
-                    let activeUsers = 0;
-                    // Count admin users
-                    let adminUsers = 0;
-                    // Count inactive users
-                    let inactiveUsers = 0;
+        // Initialize DataTable for recent bookings
+        loadRecentBookings();
 
-                    $.each(response.data, function(i, item) {
-                        if (item.status === 'active') {
-                            activeUsers++;
-                        } else {
-                            inactiveUsers++;
-                        }
-                        if (item.role === 'admin') {
-                            adminUsers++;
-                        }
-                    });
-
-                    $('#activeUsers').text(activeUsers);
-                    $('#adminUsers').text(adminUsers);
-                    $('#inactiveUsers').text(inactiveUsers);
-                }
-            }
-        });
-
-        // Initialize DataTable for recent users
-        $('#recentUsers').DataTable({
-            processing: true,
-            serverSide: true,
-            ajax: {
-                url: '<?= site_url('admin/getUsers') ?>',
-                type: 'GET'
-            },
-            columns: [{
-                    data: 'username'
-                },
-                {
-                    data: 'name'
-                },
-                {
-                    data: 'role',
-                    render: function(data) {
-                        let badgeClass = 'bg-secondary';
-
-                        if (data === 'admin') {
-                            badgeClass = 'bg-primary';
-                        } else if (data === 'manager') {
-                            badgeClass = 'bg-info';
-                        } else if (data === 'user') {
-                            badgeClass = 'bg-dark';
-                        }
-
-                        return '<span class="badge ' + badgeClass + '">' + data.charAt(0).toUpperCase() + data.slice(1) + '</span>';
-                    }
-                },
-                {
-                    data: 'status',
-                    render: function(data) {
-                        if (data === 'active') {
-                            return '<span class="badge bg-success">Aktif</span>';
-                        } else {
-                            return '<span class="badge bg-danger">Tidak Aktif</span>';
-                        }
-                    }
-                }
-            ],
-            order: [
-                [0, 'desc']
-            ],
-            pageLength: 5,
-            lengthMenu: [5, 10, 25],
-            dom: 't',
-            responsive: true,
-            language: {
-                emptyTable: "Tidak ada data pengguna",
-                zeroRecords: "Tidak ada data pengguna yang cocok",
-                info: "Menampilkan _START_ hingga _END_ dari _TOTAL_ data",
-                infoEmpty: "Tidak ada data yang tersedia",
-                infoFiltered: "(difilter dari _MAX_ total data)",
-                search: "Cari:",
-                paginate: {
-                    first: "Pertama",
-                    last: "Terakhir",
-                    next: "Selanjutnya",
-                    previous: "Sebelumnya"
-                }
-            }
-        });
-
-        // Initialize User Stats Chart
+        // Initialize Booking Stats Chart
         var options = {
             series: [{
-                name: 'Total Pengguna',
-                data: [31, 40, 28, 51, 42, 109, 100, 120, 110, 125, 140, 150]
+                name: 'Total Booking',
+                data: [31, 40, 28, 51, 42, 65, 59, 80, 81, 56, 55, 40]
             }, {
-                name: 'Pengguna Aktif',
-                data: [25, 32, 25, 40, 39, 90, 85, 100, 95, 110, 120, 130]
+                name: 'Booking Selesai',
+                data: [25, 32, 25, 40, 39, 55, 50, 70, 75, 50, 48, 35]
             }, {
-                name: 'Admin',
-                data: [5, 5, 5, 6, 6, 8, 8, 8, 9, 9, 10, 10]
+                name: 'Pendapatan (juta)',
+                data: [5, 8, 6, 10, 9, 12, 11, 15, 16, 12, 11, 8]
             }],
             chart: {
                 height: 320,
@@ -727,8 +634,11 @@
             },
             tooltip: {
                 y: {
-                    formatter: function(value) {
-                        return value + " pengguna";
+                    formatter: function(value, opts) {
+                        if (opts.seriesIndex === 2) {
+                            return "Rp " + value + " juta";
+                        }
+                        return value + " booking";
                     }
                 },
                 theme: 'dark',
@@ -789,7 +699,7 @@
             }]
         };
 
-        var chart = new ApexCharts(document.querySelector("#userStatsChart"), options);
+        var chart = new ApexCharts(document.querySelector("#bookingStatsChart"), options);
         chart.render();
 
         // Handle task checkbox behavior
@@ -836,5 +746,92 @@
 
         animateOnScroll();
     });
+
+    // Function to load dashboard statistics
+    function loadDashboardStats() {
+        // Mock data - replace with actual AJAX calls to get real data
+        $('#totalBookings').text('156');
+        $('#activeQueues').text('8');
+        $('#todayRevenue').text('Rp 2.350.000');
+        $('#cancelledBookings').text('3');
+
+        // TODO: Replace with actual AJAX calls
+        /*
+        $.ajax({
+            url: '<?= site_url('admin/getDashboardStats') ?>',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                $('#totalBookings').text(response.totalBookings || 0);
+                $('#activeQueues').text(response.activeQueues || 0);
+                $('#todayRevenue').text('Rp ' + (response.todayRevenue || 0).toLocaleString());
+                $('#cancelledBookings').text(response.cancelledBookings || 0);
+            }
+        });
+        */
+    }
+
+    // Function to load recent bookings
+    function loadRecentBookings() {
+        // Mock data - replace with actual DataTable
+        const mockBookings = [
+            ['BK-001', 'John Doe', 'Cuci + Wax', '<span class="badge bg-success">Selesai</span>'],
+            ['BK-002', 'Jane Smith', 'Cuci Biasa', '<span class="badge bg-warning">Proses</span>'],
+            ['BK-003', 'Bob Wilson', 'Cuci Komplit', '<span class="badge bg-info">Dikonfirmasi</span>'],
+            ['BK-004', 'Alice Brown', 'Cuci + Vacuum', '<span class="badge bg-primary">Menunggu</span>'],
+            ['BK-005', 'Charlie Davis', 'Cuci Biasa', '<span class="badge bg-danger">Dibatalkan</span>']
+        ];
+
+        const tbody = $('#recentBookings tbody');
+        tbody.empty();
+
+        mockBookings.forEach(booking => {
+            tbody.append(`
+                <tr>
+                    <td>${booking[0]}</td>
+                    <td>${booking[1]}</td>
+                    <td>${booking[2]}</td>
+                    <td>${booking[3]}</td>
+                </tr>
+            `);
+        });
+
+        // TODO: Replace with actual DataTable initialization
+        /*
+        $('#recentBookings').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '<?= site_url('admin/getRecentBookings') ?>',
+                type: 'GET'
+            },
+            columns: [
+                { data: 'kode_booking' },
+                { data: 'nama_pelanggan' },
+                { data: 'layanan' },
+                { 
+                    data: 'status',
+                    render: function(data) {
+                        const statusClass = {
+                            'menunggu_konfirmasi': 'bg-warning',
+                            'dikonfirmasi': 'bg-info', 
+                            'proses': 'bg-primary',
+                            'selesai': 'bg-success',
+                            'dibatalkan': 'bg-danger'
+                        };
+                        return `<span class="badge ${statusClass[data] || 'bg-secondary'}">${data}</span>`;
+                    }
+                }
+            ],
+            pageLength: 5,
+            dom: 't',
+            responsive: true,
+            language: {
+                emptyTable: "Tidak ada booking terbaru",
+                zeroRecords: "Tidak ada booking yang cocok"
+            }
+        });
+        */
+    }
 </script>
 <?= $this->endSection() ?>
