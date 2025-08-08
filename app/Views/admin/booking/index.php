@@ -350,6 +350,14 @@
                                             </button>
                                         <?php endif; ?>
 
+                                        <!-- Print Invoice Button - only show if payment is completed -->
+                                        <?php if ($item['transaksi_id'] && $item['status_pembayaran'] === 'dibayar'): ?>
+                                            <a href="<?= site_url('receipt/pdf/' . $item['no_transaksi']) ?>" target="_blank"
+                                                class="btn btn-outline-secondary btn-sm me-1 mb-1" title="Cetak Faktur">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                        <?php endif; ?>
+
                                         <!-- Edit Button -->
                                         <?php if ($firstBooking && in_array($item['booking_status'], ['menunggu_konfirmasi', 'dikonfirmasi'])): ?>
                                             <a href="<?= site_url('admin/booking/edit/' . $firstBooking['id']) ?>"

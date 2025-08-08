@@ -131,21 +131,151 @@
                         <div class="col-md-6 mb-4">
                             <h5 class="text-warning mb-3">
                                 <i class="fas fa-car me-2"></i>Informasi Kendaraan
+                                <?php
+                                // Collect unique vehicles from related bookings
+                                $vehicles = [];
+                                if (!empty($relatedBookings)) {
+                                    foreach ($relatedBookings as $bookingItem) {
+                                        $vehicleKey = $bookingItem['no_plat'];
+                                        if (!isset($vehicles[$vehicleKey])) {
+                                            // Determine vehicle type based on brand/merk
+                                            $merk = strtolower($bookingItem['merk_kendaraan'] ?? '');
+                                            $jenisKendaraan = 'Unknown';
+
+                                            // Motor brands
+                                            $motorBrands = ['honda', 'yamaha', 'suzuki', 'kawasaki', 'vario', 'beat', 'scoopy', 'mio', 'nmax', 'aerox', 'satria', 'ninja', 'klx', 'stylo'];
+                                            // Mobil brands  
+                                            $mobilBrands = ['toyota', 'honda', 'nissan', 'mitsubishi', 'daihatsu', 'mazda', 'ford', 'chevrolet', 'hyundai', 'kia', 'avanza', 'xenia', 'jazz', 'yaris', 'brio', 'agya', 'ayla', 'calya', 'sigra', 'innova', 'fortuner', 'rush', 'terios', 'pajero', 'outlander', 'xpander', 'livina', 'grand', 'march', 'juke', 'serena', 'navara'];
+
+                                            // Check against motor brands first
+                                            foreach ($motorBrands as $brand) {
+                                                if (strpos($merk, $brand) !== false) {
+                                                    $jenisKendaraan = 'motor';
+                                                    break;
+                                                }
+                                            }
+
+                                            // If not motor, check mobil brands
+                                            if ($jenisKendaraan === 'Unknown') {
+                                                foreach ($mobilBrands as $brand) {
+                                                    if (strpos($merk, $brand) !== false) {
+                                                        $jenisKendaraan = 'mobil';
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            // Fallback
+                                            if ($jenisKendaraan === 'Unknown') {
+                                                $jenisKendaraan = $bookingItem['jenis_kendaraan'] ?? $booking['jenis_kendaraan'] ?? 'lainnya';
+                                            }
+
+                                            $vehicles[$vehicleKey] = [
+                                                'no_plat' => $bookingItem['no_plat'],
+                                                'merk_kendaraan' => $bookingItem['merk_kendaraan'] ?? '',
+                                                'jenis_kendaraan' => $jenisKendaraan
+                                            ];
+                                        }
+                                    }
+                                } else {
+                                    // Single booking fallback
+                                    $merk = strtolower($booking['merk_kendaraan'] ?? '');
+                                    $jenisKendaraan = $booking['jenis_kendaraan'] ?? 'lainnya';
+
+                                    // Apply brand detection
+                                    $motorBrands = ['honda', 'yamaha', 'suzuki', 'kawasaki', 'vario', 'beat', 'scoopy', 'mio', 'nmax', 'aerox', 'satria', 'ninja', 'klx', 'stylo'];
+                                    $mobilBrands = ['toyota', 'honda', 'nissan', 'mitsubishi', 'daihatsu', 'mazda', 'ford', 'chevrolet', 'hyundai', 'kia', 'avanza', 'xenia', 'jazz', 'yaris', 'brio', 'agya', 'ayla', 'calya', 'sigra', 'innova', 'fortuner', 'rush', 'terios', 'pajero', 'outlander', 'xpander', 'livina', 'grand', 'march', 'juke', 'serena', 'navara'];
+
+                                    foreach ($motorBrands as $brand) {
+                                        if (strpos($merk, $brand) !== false) {
+                                            $jenisKendaraan = 'motor';
+                                            break;
+                                        }
+                                    }
+
+                                    if ($jenisKendaraan === $booking['jenis_kendaraan']) {
+                                        foreach ($mobilBrands as $brand) {
+                                            if (strpos($merk, $brand) !== false) {
+                                                $jenisKendaraan = 'mobil';
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    $vehicles[$booking['no_plat']] = [
+                                        'no_plat' => $booking['no_plat'],
+                                        'merk_kendaraan' => $booking['merk_kendaraan'] ?? '',
+                                        'jenis_kendaraan' => $jenisKendaraan
+                                    ];
+                                }
+
+                                if (count($vehicles) > 1): ?>
+                                    <span class="badge bg-warning ms-2"><?= count($vehicles) ?> Kendaraan</span>
+                                <?php endif; ?>
                             </h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td class="text-muted">Jenis:</td>
-                                    <td class="fw-bold"><?= ucfirst($booking['jenis_kendaraan']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">No. Plat:</td>
-                                    <td class="fw-bold text-dark"><?= esc($booking['no_plat']) ?></td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">Merk:</td>
-                                    <td><?= esc($booking['merk_kendaraan'] ?? 'Tidak disebutkan') ?></td>
-                                </tr>
-                            </table>
+
+                            <?php if (count($vehicles) > 1): ?>
+                                <!-- Multiple vehicles -->
+                                <?php foreach ($vehicles as $vehicle): ?>
+                                    <div class="vehicle-item mb-3 p-3 border rounded bg-light">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <?php
+                                                $jenisIcons = [
+                                                    'motor' => 'fas fa-motorcycle',
+                                                    'mobil' => 'fas fa-car',
+                                                    'lainnya' => 'fas fa-truck'
+                                                ];
+                                                $icon = $jenisIcons[$vehicle['jenis_kendaraan']] ?? 'fas fa-car';
+                                                ?>
+                                                <h6 class="mb-1">
+                                                    <i class="<?= $icon ?> text-primary me-2"></i>
+                                                    <?= esc($vehicle['no_plat']) ?>
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <?= ucfirst($vehicle['jenis_kendaraan']) ?>
+                                                    <?php if ($vehicle['merk_kendaraan']): ?>
+                                                        - <?= esc($vehicle['merk_kendaraan']) ?>
+                                                    <?php endif; ?>
+                                                </small>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-primary">
+                                                    <?= ucfirst($vehicle['jenis_kendaraan']) ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Single vehicle -->
+                                <?php $vehicle = reset($vehicles); ?>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td class="text-muted">Jenis:</td>
+                                        <td class="fw-bold">
+                                            <?php
+                                            $jenisIcons = [
+                                                'motor' => 'fas fa-motorcycle',
+                                                'mobil' => 'fas fa-car',
+                                                'lainnya' => 'fas fa-truck'
+                                            ];
+                                            $icon = $jenisIcons[$vehicle['jenis_kendaraan']] ?? 'fas fa-car';
+                                            ?>
+                                            <i class="<?= $icon ?> text-primary me-1"></i>
+                                            <?= ucfirst($vehicle['jenis_kendaraan']) ?>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">No. Plat:</td>
+                                        <td class="fw-bold text-dark"><?= esc($vehicle['no_plat']) ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Merk:</td>
+                                        <td><?= esc($vehicle['merk_kendaraan'] ?: 'Tidak disebutkan') ?></td>
+                                    </tr>
+                                </table>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Informasi Jadwal -->
@@ -466,6 +596,14 @@
 
     .table td {
         padding: 0.5rem 0;
+    }
+
+    .vehicle-item {
+        transition: transform 0.2s ease;
+    }
+
+    .vehicle-item:hover {
+        transform: translateY(-2px);
     }
 
     @media print {

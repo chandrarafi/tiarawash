@@ -1150,7 +1150,7 @@
                     <ul class="footer-links">
                         <li>
                             <i class="fas fa-map-marker-alt me-2"></i>
-                            Jl. Raya Cuci No. 123, Jakarta Selatan
+                            Jl. Rawang Jundul, Padang Utara, kota Padang
                         </li>
                         <li>
                             <i class="fas fa-phone me-2"></i>

@@ -190,6 +190,117 @@
                 </div>
             </div>
 
+            <!-- Vehicle Information -->
+            <div class="info-card card">
+                <div class="card-header">
+                    <i class="fas fa-car me-2"></i>Informasi Kendaraan
+                </div>
+                <div class="card-body">
+                    <?php if (!empty($relatedBookings)): ?>
+                        <!-- Multiple vehicles from related bookings -->
+                        <?php
+                        $vehicles = [];
+                        foreach ($relatedBookings as $booking_item) {
+                            $vehicleKey = $booking_item['no_plat'];
+                            if (!isset($vehicles[$vehicleKey])) {
+                                // Determine vehicle type based on brand/merk
+                                $merk = strtolower($booking_item['merk_kendaraan'] ?? '');
+                                $jenisKendaraan = 'Unknown';
+
+                                // Motor brands
+                                $motorBrands = ['honda', 'yamaha', 'suzuki', 'kawasaki', 'vario', 'beat', 'scoopy', 'mio', 'nmax', 'aerox', 'satria', 'ninja', 'klx', 'stylo'];
+                                // Mobil brands  
+                                $mobilBrands = ['toyota', 'honda', 'nissan', 'mitsubishi', 'daihatsu', 'mazda', 'ford', 'chevrolet', 'hyundai', 'kia', 'avanza', 'xenia', 'jazz', 'yaris', 'brio', 'agya', 'ayla', 'calya', 'sigra', 'innova', 'fortuner', 'rush', 'terios', 'pajero', 'outlander', 'xpander', 'livina', 'grand', 'march', 'juke', 'serena', 'navara'];
+
+                                // Check against motor brands first (more specific)
+                                foreach ($motorBrands as $brand) {
+                                    if (strpos($merk, $brand) !== false) {
+                                        $jenisKendaraan = 'motor';
+                                        break;
+                                    }
+                                }
+
+                                // If not motor, check mobil brands
+                                if ($jenisKendaraan === 'Unknown') {
+                                    foreach ($mobilBrands as $brand) {
+                                        if (strpos($merk, $brand) !== false) {
+                                            $jenisKendaraan = 'mobil';
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // If still unknown, fallback to service type or existing data
+                                if ($jenisKendaraan === 'Unknown') {
+                                    $jenisKendaraan = $booking_item['jenis_kendaraan'] ?? 'lainnya';
+                                }
+
+                                $vehicles[$vehicleKey] = [
+                                    'no_plat' => $booking_item['no_plat'],
+                                    'merk_kendaraan' => $booking_item['merk_kendaraan'] ?? '',
+                                    'jenis_kendaraan' => $jenisKendaraan
+                                ];
+                            }
+                        }
+                        ?>
+
+                        <?php foreach ($vehicles as $vehicle): ?>
+                            <div class="service-item mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <?php
+                                            $jenisIcons = [
+                                                'motor' => 'fas fa-motorcycle',
+                                                'mobil' => 'fas fa-car',
+                                                'lainnya' => 'fas fa-truck'
+                                            ];
+                                            $icon = $jenisIcons[$vehicle['jenis_kendaraan']] ?? 'fas fa-car';
+                                            ?>
+                                            <i class="<?= $icon ?> me-2 text-primary"></i>
+                                            <?= esc($vehicle['no_plat']) ?>
+                                        </h6>
+                                        <?php if (!empty($vehicle['merk_kendaraan'])): ?>
+                                            <small class="text-muted">
+                                                <i class="fas fa-tag me-1"></i><?= esc($vehicle['merk_kendaraan']) ?>
+                                            </small>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-primary">
+                                            <?= ucfirst($vehicle['jenis_kendaraan']) ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+
+                    <?php else: ?>
+                        <!-- Single vehicle fallback -->
+                        <div class="info-row">
+                            <span class="info-label">Nomor Plat</span>
+                            <span class="info-value">
+                                <strong><?= esc($booking['no_plat'] ?? '-') ?></strong>
+                            </span>
+                        </div>
+                        <?php if (!empty($booking['merk_kendaraan'])): ?>
+                            <div class="info-row">
+                                <span class="info-label">Merk Kendaraan</span>
+                                <span class="info-value"><?= esc($booking['merk_kendaraan']) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (!empty($booking['jenis_kendaraan'])): ?>
+                            <div class="info-row">
+                                <span class="info-label">Jenis Kendaraan</span>
+                                <span class="info-value">
+                                    <span class="badge bg-info"><?= ucfirst($booking['jenis_kendaraan']) ?></span>
+                                </span>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Booking Information -->
             <div class="info-card card">
                 <div class="card-header">
@@ -260,23 +371,53 @@
                         <i class="fas fa-list me-2"></i>Layanan (<?= count($relatedBookings) ?> layanan)
                     </div>
                     <div class="card-body">
-                        <?php foreach ($relatedBookings as $service): ?>
-                            <div class="service-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1"><?= esc($service['nama_layanan']) ?></h6>
-                                        <small class="text-muted">
-                                            <i class="fas fa-clock me-1"></i>
-                                            <?= $service['durasi_menit'] ?> menit
-                                        </small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-success">
-                                            Rp <?= number_format($service['harga'], 0, ',', '.') ?>
+                        <?php
+                        // Group services by vehicle for better display
+                        $servicesByVehicle = [];
+                        foreach ($relatedBookings as $service) {
+                            $vehicleKey = $service['no_plat'];
+                            if (!isset($servicesByVehicle[$vehicleKey])) {
+                                $servicesByVehicle[$vehicleKey] = [
+                                    'vehicle' => $service,
+                                    'services' => []
+                                ];
+                            }
+                            $servicesByVehicle[$vehicleKey]['services'][] = $service;
+                        }
+                        ?>
+
+                        <?php foreach ($servicesByVehicle as $vehicleKey => $vehicleGroup): ?>
+                            <?php if (count($servicesByVehicle) > 1): ?>
+                                <!-- Vehicle header for multiple vehicles -->
+                                <div class="mb-2 p-2 bg-light rounded border-start border-primary border-3">
+                                    <strong><i class="fas fa-car me-1"></i><?= esc($vehicleKey) ?></strong>
+                                    <?php if (!empty($vehicleGroup['vehicle']['merk_kendaraan'])): ?>
+                                        <small class="text-muted">- <?= esc($vehicleGroup['vehicle']['merk_kendaraan']) ?></small>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php foreach ($vehicleGroup['services'] as $service): ?>
+                                <div class="service-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1"><?= esc($service['nama_layanan']) ?></h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i><?= $service['durasi_menit'] ?> menit
+                                                | <i class="fas fa-calendar me-1"></i><?= date('H:i', strtotime($service['jam'])) ?>
+                                                <?php if (count($servicesByVehicle) == 1): ?>
+                                                    | <i class="fas fa-car me-1"></i><?= esc($service['no_plat']) ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-success">
+                                                Rp <?= number_format($service['harga'], 0, ',', '.') ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            <?php endforeach; ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -356,6 +497,16 @@
                                 <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                             </span>
                         </div>
+                        <?php if ($transaksi['status_pembayaran'] === 'dibayar'): ?>
+                            <div class="info-row">
+                                <span class="info-label">Faktur</span>
+                                <span class="info-value">
+                                    <a href="<?= site_url('receipt/pdf/' . $transaksi['no_transaksi']) ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-print me-1"></i>Cetak Faktur
+                                    </a>
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php else: ?>

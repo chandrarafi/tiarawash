@@ -92,16 +92,55 @@ class Booking extends BaseController
             ]);
         }
 
-        // Validasi input
+        // Get layanan data to check jenis_kendaraan
+        $layananId = $this->request->getPost('layanan_id');
+        $layanan = $this->layananModel->find($layananId);
+        if (!$layanan) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Layanan tidak ditemukan'
+            ]);
+        }
+
+        $jenisKendaraan = $layanan['jenis_kendaraan'];
+
+        // Dynamic validation rules based on jenis kendaraan
         $rules = [
             'layanan_id' => 'required',
             'tanggal' => 'required|valid_date',
             'jam' => 'required',
-            'no_plat' => 'required|max_length[20]',
-            // 'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]', // REMOVED: redundant
-            'merk_kendaraan' => 'permit_empty|max_length[50]',
             'catatan' => 'permit_empty'
         ];
+
+        // Add vehicle-specific validation rules
+        if ($jenisKendaraan === 'motor') {
+            $rules['no_plat_motor'] = 'required|max_length[20]';
+            $rules['merk_motor'] = 'permit_empty|max_length[50]';
+        } elseif ($jenisKendaraan === 'mobil') {
+            $rules['no_plat_mobil'] = 'required|max_length[20]';
+            $rules['merk_mobil'] = 'permit_empty|max_length[50]';
+        } elseif ($jenisKendaraan === 'lainnya') {
+            $rules['no_plat_lainnya'] = 'required|max_length[20]';
+            $rules['merk_lainnya'] = 'permit_empty|max_length[50]';
+        }
+
+        // Check if it's a combo package based on nama_layanan
+        $namaLayanan = strtolower($layanan['nama_layanan']);
+        $isComboPackage = strpos($namaLayanan, 'combo') !== false ||
+            strpos($namaLayanan, 'paket') !== false ||
+            strpos($namaLayanan, 'motor + mobil') !== false ||
+            strpos($namaLayanan, 'motor & mobil') !== false ||
+            strpos($namaLayanan, 'motor dan mobil') !== false ||
+            strpos($namaLayanan, 'all in one') !== false ||
+            strpos($namaLayanan, 'lengkap') !== false;
+
+        if ($isComboPackage) {
+            // For combo packages, require both motor and mobil
+            $rules['no_plat_motor'] = 'required|max_length[20]';
+            $rules['merk_motor'] = 'permit_empty|max_length[50]';
+            $rules['no_plat_mobil'] = 'required|max_length[20]';
+            $rules['merk_mobil'] = 'permit_empty|max_length[50]';
+        }
 
         if (!$this->validate($rules)) {
             return $this->response->setJSON([
@@ -114,18 +153,6 @@ class Booking extends BaseController
         // Cek ketersediaan slot
         $tanggal = $this->request->getPost('tanggal');
         $jam = $this->request->getPost('jam');
-        $layananId = $this->request->getPost('layanan_id');
-
-        // Get layanan data to check jenis_kendaraan
-        $layanan = $this->layananModel->find($layananId);
-        if (!$layanan) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Layanan tidak ditemukan'
-            ]);
-        }
-
-        $jenisKendaraan = $layanan['jenis_kendaraan'];
 
         if (!$this->bookingModel->checkSlotAvailability($tanggal, $jam, $jenisKendaraan)) {
             return $this->response->setJSON([
@@ -134,54 +161,66 @@ class Booking extends BaseController
             ]);
         }
 
-        // Layanan data already retrieved above for slot checking
+        // Prepare vehicle data based on layanan type
+        $vehicleData = $this->prepareVehicleData($jenisKendaraan, $layanan['nama_layanan']);
 
-        // Prepare booking data
-        $bookingData = [
-            'pelanggan_id' => $pelanggan['kode_pelanggan'],
-            'tanggal' => $tanggal,
-            'jam' => $jam,
-            'no_plat' => strtoupper($this->request->getPost('no_plat')),
-            // 'jenis_kendaraan' => $jenisKendaraan, // REMOVED: redundant, use layanan.jenis_kendaraan
-            'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
-            'layanan_id' => $layananId,
-            'status' => 'menunggu_konfirmasi',
-            'catatan' => $this->request->getPost('catatan'),
-            'user_id' => $userId
-        ];
+        if (!$vehicleData) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Data kendaraan tidak lengkap'
+            ]);
+        }
 
         // Start transaction
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            // Insert booking
-            if ($this->bookingModel->insert($bookingData)) {
-                $bookingId = $this->bookingModel->getInsertID();
+            $bookingIds = [];
 
-                // Get the booking with generated kode_booking
-                $booking = $this->bookingModel->find($bookingId);
+            // Create booking for each vehicle
+            foreach ($vehicleData as $vehicle) {
+                $bookingData = [
+                    'pelanggan_id' => $pelanggan['kode_pelanggan'],
+                    'tanggal' => $tanggal,
+                    'jam' => $jam,
+                    'no_plat' => strtoupper($vehicle['no_plat']),
+                    'merk_kendaraan' => $vehicle['merk_kendaraan'],
+                    'layanan_id' => $layananId,
+                    'status' => 'menunggu_konfirmasi',
+                    'catatan' => $this->request->getPost('catatan'),
+                    'user_id' => $userId
+                ];
 
-                log_message('info', 'Booking created successfully: ' . json_encode($booking));
-
-                $db->transComplete();
-
-                if ($db->transStatus() === false) {
-                    throw new \Exception('Database transaction failed');
+                if ($this->bookingModel->insert($bookingData)) {
+                    $bookingIds[] = $this->bookingModel->getInsertID();
+                } else {
+                    throw new \Exception('Gagal menyimpan booking untuk kendaraan: ' . $vehicle['no_plat']);
                 }
-
-                return $this->response->setJSON([
-                    'status' => 'success',
-                    'message' => 'Booking berhasil dibuat! Kode booking Anda: ' . $booking['kode_booking'],
-                    'data' => [
-                        'booking_id' => $bookingId,
-                        'kode_booking' => $booking['kode_booking'],
-                        'redirect' => site_url('pelanggan/booking/detail/' . $bookingId)
-                    ]
-                ]);
-            } else {
-                throw new \Exception('Gagal menyimpan booking: ' . json_encode($this->bookingModel->errors()));
             }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('Database transaction failed');
+            }
+
+            // Get the first booking for response (atau bisa disesuaikan logic nya)
+            $firstBooking = $this->bookingModel->find($bookingIds[0]);
+
+            $message = count($bookingIds) > 1
+                ? 'Booking berhasil dibuat untuk ' . count($bookingIds) . ' kendaraan! Kode booking utama: ' . $firstBooking['kode_booking']
+                : 'Booking berhasil dibuat! Kode booking Anda: ' . $firstBooking['kode_booking'];
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => $message,
+                'data' => [
+                    'booking_ids' => $bookingIds,
+                    'kode_booking' => $firstBooking['kode_booking'],
+                    'redirect' => site_url('pelanggan/booking/detail/' . $bookingIds[0])
+                ]
+            ]);
         } catch (\Exception $e) {
             $db->transRollback();
             log_message('error', 'Booking creation failed: ' . $e->getMessage());
@@ -194,6 +233,148 @@ class Booking extends BaseController
     }
 
     /**
+     * Prepare vehicle data based on layanan type
+     */
+    private function prepareVehicleData($jenisKendaraan, $namaLayanan = '')
+    {
+        $vehicleData = [];
+
+        // Check if it's a combo package based on nama_layanan
+        $isComboPackage = false;
+        if (!empty($namaLayanan)) {
+            $namaLayananLower = strtolower($namaLayanan);
+            $isComboPackage = strpos($namaLayananLower, 'combo') !== false ||
+                strpos($namaLayananLower, 'paket') !== false ||
+                strpos($namaLayananLower, 'motor + mobil') !== false ||
+                strpos($namaLayananLower, 'motor & mobil') !== false ||
+                strpos($namaLayananLower, 'motor dan mobil') !== false ||
+                strpos($namaLayananLower, 'all in one') !== false ||
+                strpos($namaLayananLower, 'lengkap') !== false;
+        }
+
+        if ($isComboPackage) {
+            // For combo packages, collect both motor and mobil data
+            $noPlatMotor = $this->request->getPost('no_plat_motor');
+            $merkMotor = $this->request->getPost('merk_motor');
+            $noPlatMobil = $this->request->getPost('no_plat_mobil');
+            $merkMobil = $this->request->getPost('merk_mobil');
+
+            if (!empty($noPlatMotor)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMotor,
+                    'merk_kendaraan' => $merkMotor ?: ''
+                ];
+            }
+
+            if (!empty($noPlatMobil)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMobil,
+                    'merk_kendaraan' => $merkMobil ?: ''
+                ];
+            }
+        } elseif ($jenisKendaraan === 'motor') {
+            $noPlatMotor = $this->request->getPost('no_plat_motor');
+            $merkMotor = $this->request->getPost('merk_motor');
+
+            if (!empty($noPlatMotor)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMotor,
+                    'merk_kendaraan' => $merkMotor ?: ''
+                ];
+            }
+        } elseif ($jenisKendaraan === 'mobil') {
+            $noPlatMobil = $this->request->getPost('no_plat_mobil');
+            $merkMobil = $this->request->getPost('merk_mobil');
+
+            if (!empty($noPlatMobil)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMobil,
+                    'merk_kendaraan' => $merkMobil ?: ''
+                ];
+            }
+        } elseif ($jenisKendaraan === 'lainnya') {
+            $noPlatLainnya = $this->request->getPost('no_plat_lainnya');
+            $merkLainnya = $this->request->getPost('merk_lainnya');
+
+            if (!empty($noPlatLainnya)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatLainnya,
+                    'merk_kendaraan' => $merkLainnya ?: ''
+                ];
+            }
+        }
+
+        return count($vehicleData) > 0 ? $vehicleData : null;
+    }
+
+    /**
+     * Prepare vehicle data for public booking form
+     */
+    private function prepareVehicleDataForPublic($hasComboPackage, $uniqueVehicleTypes)
+    {
+        $vehicleData = [];
+
+        if ($hasComboPackage) {
+            // For combo packages, collect both motor and mobil data
+            $noPlatMotor = $this->request->getPost('no_plat_motor');
+            $merkMotor = $this->request->getPost('merk_motor');
+            $noPlatMobil = $this->request->getPost('no_plat_mobil');
+            $merkMobil = $this->request->getPost('merk_mobil');
+
+            if (!empty($noPlatMotor)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMotor,
+                    'merk_kendaraan' => $merkMotor ?: ''
+                ];
+            }
+
+            if (!empty($noPlatMobil)) {
+                $vehicleData[] = [
+                    'no_plat' => $noPlatMobil,
+                    'merk_kendaraan' => $merkMobil ?: ''
+                ];
+            }
+        } else {
+            // Add vehicle data based on unique vehicle types
+            foreach ($uniqueVehicleTypes as $type) {
+                if ($type === 'motor') {
+                    $noPlatMotor = $this->request->getPost('no_plat_motor');
+                    $merkMotor = $this->request->getPost('merk_motor');
+
+                    if (!empty($noPlatMotor)) {
+                        $vehicleData[] = [
+                            'no_plat' => $noPlatMotor,
+                            'merk_kendaraan' => $merkMotor ?: ''
+                        ];
+                    }
+                } elseif ($type === 'mobil') {
+                    $noPlatMobil = $this->request->getPost('no_plat_mobil');
+                    $merkMobil = $this->request->getPost('merk_mobil');
+
+                    if (!empty($noPlatMobil)) {
+                        $vehicleData[] = [
+                            'no_plat' => $noPlatMobil,
+                            'merk_kendaraan' => $merkMobil ?: ''
+                        ];
+                    }
+                } elseif ($type === 'lainnya') {
+                    $noPlatLainnya = $this->request->getPost('no_plat_lainnya');
+                    $merkLainnya = $this->request->getPost('merk_lainnya');
+
+                    if (!empty($noPlatLainnya)) {
+                        $vehicleData[] = [
+                            'no_plat' => $noPlatLainnya,
+                            'merk_kendaraan' => $merkLainnya ?: ''
+                        ];
+                    }
+                }
+            }
+        }
+
+        return count($vehicleData) > 0 ? $vehicleData : null;
+    }
+
+    /**
      * Proses simpan booking dari form public (untuk guest dan pelanggan)
      */
     public function storePublic()
@@ -202,18 +383,79 @@ class Booking extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid request']);
         }
 
-        // Validation rules
+        // Parse selected services first to determine vehicle requirements
+        $selectedServicesJson = $this->request->getPost('selected_services');
+        $selectedServices = json_decode($selectedServicesJson, true);
+
+        if (!$selectedServices || !is_array($selectedServices) || empty($selectedServices)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Layanan harus dipilih'
+            ]);
+        }
+
+        // Get service data to determine vehicle requirements
+        $serviceNames = [];
+        $vehicleTypes = [];
+        foreach ($selectedServices as $kodeLayanan) {
+            $service = $this->layananModel->find($kodeLayanan);
+            if ($service) {
+                $serviceNames[] = $service['nama_layanan'];
+                $vehicleTypes[] = $service['jenis_kendaraan'];
+            }
+        }
+
+        // Check if any service is a combo package
+        $hasComboPackage = false;
+        foreach ($serviceNames as $namaLayanan) {
+            $namaLayananLower = strtolower($namaLayanan);
+            if (
+                strpos($namaLayananLower, 'combo') !== false ||
+                strpos($namaLayananLower, 'paket') !== false ||
+                strpos($namaLayananLower, 'motor + mobil') !== false ||
+                strpos($namaLayananLower, 'motor & mobil') !== false ||
+                strpos($namaLayananLower, 'motor dan mobil') !== false ||
+                strpos($namaLayananLower, 'all in one') !== false ||
+                strpos($namaLayananLower, 'lengkap') !== false
+            ) {
+                $hasComboPackage = true;
+                break;
+            }
+        }
+
+        // Dynamic validation rules
         $rules = [
             'selected_services' => 'required',
             'total_durasi' => 'required|numeric',
             'total_harga' => 'required|numeric',
             'tanggal' => 'required|valid_date',
             'jam' => 'required',
-            'no_plat' => 'required|max_length[20]',
-            'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]',
-            'merk_kendaraan' => 'permit_empty|max_length[50]',
             'catatan' => 'permit_empty'
         ];
+
+        // Add vehicle-specific validation rules
+        $uniqueVehicleTypes = array_unique($vehicleTypes);
+        if ($hasComboPackage) {
+            // For combo packages, require both motor and mobil
+            $rules['no_plat_motor'] = 'required|max_length[20]';
+            $rules['merk_motor'] = 'permit_empty|max_length[50]';
+            $rules['no_plat_mobil'] = 'required|max_length[20]';
+            $rules['merk_mobil'] = 'permit_empty|max_length[50]';
+        } else {
+            // Add validation based on vehicle types in services
+            foreach ($uniqueVehicleTypes as $type) {
+                if ($type === 'motor') {
+                    $rules['no_plat_motor'] = 'required|max_length[20]';
+                    $rules['merk_motor'] = 'permit_empty|max_length[50]';
+                } elseif ($type === 'mobil') {
+                    $rules['no_plat_mobil'] = 'required|max_length[20]';
+                    $rules['merk_mobil'] = 'permit_empty|max_length[50]';
+                } elseif ($type === 'lainnya') {
+                    $rules['no_plat_lainnya'] = 'required|max_length[20]';
+                    $rules['merk_lainnya'] = 'permit_empty|max_length[50]';
+                }
+            }
+        }
 
         // Jika user belum login, validasi data pelanggan
         $isLoggedIn = session()->get('logged_in') && session()->get('role') === 'pelanggan';
@@ -228,17 +470,6 @@ class Booking extends BaseController
                 'status' => 'error',
                 'message' => 'Data tidak valid',
                 'errors' => $this->validator->getErrors()
-            ]);
-        }
-
-        // Parse selected services
-        $selectedServicesJson = $this->request->getPost('selected_services');
-        $selectedServices = json_decode($selectedServicesJson, true);
-
-        if (!$selectedServices || !is_array($selectedServices) || empty($selectedServices)) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Layanan harus dipilih'
             ]);
         }
 
@@ -357,58 +588,66 @@ class Booking extends BaseController
 
             log_message('info', "Assigned shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for entire booking duration ({$totalDurasi} minutes)");
 
-            // Create booking for each selected service
+            // Prepare vehicle data for the booking
+            $vehicleData = $this->prepareVehicleDataForPublic($hasComboPackage, $uniqueVehicleTypes);
+
+            if (!$vehicleData || empty($vehicleData)) {
+                throw new \Exception('Data kendaraan tidak valid atau tidak lengkap');
+            }
+
+            // Create booking for each vehicle and each selected service combination
             $bookingIds = [];
             $totalHarga = 0;
 
-            foreach ($validServices as $index => $service) {
-                // Calculate jam for each service (sequential)
-                $serviceStartMinutes = $startTimeMinutes;
-                if ($index > 0) {
-                    // Add duration of all previous services
-                    for ($i = 0; $i < $index; $i++) {
-                        $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
+            foreach ($vehicleData as $vehicle) {
+                foreach ($validServices as $index => $service) {
+                    // Calculate jam for each service (sequential)
+                    $serviceStartMinutes = $startTimeMinutes;
+                    if ($index > 0) {
+                        // Add duration of all previous services
+                        for ($i = 0; $i < $index; $i++) {
+                            $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
+                        }
                     }
-                }
 
-                $serviceJam = sprintf(
-                    '%02d:%02d',
-                    floor($serviceStartMinutes / 60),
-                    $serviceStartMinutes % 60
-                );
+                    $serviceJam = sprintf(
+                        '%02d:%02d',
+                        floor($serviceStartMinutes / 60),
+                        $serviceStartMinutes % 60
+                    );
 
-                // Set payment timeout (30 minutes from now)
-                $paymentExpires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+                    // Set payment timeout (30 minutes from now)
+                    $paymentExpires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
-                $bookingData = [
-                    'kode_booking' => $sharedKodeBooking, // Use shared kode_booking
-                    'pelanggan_id' => $pelangganId,
-                    'tanggal' => $tanggal,
-                    'jam' => $serviceJam,
-                    'no_plat' => strtoupper($this->request->getPost('no_plat')),
-                    'jenis_kendaraan' => $jenisKendaraan,
-                    'merk_kendaraan' => $this->request->getPost('merk_kendaraan'),
-                    'layanan_id' => $service['kode_layanan'],
-                    'status' => 'menunggu_konfirmasi',
-                    'payment_expires_at' => $paymentExpires,
-                    'catatan' => $this->request->getPost('catatan'),
-                    'user_id' => $userId,
-                    'id_karyawan' => $sharedKaryawan['idkaryawan'] // Use SAME karyawan for all services
-                ];
+                    $bookingData = [
+                        'kode_booking' => $sharedKodeBooking, // Use shared kode_booking
+                        'pelanggan_id' => $pelangganId,
+                        'tanggal' => $tanggal,
+                        'jam' => $serviceJam,
+                        'no_plat' => strtoupper($vehicle['no_plat']),
+                        'merk_kendaraan' => $vehicle['merk_kendaraan'],
+                        'layanan_id' => $service['kode_layanan'],
+                        'status' => 'menunggu_konfirmasi',
+                        'payment_expires_at' => $paymentExpires,
+                        'catatan' => $this->request->getPost('catatan'),
+                        'user_id' => $userId,
+                        'id_karyawan' => $sharedKaryawan['idkaryawan'] // Use SAME karyawan for all services
+                    ];
 
-                log_message('info', "Using shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for service {$service['nama_layanan']} at {$serviceJam}");
-                log_message('info', "Booking data to be inserted: " . json_encode($bookingData));
+                    log_message('info', "Using shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for service {$service['nama_layanan']} at {$serviceJam} for vehicle {$vehicle['no_plat']}");
+                    log_message('info', "Booking data to be inserted: " . json_encode($bookingData));
 
-                if ($this->bookingModel->insert($bookingData)) {
-                    $bookingIds[] = $this->bookingModel->getInsertID();
-                    $totalHarga += (float)$service['harga'];
-                    log_message('info', "Successfully inserted booking for service: {$service['nama_layanan']}");
-                } else {
-                    $errors = $this->bookingModel->errors();
-                    log_message('error', "Booking validation errors: " . json_encode($errors));
-                    log_message('error', "Booking data that failed: " . json_encode($bookingData));
-                    log_message('error', "Karyawan data: " . json_encode($sharedKaryawan));
-                    throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan'] . '. Errors: ' . json_encode($errors));
+                    if ($this->bookingModel->insert($bookingData)) {
+                        $bookingIds[] = $this->bookingModel->getInsertID();
+                        $totalHarga += (float)$service['harga'];
+                        log_message('info', "Successfully inserted booking for service: {$service['nama_layanan']} for vehicle: {$vehicle['no_plat']}");
+                    } else {
+                        $errors = $this->bookingModel->errors();
+                        log_message('error', "Booking validation errors: " . json_encode($errors));
+                        log_message('error', "Booking data that failed: " . json_encode($bookingData));
+                        log_message('error', "Karyawan data: " . json_encode($sharedKaryawan));
+                        throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan'] . ' untuk kendaraan: ' . $vehicle['no_plat'] . '. Errors: ' . json_encode($errors));
+                    }
                 }
             }
 

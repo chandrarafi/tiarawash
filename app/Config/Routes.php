@@ -16,6 +16,10 @@ $routes->get('payment/(:segment)', 'Payment::index/$1'); // Payment page by book
 $routes->post('payment/process', 'Payment::process'); // Process payment
 $routes->get('payment/success/(:segment)', 'Payment::success/$1'); // Payment success page
 
+// Receipt routes
+$routes->get('receipt/pdf/(:segment)', 'Receipt::pdf/$1'); // Generate PDF receipt
+$routes->get('receipt/download/(:segment)', 'Receipt::download/$1'); // Download PDF receipt
+
 // Authentication routes
 $routes->group('auth', function ($routes) {
     $routes->get('/', 'Auth::index');

@@ -267,6 +267,21 @@
         color: #dc3545;
     }
 
+    /* Vehicle Type Sections */
+    .kendaraan-type-section {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .kendaraan-type-section h6 {
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
     .btn-select {
         background: #f8f9fa;
         border: 1px solid #ced4da;
@@ -566,34 +581,91 @@
                         <i class="fas fa-car me-2"></i>Informasi Kendaraan
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="jenis_kendaraan" class="form-label">
-                                        Jenis Kendaraan <span class="required">*</span>
-                                    </label>
-                                    <select class="form-select" id="jenis_kendaraan" name="jenis_kendaraan" required>
-                                        <option value="">-- Pilih Jenis --</option>
-                                        <option value="motor" <?= old('jenis_kendaraan') == 'motor' ? 'selected' : '' ?>>Motor</option>
-                                        <option value="mobil" <?= old('jenis_kendaraan') == 'mobil' ? 'selected' : '' ?>>Mobil</option>
-                                        <option value="lainnya" <?= old('jenis_kendaraan') == 'lainnya' ? 'selected' : '' ?>>Lainnya</option>
-                                    </select>
+                        <!-- Vehicle Placeholder -->
+                        <div id="vehicle-placeholder" class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Pilih layanan terlebih dahulu untuk menentukan jenis kendaraan yang diperlukan.
+                        </div>
+
+                        <!-- Multi-vehicle Info Alert -->
+                        <div id="multi-vehicle-info" class="alert alert-success d-none">
+                            <i class="fas fa-cars me-2"></i>
+                            <strong>Paket Combo Detected!</strong> Layanan ini memerlukan input untuk beberapa kendaraan.
+                        </div>
+
+                        <!-- Motor Section -->
+                        <div id="motor-section" class="kendaraan-type-section d-none">
+                            <h6 class="text-primary">
+                                <i class="fas fa-motorcycle me-2"></i>Kendaraan Motor
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="no_plat_motor" class="form-label">
+                                            No. Plat Motor <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="no_plat_motor" name="no_plat_motor"
+                                            placeholder="Contoh: B 1234 XYZ" value="<?= old('no_plat_motor') ?>">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="no_plat" class="form-label">
-                                        No. Plat <span class="required">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" id="no_plat" name="no_plat"
-                                        placeholder="Contoh: B 1234 ABC" value="<?= old('no_plat') ?>" required>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="merk_motor" class="form-label">Merk Motor</label>
+                                        <input type="text" class="form-control" id="merk_motor" name="merk_motor"
+                                            placeholder="Contoh: Honda Vario, Yamaha NMAX" value="<?= old('merk_motor') ?>">
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="merk_kendaraan" class="form-label">Merk Kendaraan</label>
-                            <input type="text" class="form-control" id="merk_kendaraan" name="merk_kendaraan"
-                                placeholder="Contoh: Honda Vario, Toyota Avanza" value="<?= old('merk_kendaraan') ?>">
+
+                        <!-- Mobil Section -->
+                        <div id="mobil-section" class="kendaraan-type-section d-none">
+                            <h6 class="text-primary">
+                                <i class="fas fa-car me-2"></i>Kendaraan Mobil
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="no_plat_mobil" class="form-label">
+                                            No. Plat Mobil <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="no_plat_mobil" name="no_plat_mobil"
+                                            placeholder="Contoh: B 1234 ABC" value="<?= old('no_plat_mobil') ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="merk_mobil" class="form-label">Merk Mobil</label>
+                                        <input type="text" class="form-control" id="merk_mobil" name="merk_mobil"
+                                            placeholder="Contoh: Toyota Avanza, Honda Jazz" value="<?= old('merk_mobil') ?>">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lainnya Section -->
+                        <div id="lainnya-section" class="kendaraan-type-section d-none">
+                            <h6 class="text-primary">
+                                <i class="fas fa-truck me-2"></i>Kendaraan Lainnya
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="no_plat_lainnya" class="form-label">
+                                            No. Plat Kendaraan <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="no_plat_lainnya" name="no_plat_lainnya"
+                                            placeholder="Contoh: B 1234 DEF" value="<?= old('no_plat_lainnya') ?>">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="merk_lainnya" class="form-label">Merk Kendaraan</label>
+                                        <input type="text" class="form-control" id="merk_lainnya" name="merk_lainnya"
+                                            placeholder="Contoh: Isuzu Elf, Mitsubishi Canter" value="<?= old('merk_lainnya') ?>">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1561,8 +1633,14 @@
             });
         });
 
-        // Auto uppercase no plat
-        document.getElementById('no_plat').addEventListener('input', function() {
+        // Auto uppercase no plat for all vehicle types
+        document.getElementById('no_plat_motor')?.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+        document.getElementById('no_plat_mobil')?.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+        document.getElementById('no_plat_lainnya')?.addEventListener('input', function() {
             this.value = this.value.toUpperCase();
         });
     });
@@ -1637,8 +1715,13 @@
             summary.style.display = 'none';
             // Reset time slots when no services
             showEmptyTimeSlots('Pilih layanan untuk melihat slot waktu');
+            // Reset vehicle sections
+            hideAllVehicleSections();
             return;
         }
+
+        // Update vehicle sections based on selected services
+        updateVehicleSections();
 
         // Display selected services as simple table
         if (selectedServices.length === 0) {
@@ -1706,6 +1789,88 @@
         if (checkbox) checkbox.checked = false;
 
         updateSelectedServicesDisplay();
+    }
+
+    // Functions to handle vehicle sections
+    function updateVehicleSections() {
+        if (selectedServices.length === 0) {
+            hideAllVehicleSections();
+            return;
+        }
+
+        // Get unique vehicle types from selected services
+        const vehicleTypes = [...new Set(selectedServices.map(service => service.jenis))];
+
+        // Check if any service is a combo package
+        const hasComboPackage = selectedServices.some(service => {
+            const namaLayanan = service.nama.toLowerCase();
+            return namaLayanan.includes('combo') ||
+                namaLayanan.includes('paket') ||
+                namaLayanan.includes('motor + mobil') ||
+                namaLayanan.includes('motor & mobil') ||
+                namaLayanan.includes('motor dan mobil') ||
+                namaLayanan.includes('all in one') ||
+                namaLayanan.includes('lengkap');
+        });
+
+        hideAllVehicleSections();
+
+        if (hasComboPackage) {
+            // Show both motor and mobil sections for combo packages
+            showVehicleSection('motor');
+            showVehicleSection('mobil');
+            document.getElementById('multi-vehicle-info').classList.remove('d-none');
+            setRequiredFields('motor', true);
+            setRequiredFields('mobil', true);
+        } else {
+            // Show sections based on vehicle types
+            vehicleTypes.forEach(type => {
+                showVehicleSection(type);
+                setRequiredFields(type, true);
+            });
+            document.getElementById('multi-vehicle-info').classList.add('d-none');
+        }
+    }
+
+    function hideAllVehicleSections() {
+        document.getElementById('vehicle-placeholder').classList.remove('d-none');
+        document.getElementById('multi-vehicle-info').classList.add('d-none');
+        document.getElementById('motor-section').classList.add('d-none');
+        document.getElementById('mobil-section').classList.add('d-none');
+        document.getElementById('lainnya-section').classList.add('d-none');
+
+        // Clear required attributes and validation errors
+        setRequiredFields('motor', false);
+        setRequiredFields('mobil', false);
+        setRequiredFields('lainnya', false);
+    }
+
+    function showVehicleSection(type) {
+        document.getElementById('vehicle-placeholder').classList.add('d-none');
+
+        if (type === 'motor') {
+            document.getElementById('motor-section').classList.remove('d-none');
+        } else if (type === 'mobil') {
+            document.getElementById('mobil-section').classList.remove('d-none');
+        } else if (type === 'lainnya') {
+            document.getElementById('lainnya-section').classList.remove('d-none');
+        }
+    }
+
+    function setRequiredFields(type, required) {
+        const noPlatField = document.getElementById(`no_plat_${type}`);
+        if (noPlatField) {
+            if (required) {
+                noPlatField.setAttribute('required', 'required');
+            } else {
+                noPlatField.removeAttribute('required');
+                noPlatField.value = '';
+                // Clear validation errors
+                noPlatField.classList.remove('is-invalid');
+                const feedback = noPlatField.parentNode.querySelector('.invalid-feedback');
+                if (feedback) feedback.remove();
+            }
+        }
     }
 
     // Initialize with old values if any
