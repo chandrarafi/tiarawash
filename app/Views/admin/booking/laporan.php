@@ -40,14 +40,14 @@
                                     <label for="tanggal">Tanggal Spesifik:</label>
                                     <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= esc($tanggal_filter) ?>">
                                 </div>
-                                <div class="col-md-2">
+                                <!-- <div class="col-md-2">
                                     <label for="tahun">Tahun:</label>
                                     <select id="tahun" name="tahun" class="form-control">
                                         <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
                                             <option value="<?= $y ?>" <?= $tahun == $y ? 'selected' : '' ?>><?= $y ?></option>
                                         <?php endfor; ?>
                                     </select>
-                                </div>
+                                </div> -->
                                 <div class="col-md-4">
                                     <label>&nbsp;</label><br>
                                     <button type="submit" class="btn btn-primary">Filter</button>
