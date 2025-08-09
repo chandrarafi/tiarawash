@@ -36,15 +36,15 @@
                         </div>
                         <div class="card-body">
                             <form method="GET" action="<?= site_url('admin/karyawan/laporan') ?>" class="row">
-                                <div class="col-md-3">
+                                <!-- <div class="col-md-3">
                                     <label for="tanggal_cetak">Tanggal :</label>
                                     <input type="text" id="tanggal_cetak" name="tanggal_cetak"
                                         class="form-control" value="<?= $tanggal_cetak ?>"
                                         placeholder="DD/MM/YYYY">
-                                </div>
+                                </div> -->
                                 <div class="col-md-4">
-                                    <label>&nbsp;</label><br>
-                                    <button type="submit" class="btn btn-primary">Filter</button>
+                                    <!-- <label>&nbsp;</label><br>
+                                    <button type="submit" class="btn btn-primary">Filter</button> -->
                                     <a href="<?= site_url('admin/karyawan/export-pdf?tanggal_cetak=' . urlencode($tanggal_cetak)) ?>"
                                         class="btn btn-danger" target="_blank">
                                         <i class="fas fa-file-pdf"></i> Export PDF
@@ -80,11 +80,11 @@
                             </div>
 
                             <!-- Filter Info sesuai format gambar -->
-                            <div class="mb-3">
+                            <!-- <div class="mb-3">
                                 <p class="mb-1">
                                     <strong>Tanggal :</strong> <?= $tanggal_cetak ?>
-                                </p>
-                            </div>
+                                </p> -->
+                            <!-- </div> -->
 
                             <!-- Report Table sesuai format gambar -->
                             <div class="table-responsive">

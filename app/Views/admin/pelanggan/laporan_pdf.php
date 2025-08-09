@@ -128,9 +128,9 @@
     </div>
 
     <!-- Filter Info -->
-    <div class="filter-info">
+    <!-- <div class="filter-info">
         <strong>Tanggal :</strong> <?= $tanggal_cetak ?>
-    </div>
+    </div> -->
 
     <!-- Data Table -->
     <table class="data-table">

@@ -38,9 +38,16 @@
                             <form method="GET" action="<?= site_url('admin/antrian/laporan') ?>" class="row">
                                 <div class="col-md-3">
                                     <label for="tanggal_cetak">Tanggal:</label>
-                                    <input type="text" id="tanggal_cetak" name="tanggal_cetak"
-                                        class="form-control" value="<?= $tanggal_cetak ?>"
-                                        placeholder="DD/MM/YYYY">
+                                    <div class="input-group">
+                                        <input type="text" id="tanggal_cetak" name="tanggal_cetak"
+                                            class="form-control" value="<?= $tanggal_cetak ?>"
+                                            placeholder="DD/MM/YYYY" readonly>
+                                        <div class="input-group-append">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label>&nbsp;</label><br>
@@ -147,4 +154,24 @@
         vertical-align: middle;
     }
 </style>
+
+<!-- Include Date Picker CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date picker
+        flatpickr("#tanggal_cetak", {
+            dateFormat: "d/m/Y",
+            locale: "id",
+            defaultDate: "<?= $tanggal_cetak ?>",
+            allowInput: true,
+            clickOpens: true
+        });
+    });
+</script>
+
 <?= $this->endSection() ?>

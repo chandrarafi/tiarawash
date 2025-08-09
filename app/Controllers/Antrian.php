@@ -511,10 +511,25 @@ class Antrian extends BaseController
         // Get filter parameters
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan antrian dengan join
+        // Convert tanggal_cetak format from DD/MM/YYYY to YYYY-MM-DD for database query
+        $tanggal_filter = $tanggal_cetak;
+        if ($tanggal_cetak && $tanggal_cetak !== date('d/m/Y')) {
+            $date_parts = explode('/', $tanggal_cetak);
+            if (count($date_parts) === 3) {
+                $tanggal_filter = $date_parts[2] . '-' . sprintf('%02d', $date_parts[1]) . '-' . sprintf('%02d', $date_parts[0]);
+            }
+        } else {
+            $tanggal_filter = date('Y-m-d');
+        }
+
+        // Build query untuk laporan antrian dengan join dan filter tanggal
         $builder = $this->antrianModel->builder();
         $builder->select('antrian.*, b.kode_booking, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
         $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
+
+        // Apply date filter
+        $builder->where('antrian.tanggal', $tanggal_filter);
+
         $builder->orderBy('antrian.id', 'ASC');
 
         $antrian = $builder->get()->getResultArray();
@@ -545,10 +560,25 @@ class Antrian extends BaseController
         // Get filter parameters
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan antrian dengan join
+        // Convert tanggal_cetak format from DD/MM/YYYY to YYYY-MM-DD for database query
+        $tanggal_filter = $tanggal_cetak;
+        if ($tanggal_cetak && $tanggal_cetak !== date('d/m/Y')) {
+            $date_parts = explode('/', $tanggal_cetak);
+            if (count($date_parts) === 3) {
+                $tanggal_filter = $date_parts[2] . '-' . sprintf('%02d', $date_parts[1]) . '-' . sprintf('%02d', $date_parts[0]);
+            }
+        } else {
+            $tanggal_filter = date('Y-m-d');
+        }
+
+        // Build query untuk laporan antrian dengan join dan filter tanggal
         $builder = $this->antrianModel->builder();
         $builder->select('antrian.*, b.kode_booking, b.tanggal, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
         $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
+
+        // Apply date filter
+        $builder->where('antrian.tanggal', $tanggal_filter);
+
         $builder->orderBy('antrian.id', 'ASC');
 
         $antrian = $builder->get()->getResultArray();
