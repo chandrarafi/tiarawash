@@ -1,198 +1,192 @@
 <?= $this->extend('admin/layouts/main') ?>
 
+<?= $this->section('title') ?>
+<?= esc($title) ?>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
-<!-- Page Header -->
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">Laporan Pembelian Perlengkapan</h1>
-        <p class="mb-0 text-secondary">Lihat dan cetak laporan pembelian perlengkapan</p>
-    </div>
-    <a href="<?= site_url('admin/pembelian') ?>" class="btn btn-secondary d-flex align-items-center">
-        <i class="bi bi-arrow-left me-2"></i> Kembali
-    </a>
-</div>
-
-<!-- Content Row -->
-<div class="row">
-    <div class="col-12">
-        <div class="card mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Filter Laporan</h6>
-            </div>
-            <div class="card-body">
-                <form id="formFilter" class="row g-3">
-                    <div class="col-md-5">
-                        <label for="start_date" class="form-label">Tanggal Awal</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" value="<?= date('Y-m-01') ?>" required>
-                    </div>
-                    <div class="col-md-5">
-                        <label for="end_date" class="form-label">Tanggal Akhir</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" value="<?= date('Y-m-d') ?>" required>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search me-2"></i> Tampilkan
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Data Laporan Pembelian</h6>
-                <button type="button" class="btn btn-sm btn-success" id="btnExport" disabled>
-                    <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover" id="laporanTable">
-                        <thead>
-                            <tr>
-                                <th width="50">No</th>
-                                <th>No Faktur</th>
-                                <th>Tanggal</th>
-                                <th>Supplier</th>
-                                <th>Total Harga</th>
-                                <th>Petugas</th>
-                                <th width="100">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="laporanData">
-                            <tr>
-                                <td colspan="7" class="text-center">Pilih rentang tanggal dan klik tampilkan untuk melihat data</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <th colspan="4" class="text-end">Total</th>
-                                <th id="totalHarga">Rp 0</th>
-                                <th colspan="2"></th>
-                            </tr>
-                        </tfoot>
-                    </table>
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0"><?= esc($title) ?></h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="<?= site_url('admin/dashboard') ?>">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="<?= site_url('admin/pembelian') ?>">Pembelian</a></li>
+                        <li class="breadcrumb-item active">Laporan Pembelian Alat</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
+            <!-- Filter Form -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Filter Laporan</h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="<?= site_url('admin/pembelian/laporan') ?>" class="row" id="formFilter">
+                                <div class="col-md-3">
+                                    <label for="bulan">Bulan:</label>
+                                    <select id="bulan" name="bulan" class="form-control">
+                                        <option value="">Pilih Bulan</option>
+                                        <option value="01" <?= (isset($bulan) && $bulan == '01') ? 'selected' : '' ?>>Januari</option>
+                                        <option value="02" <?= (isset($bulan) && $bulan == '02') ? 'selected' : '' ?>>Februari</option>
+                                        <option value="03" <?= (isset($bulan) && $bulan == '03') ? 'selected' : '' ?>>Maret</option>
+                                        <option value="04" <?= (isset($bulan) && $bulan == '04') ? 'selected' : '' ?>>April</option>
+                                        <option value="05" <?= (isset($bulan) && $bulan == '05') ? 'selected' : '' ?>>Mei</option>
+                                        <option value="06" <?= (isset($bulan) && $bulan == '06') ? 'selected' : '' ?>>Juni</option>
+                                        <option value="07" <?= (isset($bulan) && $bulan == '07') ? 'selected' : '' ?>>Juli</option>
+                                        <option value="08" <?= (isset($bulan) && $bulan == '08') ? 'selected' : '' ?>>Agustus</option>
+                                        <option value="09" <?= (isset($bulan) && $bulan == '09') ? 'selected' : '' ?>>September</option>
+                                        <option value="10" <?= (isset($bulan) && $bulan == '10') ? 'selected' : '' ?>>Oktober</option>
+                                        <option value="11" <?= (isset($bulan) && $bulan == '11') ? 'selected' : '' ?>>November</option>
+                                        <option value="12" <?= (isset($bulan) && $bulan == '12') ? 'selected' : '' ?>>Desember</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="tahun">Tahun:</label>
+                                    <select id="tahun" name="tahun" class="form-control">
+                                        <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
+                                            <option value="<?= $y ?>" <?= (isset($tahun) && $tahun == $y) ? 'selected' : '' ?>><?= $y ?></option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>&nbsp;</label><br>
+                                    <button type="submit" class="btn btn-primary">Filter</button>
+                                    <a href="<?= site_url('admin/pembelian/export-pdf?bulan=' . urlencode($bulan ?? '') . '&tahun=' . urlencode($tahun ?? '')) ?>"
+                                        class="btn btn-danger" target="_blank" id="btnExportPDF">
+                                        <i class="fas fa-file-pdf"></i> Export PDF
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Content -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card" id="printable-content">
+                        <div class="card-body">
+                            <!-- Report Header sesuai gambar -->
+                            <div class="text-center mb-4" id="report-header">
+                                <div class="row align-items-center">
+                                    <div class="col-2">
+                                        <img src="<?= base_url('images/logo.png') ?>" alt="Logo" style="max-width: 100px; height: auto;" class="img-fluid">
+                                    </div>
+                                    <div class="col-8">
+                                        <h2 class="mb-1"><strong>Tiara Wash</strong></h2>
+                                        <p class="mb-1">Alamat : Jl. Rawang Jundul, Padang Utara, Kota Padang</p>
+                                        <p class="mb-1">Sumatera Barat 25127</p>
+                                        <p class="mb-0">Telp/Fax: 0813-6359-6965</p>
+                                    </div>
+                                    <div class="col-2"></div>
+                                </div>
+                                <hr style="border-top: 2px solid #000; margin: 20px 0;">
+                                <h3 class="text-center mb-3"><strong>Laporan Pembelian Alat</strong></h3>
+                            </div>
+
+                            <!-- Filter Info sesuai format gambar -->
+                            <div class="mb-3">
+                                <p class="mb-1">
+                                    <strong>Bulan :</strong>
+                                    <?php
+                                    $nama_bulan = [
+                                        '01' => 'Januari ',
+                                        '02' => 'Februari ',
+                                        '03' => 'Maret ',
+                                        '04' => 'April ',
+                                        '05' => 'Mei ',
+                                        '06' => 'Juni ',
+                                        '07' => 'Juli ',
+                                        '08' => 'Agustus ',
+                                        '09' => 'September ',
+                                        '10' => 'Oktober ',
+                                        '11' => 'November ',
+                                        '12' => 'Desember '
+                                    ];
+                                    echo (isset($bulan) && $bulan && isset($nama_bulan[$bulan])) ? $nama_bulan[$bulan] . (isset($tahun) ? $tahun : date('Y')) : 'Semua Data';
+                                    ?>
+                                </p>
+                            </div>
+
+                            <!-- Report Table sesuai format gambar -->
+                            <div class="table-responsive">
+                                <table class="table table-bordered" style="font-size: 11px;">
+                                    <thead style="background-color: #f8f9fa;">
+                                        <tr>
+                                            <th class="text-center" style="width: 5%;">NO</th>
+                                            <th class="text-center" style="width: 15%;">No Faktur</th>
+                                            <th class="text-center" style="width: 12%;">Tanggal</th>
+                                            <th class="text-center" style="width: 25%;">Supplier</th>
+                                            <th class="text-center" style="width: 15%;">Total</th>
+                                            <th class="text-center" style="width: 28%;">Keterangan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (!empty($pembelian)): ?>
+                                            <?php foreach ($pembelian as $index => $item): ?>
+                                                <tr>
+                                                    <td class="text-center"><?= sprintf('%02d', $index + 1) ?></td>
+                                                    <td class="text-center"><?= esc($item['no_faktur']) ?></td>
+                                                    <td class="text-center"><?= date('d/m/Y', strtotime($item['tanggal'])) ?></td>
+                                                    <td><?= esc($item['supplier']) ?></td>
+                                                    <td class="text-center">Rp. <?= number_format($item['total_harga'], 0, ',', '.') ?></td>
+                                                    <td><?= esc($item['keterangan'] ?? '-') ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                            <!-- Total Row -->
+                                            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                                                <td class="text-center" colspan="4"><strong>Total</strong></td>
+                                                <td class="text-center">Rp. <?= number_format($total_harga, 0, ',', '.') ?></td>
+                                                <td></td>
+                                            </tr>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td colspan="6" class="text-center">Tidak ada data pembelian</td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Summary and Signature sesuai format gambar -->
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <!-- Kosong untuk sesuai layout -->
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <p>Padang,<?= date('d-m-Y') ?></p>
+                                    <br><br><br>
+                                    <p><strong>Pimpinan</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 
-<?= $this->endSection() ?>
+<style>
+    /* Screen styles */
+    .table th {
+        vertical-align: middle;
+    }
+</style>
 
-<?= $this->section('scripts') ?>
-<script>
-    $(document).ready(function() {
-        // Event submit form filter
-        $('#formFilter').on('submit', function(e) {
-            e.preventDefault();
-
-            const startDate = $('#start_date').val();
-            const endDate = $('#end_date').val();
-
-            // Validasi tanggal
-            if (new Date(startDate) > new Date(endDate)) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: 'Tanggal awal tidak boleh lebih besar dari tanggal akhir'
-                });
-                return;
-            }
-
-            // Tampilkan loading
-            $('#laporanData').html('<tr><td colspan="7" class="text-center"><i class="spinner-border spinner-border-sm"></i> Memuat data...</td></tr>');
-
-            // Ambil data laporan
-            $.ajax({
-                url: '<?= site_url('admin/pembelian/getLaporanData') ?>',
-                type: 'GET',
-                data: {
-                    start_date: startDate,
-                    end_date: endDate
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        // Enable tombol export
-                        $('#btnExport').prop('disabled', false);
-
-                        // Render data laporan
-                        renderLaporanData(response.data);
-                    } else {
-                        $('#laporanData').html('<tr><td colspan="7" class="text-center">Terjadi kesalahan saat memuat data</td></tr>');
-                        $('#totalHarga').text('Rp 0');
-                        $('#btnExport').prop('disabled', true);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('#laporanData').html('<tr><td colspan="7" class="text-center">Terjadi kesalahan saat memuat data</td></tr>');
-                    $('#totalHarga').text('Rp 0');
-                    $('#btnExport').prop('disabled', true);
-                }
-            });
-        });
-
-        // Event klik tombol export
-        $('#btnExport').on('click', function() {
-            const startDate = $('#start_date').val();
-            const endDate = $('#end_date').val();
-
-            // Redirect ke URL export dengan parameter tanggal
-            window.location.href = `<?= site_url('admin/pembelian/exportExcel') ?>?start_date=${startDate}&end_date=${endDate}`;
-        });
-
-        // Fungsi untuk render data laporan
-        function renderLaporanData(data) {
-            if (data.length === 0) {
-                $('#laporanData').html('<tr><td colspan="7" class="text-center">Tidak ada data pembelian pada rentang tanggal yang dipilih</td></tr>');
-                $('#totalHarga').text('Rp 0');
-                return;
-            }
-
-            let html = '';
-            let totalHarga = 0;
-
-            data.forEach(function(item, index) {
-                html += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${item.no_faktur}</td>
-                        <td>${formatDate(item.tanggal)}</td>
-                        <td>${item.supplier}</td>
-                        <td>${formatRupiah(item.total_harga)}</td>
-                        <td>${item.user_name || '-'}</td>
-                        <td>
-                            <a href="<?= site_url('admin/pembelian/detail/') ?>${item.id}" class="btn btn-sm btn-info">
-                                <i class="bi bi-eye"></i> Detail
-                            </a>
-                        </td>
-                    </tr>
-                `;
-
-                totalHarga += parseFloat(item.total_harga);
-            });
-
-            $('#laporanData').html(html);
-            $('#totalHarga').text(formatRupiah(totalHarga));
-        }
-
-        // Format tanggal
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-        }
-
-        // Format rupiah
-        function formatRupiah(angka) {
-            if (!angka || isNaN(angka)) return 'Rp 0';
-            return 'Rp ' + parseFloat(angka).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-        }
-    });
-</script>
 <?= $this->endSection() ?>

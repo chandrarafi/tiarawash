@@ -113,11 +113,11 @@
                         <span>Laporan</span>
                     </h6>
                 </li>
-                <!-- <li class="nav-item">
+                <li class="nav-item">
                     <a class="nav-link <?= isset($active) && $active == 'laporan-pembelian' ? 'active' : '' ?>" href="<?= base_url('admin/pembelian/laporan') ?>">
-                        <i class="bi bi-file-earmark-bar-graph"></i> Laporan Pembelian
+                        <i class="bi bi-file-earmark-bar-graph"></i> Laporan Pembelian Alat
                     </a>
-                </li> -->
+                </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link <?= isset($active) && $active == 'laporan-transaksi' ? 'active' : '' ?>" href="<?= base_url('admin/transaksi/report') ?>">
                         <i class="bi bi-graph-up"></i> Laporan Transaksi
@@ -182,6 +182,21 @@
 
             <?php elseif (session()->get('role') == 'pimpinan') : ?>
                 <!-- Menu Pimpinan -->
+                <li class="nav-item">
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Laporan</span>
+                    </h6>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-pembelian' ? 'active' : '' ?>" href="<?= base_url('admin/pembelian/laporan') ?>">
+                        <i class="bi bi-file-earmark-bar-graph"></i> Laporan Pembelian Alat
+                    </a>
+                </li>
+                <!-- <li class="nav-item">
+                    <a class="nav-link <?= isset($active) && $active == 'laporan-transaksi' ? 'active' : '' ?>" href="<?= base_url('admin/transaksi/report') ?>">
+                        <i class="bi bi-graph-up"></i> Laporan Transaksi
+                    </a>
+                </li> -->
                 <li class="nav-item">
                     <a class="nav-link <?= isset($active) && $active == 'laporan-booking' ? 'active' : '' ?>" href="<?= base_url('admin/booking/laporan') ?>">
                         <i class="bi bi-calendar-week"></i> Laporan Booking

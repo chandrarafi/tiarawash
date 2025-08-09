@@ -343,51 +343,37 @@
                 <div class="section-title">III. Rincian Layanan</div>
 
                 <?php if (!empty($booking_details)): ?>
-                    <?php
-                    // Group by vehicle
-                    $vehicles = [];
-                    foreach ($booking_details as $detail) {
-                        $vehicleKey = $detail['booking']['no_plat'];
-                        if (!isset($vehicles[$vehicleKey])) {
-                            $vehicles[$vehicleKey] = [
-                                'no_plat' => $detail['booking']['no_plat'],
-                                'merk_kendaraan' => $detail['booking']['merk_kendaraan'] ?? '',
-                                'services' => []
-                            ];
-                        }
-                        $vehicles[$vehicleKey]['services'][] = $detail;
-                    }
-                    ?>
-
-                    <?php foreach ($vehicles as $vehicle): ?>
+                    <!-- Display vehicle information once (from first booking since all have same combined data) -->
+                    <?php if (count($booking_details) > 0): ?>
                         <h5 style="margin-top: 1.5rem; margin-bottom: 1rem; font-weight: bold;">
-                            Kendaraan: <?= esc($vehicle['no_plat']) ?>
-                            <?php if (!empty($vehicle['merk_kendaraan'])): ?>
-                                - <?= esc($vehicle['merk_kendaraan']) ?>
+                            Kendaraan: <?= esc($booking_details[0]['booking']['no_plat']) ?>
+                            <?php if (!empty($booking_details[0]['booking']['merk_kendaraan'])): ?>
+                                <br><span style="font-weight: normal; font-size: 0.9em;">Merk: <?= esc($booking_details[0]['booking']['merk_kendaraan']) ?></span>
                             <?php endif; ?>
                         </h5>
+                    <?php endif; ?>
 
-                        <table class="service-table">
-                            <thead>
+                    <!-- Services table -->
+                    <table class="service-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Nama Layanan</th>
+                                <th style="width: 15%" class="text-center">Durasi</th>
+                                <th style="width: 15%" class="text-center">Waktu</th>
+                                <th style="width: 30%" class="text-right">Harga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($booking_details as $detail): ?>
                                 <tr>
-                                    <th style="width: 40%">Nama Layanan</th>
-                                    <th style="width: 15%" class="text-center">Durasi</th>
-                                    <th style="width: 15%" class="text-center">Waktu</th>
-                                    <th style="width: 30%" class="text-right">Harga</th>
+                                    <td><?= esc($detail['layanan']['nama_layanan']) ?></td>
+                                    <td class="text-center"><?= $detail['layanan']['durasi_menit'] ?> menit</td>
+                                    <td class="text-center"><?= date('H:i', strtotime($detail['booking']['jam'])) ?></td>
+                                    <td class="text-right">Rp <?= number_format($detail['layanan']['harga'], 0, ',', '.') ?></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($vehicle['services'] as $service): ?>
-                                    <tr>
-                                        <td><?= esc($service['layanan']['nama_layanan']) ?></td>
-                                        <td class="text-center"><?= $service['layanan']['durasi_menit'] ?> menit</td>
-                                        <td class="text-center"><?= date('H:i', strtotime($service['booking']['jam'])) ?></td>
-                                        <td class="text-right">Rp <?= number_format($service['layanan']['harga'], 0, ',', '.') ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 <?php else: ?>
                     <table class="service-table">
                         <thead>

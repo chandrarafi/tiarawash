@@ -693,7 +693,11 @@
                                             <small>
                                                 <i class="fas fa-clock me-1"></i><?= esc($detail['booking']['jam']) ?>
                                                 | <i class="fas fa-calendar me-1"></i><?= date('d/m/Y', strtotime($detail['booking']['tanggal'])) ?>
-                                                | <i class="fas fa-car me-1"></i><?= esc($detail['booking']['no_plat']) ?>
+                                                <br>
+                                                <i class="fas fa-car me-1"></i><?= esc($detail['booking']['no_plat']) ?>
+                                                <?php if (!empty($detail['booking']['merk_kendaraan'])): ?>
+                                                    <br><small class="text-muted">Merk: <?= esc($detail['booking']['merk_kendaraan']) ?></small>
+                                                <?php endif; ?>
                                             </small>
                                         </div>
                                         <div class="service-price">

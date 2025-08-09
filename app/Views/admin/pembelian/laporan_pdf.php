@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Transaksi Cuci Pertahun</title>
+    <title>Laporan Pembelian Alat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,19 +58,20 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            font-size: 11px;
+            font-size: 9px;
         }
 
         .data-table th,
         .data-table td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 3px;
             text-align: center;
         }
 
         .data-table th {
             background-color: #f0f0f0;
             font-weight: bold;
+            font-size: 9px;
         }
 
         .data-table td {
@@ -105,22 +106,6 @@
         .signature .right {
             text-align: right;
         }
-
-        .summary {
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-
-        .summary table {
-            width: 50%;
-            margin: 0;
-        }
-
-        .summary td {
-            border: none;
-            padding: 5px;
-            text-align: left;
-        }
     </style>
 </head>
 
@@ -148,7 +133,7 @@
                 <td style="width: 70%;">
                     <div class="company-info">
                         <h2>Tiara Wash</h2>
-                        <p>Alamat : Jl Rawang Jundul, Padang Utara, Kota Padang</p>
+                        <p>Alamat : Jl. Rawang Jundul, Padang Utara, Kota Padang</p>
                         <p>Sumatera Barat 25127</p>
                         <p>Telp/Fax: 0813-6359-6965</p>
                     </div>
@@ -160,52 +145,47 @@
 
     <!-- Report Title -->
     <div class="report-title">
-        LAPORAN TRANSAKSI CUCI PERTAHUN
+        LAPORAN PEMBELIAN ALAT
     </div>
 
     <!-- Filter Info -->
     <div class="filter-info">
-        <p><strong>Periode:</strong> <?= $periode ?></p>
+        <p><strong>Bulan:</strong> <?= $periode ?></p>
     </div>
-
-
 
     <!-- Report Table -->
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 15%;">No</th>
-                <th style="width: 25%;">Bulan</th>
-                <th style="width: 30%;">Jumlah Transaksi</th>
-                <th style="width: 30%;">Total</th>
+                <th style="width: 5%;">NO</th>
+                <th style="width: 15%;">No Faktur</th>
+                <th style="width: 12%;">Tanggal</th>
+                <th style="width: 25%;">Supplier</th>
+                <th style="width: 15%;">Total</th>
+                <th style="width: 28%;">Keterangan</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (!empty($laporan_detail)): ?>
-                <?php 
-                $total_transaksi = 0;
-                $total_keseluruhan = 0;
-                ?>
-                <?php foreach ($laporan_detail as $index => $item): ?>
-                    <?php 
-                    $total_transaksi += $item['jumlah_transaksi'];
-                    $total_keseluruhan += $item['total'];
-                    ?>
+            <?php if (!empty($pembelian)): ?>
+                <?php foreach ($pembelian as $index => $item): ?>
                     <tr>
                         <td><?= sprintf('%02d', $index + 1) ?></td>
-                        <td><?= $item['nama_bulan'] ?></td>
-                        <td><?= $item['jumlah_transaksi'] ?></td>
-                        <td class="text-right">Rp. <?= number_format($item['total'], 0, ',', '.') ?></td>
+                        <td><?= esc($item['no_faktur']) ?></td>
+                        <td><?= date('d/m/Y', strtotime($item['tanggal'])) ?></td>
+                        <td class="text-left"><?= esc($item['supplier']) ?></td>
+                        <td class="text-right">Rp. <?= number_format($item['total_harga'], 0, ',', '.') ?></td>
+                        <td class="text-left"><?= esc($item['keterangan'] ?? '-') ?></td>
                     </tr>
                 <?php endforeach; ?>
+                <!-- Total Row -->
                 <tr class="total-row">
-                    <td colspan="2" class="text-center"><strong>Total</strong></td>
-                    <td class="text-center"><strong><?= $total_transaksi ?></strong></td>
-                    <td class="text-right"><strong>Rp. <?= number_format($total_keseluruhan, 0, ',', '.') ?></strong></td>
+                    <td colspan="4"><strong>TOTAL</strong></td>
+                    <td class="text-right"><strong>Rp. <?= number_format($total_harga, 0, ',', '.') ?></strong></td>
+                    <td></td>
                 </tr>
             <?php else: ?>
                 <tr>
-                    <td colspan="4">Tidak ada data transaksi</td>
+                    <td colspan="6">Tidak ada data pembelian</td>
                 </tr>
             <?php endif; ?>
         </tbody>

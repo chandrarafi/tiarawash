@@ -99,7 +99,15 @@
                                     </thead>
                                     <tbody>
                                         <?php if (!empty($laporan_detail)): ?>
+                                            <?php
+                                            $total_transaksi = 0;
+                                            $total_keseluruhan = 0;
+                                            ?>
                                             <?php foreach ($laporan_detail as $index => $item): ?>
+                                                <?php
+                                                $total_transaksi += $item['jumlah_transaksi'];
+                                                $total_keseluruhan += $item['total'];
+                                                ?>
                                                 <tr>
                                                     <td class="text-center"><?= sprintf('%02d', $index + 1) ?></td>
                                                     <td class="text-center"><?= $item['nama_bulan'] ?></td>
@@ -107,6 +115,11 @@
                                                     <td class="text-center">Rp. <?= number_format($item['total'], 0, ',', '.') ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
+                                            <tr style="background-color: #f8f9fa; font-weight: bold;">
+                                                <td colspan="2" class="text-center"><strong>Total</strong></td>
+                                                <td class="text-center"><strong><?= $total_transaksi ?></strong></td>
+                                                <td class="text-center"><strong>Rp. <?= number_format($total_keseluruhan, 0, ',', '.') ?></strong></td>
+                                            </tr>
                                         <?php else: ?>
                                             <tr>
                                                 <td colspan="4" class="text-center">Tidak ada data transaksi</td>

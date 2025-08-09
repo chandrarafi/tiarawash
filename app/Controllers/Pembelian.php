@@ -618,11 +618,82 @@ class Pembelian extends BaseController
 
     public function laporan()
     {
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Get data pembelian berdasarkan filter
+        $pembelian = [];
+        $total_harga = 0;
+
+        if ($bulan && $tahun) {
+            $startDate = $tahun . '-' . $bulan . '-01';
+            $endDate = $tahun . '-' . $bulan . '-' . date('t', strtotime($startDate));
+
+            $pembelian = $this->pembelianModel->getLaporanPembelian($startDate, $endDate);
+            $total_harga = array_sum(array_column($pembelian, 'total_harga'));
+        }
+
         $data = [
-            'title' => 'Laporan Pembelian',
-            'active' => 'laporan-pembelian'
+            'title' => 'Laporan Pembelian Alat',
+            'active' => 'laporan-pembelian',
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'pembelian' => $pembelian,
+            'total_harga' => $total_harga
         ];
         return view('admin/pembelian/laporan', $data);
+    }
+
+    public function exportPdf()
+    {
+        $bulan = $this->request->getGet('bulan') ?? date('m');
+        $tahun = $this->request->getGet('tahun') ?? date('Y');
+
+        // Get data pembelian berdasarkan filter
+        $pembelian = [];
+        $total_harga = 0;
+
+        if ($bulan && $tahun) {
+            $startDate = $tahun . '-' . $bulan . '-01';
+            $endDate = $tahun . '-' . $bulan . '-' . date('t', strtotime($startDate));
+
+            $pembelian = $this->pembelianModel->getLaporanPembelian($startDate, $endDate);
+            $total_harga = array_sum(array_column($pembelian, 'total_harga'));
+        }
+
+        $nama_bulan = [
+            '01' => 'Januari ',
+            '02' => 'Februari ',
+            '03' => 'Maret ',
+            '04' => 'April ',
+            '05' => 'Mei ',
+            '06' => 'Juni ',
+            '07' => 'Juli ',
+            '08' => 'Agustus ',
+            '09' => 'September ',
+            '10' => 'Oktober ',
+            '11' => 'November ',
+            '12' => 'Desember '
+        ];
+
+        $periode = ($bulan && isset($nama_bulan[$bulan])) ? $nama_bulan[$bulan] . $tahun : 'Semua Data';
+
+        $data = [
+            'title' => 'Laporan Pembelian Alat',
+            'periode' => $periode,
+            'pembelian' => $pembelian,
+            'total_harga' => $total_harga
+        ];
+
+        // Load DOMPDF library
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml(view('admin/pembelian/laporan_pdf', $data));
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // Output the generated PDF to Browser
+        $filename = 'Laporan_Pembelian_Alat_' . $periode . '.pdf';
+        $dompdf->stream($filename, array("Attachment" => false));
     }
 
     public function getLaporanData()

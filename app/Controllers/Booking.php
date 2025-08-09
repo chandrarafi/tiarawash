@@ -595,59 +595,71 @@ class Booking extends BaseController
                 throw new \Exception('Data kendaraan tidak valid atau tidak lengkap');
             }
 
-            // Create booking for each vehicle and each selected service combination
+            // Create booking for each selected service (not per vehicle)
+            // Store all vehicle data in first vehicle's no_plat and merk_kendaraan
             $bookingIds = [];
             $totalHarga = 0;
 
+            // Combine all vehicle data into a single string for storage
+            $allNoPlat = [];
+            $allMerkKendaraan = [];
             foreach ($vehicleData as $vehicle) {
-                foreach ($validServices as $index => $service) {
-                    // Calculate jam for each service (sequential)
-                    $serviceStartMinutes = $startTimeMinutes;
-                    if ($index > 0) {
-                        // Add duration of all previous services
-                        for ($i = 0; $i < $index; $i++) {
-                            $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
-                        }
+                $allNoPlat[] = strtoupper($vehicle['no_plat']);
+                if (!empty($vehicle['merk_kendaraan'])) {
+                    $allMerkKendaraan[] = $vehicle['merk_kendaraan'];
+                }
+            }
+
+            $combinedNoPlat = implode(', ', $allNoPlat);
+            $combinedMerkKendaraan = implode(', ', $allMerkKendaraan);
+
+            foreach ($validServices as $index => $service) {
+                // Calculate jam for each service (sequential)
+                $serviceStartMinutes = $startTimeMinutes;
+                if ($index > 0) {
+                    // Add duration of all previous services
+                    for ($i = 0; $i < $index; $i++) {
+                        $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
                     }
+                }
 
-                    $serviceJam = sprintf(
-                        '%02d:%02d',
-                        floor($serviceStartMinutes / 60),
-                        $serviceStartMinutes % 60
-                    );
+                $serviceJam = sprintf(
+                    '%02d:%02d',
+                    floor($serviceStartMinutes / 60),
+                    $serviceStartMinutes % 60
+                );
 
-                    // Set payment timeout (30 minutes from now)
-                    $paymentExpires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+                // Set payment timeout (30 minutes from now)
+                $paymentExpires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
-                    $bookingData = [
-                        'kode_booking' => $sharedKodeBooking, // Use shared kode_booking
-                        'pelanggan_id' => $pelangganId,
-                        'tanggal' => $tanggal,
-                        'jam' => $serviceJam,
-                        'no_plat' => strtoupper($vehicle['no_plat']),
-                        'merk_kendaraan' => $vehicle['merk_kendaraan'],
-                        'layanan_id' => $service['kode_layanan'],
-                        'status' => 'menunggu_konfirmasi',
-                        'payment_expires_at' => $paymentExpires,
-                        'catatan' => $this->request->getPost('catatan'),
-                        'user_id' => $userId,
-                        'id_karyawan' => $sharedKaryawan['idkaryawan'] // Use SAME karyawan for all services
-                    ];
+                $bookingData = [
+                    'kode_booking' => $sharedKodeBooking, // Use shared kode_booking
+                    'pelanggan_id' => $pelangganId,
+                    'tanggal' => $tanggal,
+                    'jam' => $serviceJam,
+                    'no_plat' => $combinedNoPlat, // Combined vehicle plates
+                    'merk_kendaraan' => $combinedMerkKendaraan, // Combined vehicle brands
+                    'layanan_id' => $service['kode_layanan'],
+                    'status' => 'menunggu_konfirmasi',
+                    'payment_expires_at' => $paymentExpires,
+                    'catatan' => $this->request->getPost('catatan'),
+                    'user_id' => $userId,
+                    'id_karyawan' => $sharedKaryawan['idkaryawan'] // Use SAME karyawan for all services
+                ];
 
-                    log_message('info', "Using shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for service {$service['nama_layanan']} at {$serviceJam} for vehicle {$vehicle['no_plat']}");
-                    log_message('info', "Booking data to be inserted: " . json_encode($bookingData));
+                log_message('info', "Using shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for service {$service['nama_layanan']} at {$serviceJam} for combined vehicles: {$combinedNoPlat}");
+                log_message('info', "Booking data to be inserted: " . json_encode($bookingData));
 
-                    if ($this->bookingModel->insert($bookingData)) {
-                        $bookingIds[] = $this->bookingModel->getInsertID();
-                        $totalHarga += (float)$service['harga'];
-                        log_message('info', "Successfully inserted booking for service: {$service['nama_layanan']} for vehicle: {$vehicle['no_plat']}");
-                    } else {
-                        $errors = $this->bookingModel->errors();
-                        log_message('error', "Booking validation errors: " . json_encode($errors));
-                        log_message('error', "Booking data that failed: " . json_encode($bookingData));
-                        log_message('error', "Karyawan data: " . json_encode($sharedKaryawan));
-                        throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan'] . ' untuk kendaraan: ' . $vehicle['no_plat'] . '. Errors: ' . json_encode($errors));
-                    }
+                if ($this->bookingModel->insert($bookingData)) {
+                    $bookingIds[] = $this->bookingModel->getInsertID();
+                    $totalHarga += (float)$service['harga'];
+                    log_message('info', "Successfully inserted booking for service: {$service['nama_layanan']} for combined vehicles: {$combinedNoPlat}");
+                } else {
+                    $errors = $this->bookingModel->errors();
+                    log_message('error', "Booking validation errors: " . json_encode($errors));
+                    log_message('error', "Booking data that failed: " . json_encode($bookingData));
+                    log_message('error', "Karyawan data: " . json_encode($sharedKaryawan));
+                    throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan'] . ' untuk kendaraan: ' . $combinedNoPlat . '. Errors: ' . json_encode($errors));
                 }
             }
 
@@ -663,8 +675,13 @@ class Booking extends BaseController
                 $endTimeMinutes % 60
             );
 
+            $vehicleCount = count($vehicleData);
+            $serviceCount = count($validServices);
+
             $successMessage = "Booking berhasil dibuat! Kode booking: {$sharedKodeBooking}";
-            $successMessage .= "\nTotal " . count($validServices) . " layanan dari {$jam} hingga {$endTime}";
+            $successMessage .= "\n{$serviceCount} layanan untuk {$vehicleCount} kendaraan";
+            $successMessage .= "\nJadwal: {$jam} hingga {$endTime}";
+            $successMessage .= "\nKendaraan: {$combinedNoPlat}";
             $successMessage .= "\nTotal biaya: Rp " . number_format($totalHarga, 0, ',', '.');
 
             if (!$isLoggedIn) {

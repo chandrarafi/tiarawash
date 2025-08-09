@@ -92,7 +92,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     });
 
     // Pembelian routes (hanya admin)
-    $routes->group('pembelian', ['filter' => 'role:admin'], function ($routes) {
+    $routes->group('pembelian', ['filter' => 'role:admin,pimpinan'], function ($routes) {
         $routes->get('/', 'Pembelian::index');
         $routes->get('create', 'Pembelian::create');
         $routes->post('save', 'Pembelian::save');
@@ -112,6 +112,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
         $routes->get('laporan', 'Pembelian::laporan');
         $routes->get('getLaporanData', 'Pembelian::getLaporanData');
         $routes->get('exportExcel', 'Pembelian::exportExcel');
+        $routes->get('export-pdf', 'Pembelian::exportPdf');
     });
 
     // Layanan Management (hanya admin)
