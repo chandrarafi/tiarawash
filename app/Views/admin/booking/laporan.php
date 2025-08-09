@@ -41,14 +41,6 @@
                                     <input type="date" id="tanggal" name="tanggal" class="form-control" value="<?= esc($tanggal_filter) ?>">
                                 </div>
                                 <div class="col-md-2">
-                                    <label for="bulan">Bulan:</label>
-                                    <select id="bulan" name="bulan" class="form-control">
-                                        <?php foreach ($nama_bulan as $key => $value): ?>
-                                            <option value="<?= $key ?>" <?= $bulan == $key ? 'selected' : '' ?>><?= $value ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
                                     <label for="tahun">Tahun:</label>
                                     <select id="tahun" name="tahun" class="form-control">
                                         <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
@@ -62,7 +54,7 @@
                                     <!-- <button type="button" onclick="printReport()" class="btn btn-success">
                                         <i class="fas fa-print"></i> Cetak Browser
                                     </button> -->
-                                    <a href="<?= site_url('admin/booking/export-pdf?' . http_build_query(['bulan' => $bulan, 'tahun' => $tahun, 'tanggal' => $tanggal_filter])) ?>"
+                                    <a href="<?= site_url('admin/booking/export-pdf?' . http_build_query(['tahun' => $tahun, 'tanggal' => $tanggal_filter])) ?>"
                                         class="btn btn-danger" target="_blank">
                                         <i class="fas fa-file-pdf"></i> Export PDF
                                     </a>
@@ -103,7 +95,7 @@
                                     <?php if ($tanggal_filter): ?>
                                         <?= date('d/m/Y', strtotime($tanggal_filter)) ?>
                                     <?php else: ?>
-                                        <?= $nama_bulan[$bulan] ?> <?= $tahun ?>
+                                        Tahun <?= $tahun ?>
                                     <?php endif; ?>
                                 </p>
                             </div>
@@ -271,19 +263,14 @@
         window.print();
     }
 
-    // Auto-clear tanggal when bulan/tahun changed
-    document.getElementById('bulan').addEventListener('change', function() {
-        document.getElementById('tanggal').value = '';
-    });
-
+    // Auto-clear tanggal when tahun changed
     document.getElementById('tahun').addEventListener('change', function() {
         document.getElementById('tanggal').value = '';
     });
 
-    // Auto-clear bulan/tahun when tanggal changed
+    // Auto-clear tahun when tanggal changed
     document.getElementById('tanggal').addEventListener('change', function() {
         if (this.value) {
-            document.getElementById('bulan').selectedIndex = 0;
             document.getElementById('tahun').selectedIndex = 0;
         }
     });
