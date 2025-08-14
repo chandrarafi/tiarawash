@@ -18,7 +18,7 @@ class BookingModel extends Model
         'tanggal',
         'jam',
         'no_plat',
-        // 'jenis_kendaraan', // REMOVED: redundant, use layanan.jenis_kendaraan via JOIN
+
         'merk_kendaraan',
         'layanan_id',
         'status',
@@ -28,20 +28,20 @@ class BookingModel extends Model
         'id_karyawan'
     ];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules      = [
         'kode_booking'    => 'permit_empty|max_length[20]',
         'pelanggan_id'    => 'required|max_length[10]',
         'tanggal'         => 'required|valid_date',
         'jam'             => 'required',
         'no_plat'         => 'required|max_length[20]',
-        // 'jenis_kendaraan' => 'required|in_list[motor,mobil,lainnya]', // REMOVED: redundant
+
         'merk_kendaraan'  => 'permit_empty|max_length[50]',
         'layanan_id'      => 'required|is_not_unique[layanan.kode_layanan]',
         'catatan'         => 'permit_empty',
@@ -60,7 +60,7 @@ class BookingModel extends Model
         'no_plat' => [
             'required' => 'Nomor plat kendaraan harus diisi',
         ],
-        // REMOVED: jenis_kendaraan validation - data comes from layanan table
+
         'layanan_id' => [
             'required' => 'Layanan harus dipilih',
             'numeric' => 'ID layanan tidak valid',
@@ -68,7 +68,7 @@ class BookingModel extends Model
         ],
     ];
 
-    // Callbacks
+
     protected $beforeInsert = ['generateKodeBooking'];
     protected $beforeUpdate = [];
     protected $afterInsert  = [];
@@ -76,7 +76,7 @@ class BookingModel extends Model
 
     protected function generateKodeBooking(array $data)
     {
-        // Only generate if kode_booking is not provided or empty
+
         if (empty($data['data']['kode_booking'])) {
             $data['data']['kode_booking'] = $this->generateNewKodeBooking();
         }
@@ -153,21 +153,21 @@ class BookingModel extends Model
      */
     public function checkSlotAvailability($tanggal, $jam, $jenisKendaraan = null)
     {
-        // Check if there's already a booking at this time
+
         $builder = $this->db->table('booking b')
             ->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left')
             ->where('b.tanggal', $tanggal)
             ->where('b.jam', $jam)
             ->where('b.status !=', 'dibatalkan');
 
-        // Optional: filter by vehicle type if provided (from layanan table)
+
         if ($jenisKendaraan) {
             $builder->where('l.jenis_kendaraan', $jenisKendaraan);
         }
 
         $existingBooking = $builder->get()->getRowArray();
 
-        // If no existing booking found, slot is available
+
         return $existingBooking === null;
     }
 
@@ -176,17 +176,17 @@ class BookingModel extends Model
      */
     public function getAvailableKaryawan($tanggal, $jam, $durasi = 60)
     {
-        // Calculate end time
+
         list($hours, $minutes) = explode(':', $jam);
         $startTimeMinutes = ($hours * 60) + $minutes;
         $endTimeMinutes = $startTimeMinutes + $durasi;
         $endTime = sprintf('%02d:%02d', floor($endTimeMinutes / 60), $endTimeMinutes % 60);
 
-        // Get all karyawan
+
         $karyawanModel = new \App\Models\KaryawanModel();
         $allKaryawan = $karyawanModel->findAll();
 
-        // Get busy karyawan (already booked for this time slot)
+
         $busyKaryawan = $this->db->table('booking b')
             ->select('b.id_karyawan')
             ->join('layanan l', 'l.kode_layanan = b.layanan_id', 'left')
@@ -202,7 +202,7 @@ class BookingModel extends Model
 
         $busyKaryawanIds = array_column($busyKaryawan, 'id_karyawan');
 
-        // Filter available karyawan
+
         $availableKaryawan = array_filter($allKaryawan, function ($karyawan) use ($busyKaryawanIds) {
             return !in_array($karyawan['idkaryawan'], $busyKaryawanIds);
         });
@@ -221,7 +221,7 @@ class BookingModel extends Model
             return null;
         }
 
-        // Return random karyawan
+
         $randomIndex = array_rand($availableKaryawan);
         return $availableKaryawan[$randomIndex];
     }

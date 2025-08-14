@@ -5,8 +5,6 @@ namespace App\Controllers;
 use App\Models\TransaksiModel;
 use App\Models\BookingModel;
 use App\Models\LayananModel;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class Receipt extends BaseController
 {
@@ -21,13 +19,10 @@ class Receipt extends BaseController
         $this->layananModel = new LayananModel();
     }
 
-    /**
-     * Generate PDF receipt
-     */
     public function pdf($noTransaksi)
     {
         try {
-            // Get transaction data
+
             $transaksi = $this->transaksiModel
                 ->select('transaksi.*, booking.pelanggan_id, booking.no_plat, booking.merk_kendaraan, pelanggan.nama_pelanggan, pelanggan.no_hp')
                 ->join('booking', 'booking.id = transaksi.booking_id', 'left')
@@ -39,7 +34,7 @@ class Receipt extends BaseController
                 throw new \Exception('Transaksi tidak ditemukan');
             }
 
-            // Get booking details - use kode_booking from main booking
+
             $mainBooking = $this->bookingModel->find($transaksi['booking_id']);
             $bookingDetails = $this->bookingModel
                 ->select('booking.*, layanan.nama_layanan, layanan.harga, layanan.durasi_menit, layanan.jenis_kendaraan')
@@ -48,7 +43,7 @@ class Receipt extends BaseController
                 ->orderBy('booking.jam', 'ASC')
                 ->findAll();
 
-            // Group vehicles
+
             $vehicles = [];
             foreach ($bookingDetails as $detail) {
                 $vehicleKey = $detail['no_plat'];
@@ -62,7 +57,7 @@ class Receipt extends BaseController
                 $vehicles[$vehicleKey]['services'][] = $detail;
             }
 
-            // Prepare data for PDF
+
             $data = [
                 'transaksi' => $transaksi,
                 'vehicles' => $vehicles,
@@ -70,42 +65,30 @@ class Receipt extends BaseController
                 'title' => 'Struk Pembayaran - ' . $noTransaksi
             ];
 
-            // Generate PDF
+
             $html = view('receipt/pdf_template', $data);
 
-            $options = new Options();
-            $options->set('isHtml5ParserEnabled', true);
-            $options->set('isPhpEnabled', true);
-            $options->set('defaultFont', 'Arial');
+            require_once APPPATH . 'Helpers/PdfHelper.php';
 
-            $dompdf = new Dompdf($options);
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
+            $filename = 'struk_' . $noTransaksi;
+            $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
 
-            // Output PDF
-            $filename = 'struk_' . $noTransaksi . '.pdf';
-            return $this->response->setHeader('Content-Type', 'application/pdf')
-                ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
-                ->setBody($dompdf->output());
+            return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
         } catch (\Exception $e) {
             log_message('error', 'Error generating PDF receipt: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
 
-            // Return simple HTML error instead of redirect
+
             return $this->response->setStatusCode(500)->setBody(
                 '<html><body><h1>Error</h1><p>Gagal membuat struk PDF: ' . $e->getMessage() . '</p></body></html>'
             );
         }
     }
 
-    /**
-     * Download PDF receipt
-     */
     public function download($noTransaksi)
     {
         try {
-            // Get transaction data
+            // Get the same data as PDF method
             $transaksi = $this->transaksiModel
                 ->select('transaksi.*, booking.pelanggan_id, booking.no_plat, booking.merk_kendaraan, pelanggan.nama_pelanggan, pelanggan.no_hp')
                 ->join('booking', 'booking.id = transaksi.booking_id', 'left')
@@ -117,7 +100,7 @@ class Receipt extends BaseController
                 throw new \Exception('Transaksi tidak ditemukan');
             }
 
-            // Get booking details - use kode_booking from main booking
+
             $mainBooking = $this->bookingModel->find($transaksi['booking_id']);
             $bookingDetails = $this->bookingModel
                 ->select('booking.*, layanan.nama_layanan, layanan.harga, layanan.durasi_menit, layanan.jenis_kendaraan')
@@ -126,7 +109,7 @@ class Receipt extends BaseController
                 ->orderBy('booking.jam', 'ASC')
                 ->findAll();
 
-            // Group vehicles
+
             $vehicles = [];
             foreach ($bookingDetails as $detail) {
                 $vehicleKey = $detail['no_plat'];
@@ -140,7 +123,7 @@ class Receipt extends BaseController
                 $vehicles[$vehicleKey]['services'][] = $detail;
             }
 
-            // Prepare data for PDF
+
             $data = [
                 'transaksi' => $transaksi,
                 'vehicles' => $vehicles,
@@ -148,29 +131,20 @@ class Receipt extends BaseController
                 'title' => 'Struk Pembayaran - ' . $noTransaksi
             ];
 
-            // Generate PDF
+
             $html = view('receipt/pdf_template', $data);
 
-            $options = new Options();
-            $options->set('isHtml5ParserEnabled', true);
-            $options->set('isPhpEnabled', true);
-            $options->set('defaultFont', 'Arial');
+            require_once APPPATH . 'Helpers/PdfHelper.php';
 
-            $dompdf = new Dompdf($options);
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'portrait');
-            $dompdf->render();
+            $filename = 'struk_' . $noTransaksi;
+            $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
 
-            // Download PDF
-            $filename = 'struk_' . $noTransaksi . '.pdf';
-            return $this->response->setHeader('Content-Type', 'application/pdf')
-                ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                ->setBody($dompdf->output());
+            return \App\Helpers\PdfHelper::streamPdf($pdfResult, true); // true for download
         } catch (\Exception $e) {
             log_message('error', 'Error downloading PDF receipt: ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
 
-            // Return simple HTML error instead of redirect
+
             return $this->response->setStatusCode(500)->setBody(
                 '<html><body><h1>Error</h1><p>Gagal download struk PDF: ' . $e->getMessage() . '</p></body></html>'
             );

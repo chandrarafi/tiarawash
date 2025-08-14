@@ -20,20 +20,20 @@ class Auth extends BaseController
         $this->pelangganModel = new PelangganModel();
         $this->otpModel = new OTPModel();
         $this->email = \Config\Services::email();
-        // Load helper cookie
+
         helper('cookie');
     }
 
     public function index()
     {
-        // Jika sudah login, redirect ke dashboard
+
         if (session()->get('logged_in')) {
             $redirectUrl = session()->get('redirect_url');
 
-            // Clear redirect_url to prevent loops
+
             session()->remove('redirect_url');
 
-            // Determine redirect based on role
+
             $role = session()->get('role');
             $defaultRedirect = match ($role) {
                 'pelanggan' => 'pelanggan/dashboard',
@@ -41,7 +41,7 @@ class Auth extends BaseController
                 default => 'admin'
             };
 
-            // Only use redirect_url if it's not an auth route to prevent loops
+
             if ($redirectUrl && !str_contains($redirectUrl, '/auth')) {
                 return redirect()->to($redirectUrl);
             }
@@ -64,7 +64,7 @@ class Auth extends BaseController
             ->first();
 
         if ($user) {
-            // Debug log
+
             log_message('info', 'User found for login: ' . $username . ', Status: ' . $user['status']);
 
             if ($user['status'] !== 'active') {
@@ -77,12 +77,12 @@ class Auth extends BaseController
 
             log_message('info', 'Attempting password verification for user: ' . $username);
             if (password_verify($password, $user['password'])) {
-                // Update last login
+
                 $this->userModel->update($user['id'], [
                     'last_login' => date('Y-m-d H:i:s')
                 ]);
 
-                // Set session
+
                 $sessionData = [
                     'user_id' => $user['id'],
                     'username' => $user['username'],
@@ -93,23 +93,23 @@ class Auth extends BaseController
                 ];
                 session()->set($sessionData);
 
-                // Set remember me cookie jika dipilih
+
                 if ($remember) {
                     $this->setRememberMeCookie($user['id']);
                 }
 
-                // Get redirect URL and clear it to prevent loops
+
                 $redirectUrl = session()->get('redirect_url');
                 session()->remove('redirect_url');
 
-                // Determine redirect based on role
+
                 $defaultRedirect = match ($user['role']) {
                     'pelanggan' => site_url('pelanggan/dashboard'),
                     'admin', 'pimpinan' => site_url('admin'),
                     default => site_url('admin')
                 };
 
-                // Use redirect_url if it exists and is not an auth route
+
                 $finalRedirect = ($redirectUrl && !str_contains($redirectUrl, '/auth')) ? $redirectUrl : $defaultRedirect;
 
                 return $this->response->setJSON([
@@ -132,13 +132,13 @@ class Auth extends BaseController
 
     public function logout()
     {
-        // Hapus remember me cookie
+
         if (get_cookie('remember_token')) {
             delete_cookie('remember_token');
             delete_cookie('user_id');
         }
 
-        // Destroy session
+
         session()->destroy();
 
         return redirect()->to('auth')->with('message', 'Anda telah berhasil logout');
@@ -148,16 +148,16 @@ class Auth extends BaseController
     {
         $token = bin2hex(random_bytes(32));
 
-        // Simpan token di database
+
         $this->userModel->update($userId, [
             'remember_token' => $token
         ]);
 
-        // Set cookies yang akan expired dalam 30 hari
+
         $expires = 30 * 24 * 60 * 60; // 30 hari
         $secure = isset($_SERVER['HTTPS']); // Set secure hanya jika HTTPS
 
-        // Set cookie untuk remember token
+
         set_cookie(
             'remember_token',
             $token,
@@ -169,7 +169,7 @@ class Auth extends BaseController
             true  // httponly
         );
 
-        // Set cookie untuk user ID
+
         set_cookie(
             'user_id',
             $userId,
@@ -182,11 +182,11 @@ class Auth extends BaseController
         );
     }
 
-    // ==================== REGISTER METHODS ====================
+
 
     public function register()
     {
-        // Jika sudah login, redirect ke dashboard
+
         if (session()->get('logged_in')) {
             return redirect()->to('admin');
         }
@@ -215,7 +215,7 @@ class Auth extends BaseController
 
         $email = $this->request->getPost('email');
 
-        // Generate and send OTP
+
         $otpCode = $this->otpModel->generateOTP($email, 'registration');
 
         if (!$otpCode) {
@@ -225,7 +225,7 @@ class Auth extends BaseController
             ]);
         }
 
-        // Send OTP email
+
         if ($this->sendOTPEmail($email, $otpCode, 'registration')) {
 
             session()->set('registration_data', [
@@ -253,7 +253,7 @@ class Auth extends BaseController
 
     public function verify()
     {
-        // Check if registration data exists
+
         if (!session()->has('registration_data')) {
             return redirect()->to('auth/register')->with('error', 'Data registrasi tidak ditemukan. Silakan daftar ulang.');
         }
@@ -280,14 +280,14 @@ class Auth extends BaseController
             ]);
         }
 
-        // Verify OTP
+
         if ($this->otpModel->verifyOTP($registrationData['email'], $otpCode, 'registration')) {
-            // Start database transaction
+
             $db = \Config\Database::connect();
             $db->transStart();
 
             try {
-                // Create user account
+
                 $userData = $registrationData;
                 $userData['status'] = 'active';
                 $userData['email_verified_at'] = date('Y-m-d H:i:s');
@@ -295,7 +295,7 @@ class Auth extends BaseController
                 if ($this->userModel->insert($userData)) {
                     $userId = $this->userModel->getInsertID();
 
-                    // If user is pelanggan, also create pelanggan record
+
                     if ($userData['role'] === 'pelanggan') {
                         $pelangganData = [
                             'kode_pelanggan' => $this->pelangganModel->generateKode(),
@@ -314,24 +314,24 @@ class Auth extends BaseController
                         log_message('info', 'Pelanggan record created successfully with kode: ' . $pelangganData['kode_pelanggan']);
                     }
 
-                    // Complete transaction
+
                     $db->transComplete();
 
                     if ($db->transStatus() === false) {
                         throw new \Exception('Database transaction failed');
                     }
 
-                    // Clear registration data from session
+
                     session()->remove('registration_data');
 
-                    // Clear any existing redirect_url to prevent loops
+
                     session()->remove('redirect_url');
 
-                    // Log the user in
+
                     $user = $this->userModel->where('email', $userData['email'])->first();
                     $this->setUserSession($user);
 
-                    // Determine redirect based on role
+
                     $redirectUrl = match ($user['role']) {
                         'pelanggan' => base_url('pelanggan/dashboard'),
                         'admin', 'pimpinan' => base_url('admin'),
@@ -349,7 +349,7 @@ class Auth extends BaseController
                     throw new \Exception('Gagal membuat akun pengguna');
                 }
             } catch (\Exception $e) {
-                // Rollback transaction on error
+
                 $db->transRollback();
                 log_message('error', 'Registration transaction failed: ' . $e->getMessage());
 
@@ -377,7 +377,7 @@ class Auth extends BaseController
             ]);
         }
 
-        // Generate new OTP
+
         $otpCode = $this->otpModel->generateOTP($registrationData['email'], 'registration');
 
         if (!$otpCode) {
@@ -387,7 +387,7 @@ class Auth extends BaseController
             ]);
         }
 
-        // Send OTP email
+
         if ($this->sendOTPEmail($registrationData['email'], $otpCode, 'registration')) {
             return $this->response->setJSON([
                 'status' => 'success',
@@ -401,7 +401,7 @@ class Auth extends BaseController
         }
     }
 
-    // ==================== HELPER METHODS ====================
+
 
     private function sendOTPEmail($email, $otpCode, $purpose)
     {

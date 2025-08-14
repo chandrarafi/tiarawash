@@ -54,7 +54,7 @@ class Perlengkapan extends BaseController
         return view('admin/perlengkapan/edit', $data);
     }
 
-    // API untuk DataTables
+
     public function getPerlengkapan()
     {
         $request = $this->request;
@@ -64,15 +64,15 @@ class Perlengkapan extends BaseController
         $search = $request->getGet('search')['value'];
         $kategori = $request->getGet('kategori');
 
-        // Query dasar
+
         $builder = $this->perlengkapanModel->builder();
 
-        // Filter berdasarkan kategori jika ada
+
         if ($kategori && $kategori !== 'semua') {
             $builder->where('kategori', $kategori);
         }
 
-        // Filter pencarian
+
         if ($search) {
             $builder->groupStart()
                 ->like('nama', $search)
@@ -81,16 +81,16 @@ class Perlengkapan extends BaseController
                 ->groupEnd();
         }
 
-        // Hitung total records dan filtered records
+
         $totalRecords = $builder->countAllResults(false);
         $totalFiltered = $totalRecords;
 
-        // Ambil data dengan limit dan offset
+
         $builder->orderBy('id', 'DESC');
         $builder->limit($length, $start);
         $data = $builder->get()->getResultArray();
 
-        // Format data untuk DataTables
+
         $response = [
             'draw' => intval($draw),
             'recordsTotal' => $totalRecords,
@@ -134,7 +134,7 @@ class Perlengkapan extends BaseController
         try {
             $this->perlengkapanModel->insert($data);
 
-            // Log aktivitas
+
             log_message('info', 'Perlengkapan baru ditambahkan: {nama} ({kategori})', $data);
 
             return $this->response->setJSON([
@@ -171,7 +171,7 @@ class Perlengkapan extends BaseController
             ]);
         }
 
-        // Ambil data lama untuk log perubahan
+
         $oldData = $this->perlengkapanModel->find($id);
         if (!$oldData) {
             return $this->response->setJSON([
@@ -192,7 +192,7 @@ class Perlengkapan extends BaseController
         try {
             $this->perlengkapanModel->update($id, $data);
 
-            // Log perubahan stok untuk pencatatan inventaris
+
             if ($oldData['stok'] != $data['stok']) {
                 $selisih = $data['stok'] - $oldData['stok'];
                 $status = $selisih > 0 ? 'Penambahan' : 'Pengurangan';
@@ -233,7 +233,7 @@ class Perlengkapan extends BaseController
         try {
             $this->perlengkapanModel->delete($id);
 
-            // Log aktivitas
+
             log_message('info', 'Perlengkapan dihapus: {nama} ({kategori})', $perlengkapan);
 
             return $this->respondDeleted([
@@ -250,7 +250,7 @@ class Perlengkapan extends BaseController
         }
     }
 
-    // Fungsi tambahan untuk manajemen stok
+
     public function updateStok()
     {
         $id = $this->request->getPost('id');
@@ -276,7 +276,7 @@ class Perlengkapan extends BaseController
         $stokLama = $perlengkapan['stok'];
         $stokBaru = $tipe === 'masuk' ? $stokLama + $jumlah : $stokLama - $jumlah;
 
-        // Validasi stok tidak boleh negatif
+
         if ($stokBaru < 0) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -287,7 +287,7 @@ class Perlengkapan extends BaseController
         try {
             $this->perlengkapanModel->update($id, ['stok' => $stokBaru]);
 
-            // Log perubahan stok
+
             log_message('info', 'Perubahan stok {nama}: {tipe} {jumlah} unit (sebelum: {stok_lama}, sesudah: {stok_baru}), Keterangan: {keterangan}', [
                 'nama' => $perlengkapan['nama'],
                 'tipe' => $tipe,
@@ -312,7 +312,7 @@ class Perlengkapan extends BaseController
         }
     }
 
-    // Fungsi untuk mendapatkan perlengkapan dengan stok menipis (untuk notifikasi)
+
     public function getStokMenipis()
     {
         $batasMinimal = 10; // Batas minimal stok yang dianggap menipis
@@ -326,21 +326,18 @@ class Perlengkapan extends BaseController
         ]);
     }
 
-    /**
-     * Laporan Data Perlengkapan PerBulan
-     */
     public function laporanPerbulan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Build query untuk laporan perbulan
+
         $builder = $this->perlengkapanModel->builder();
         $builder->where('MONTH(created_at)', $bulan);
         $builder->where('YEAR(created_at)', $tahun);
@@ -348,7 +345,7 @@ class Perlengkapan extends BaseController
 
         $perlengkapan = $builder->get()->getResultArray();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Data Perlengkapan PerBulan',
             'subtitle' => 'Laporan perlengkapan perbulan untuk admin dan pimpinan',
@@ -376,21 +373,18 @@ class Perlengkapan extends BaseController
         return view('admin/perlengkapan/laporan_perbulan', $data);
     }
 
-    /**
-     * Export Laporan Perlengkapan PerBulan ke PDF
-     */
     public function exportPerbulanPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Build query untuk laporan perbulan
+
         $builder = $this->perlengkapanModel->builder();
         $builder->where('MONTH(created_at)', $bulan);
         $builder->where('YEAR(created_at)', $tahun);
@@ -398,7 +392,7 @@ class Perlengkapan extends BaseController
 
         $perlengkapan = $builder->get()->getResultArray();
 
-        // Prepare data for PDF
+
         $data = [
             'perlengkapan' => $perlengkapan,
             'bulan' => $bulan,
@@ -420,22 +414,15 @@ class Perlengkapan extends BaseController
             ]
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/perlengkapan/laporan_perbulan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Perlengkapan_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/perlengkapan/laporan_perbulan_pdf', $data);
+        $filename = 'Laporan_Perlengkapan_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun;
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

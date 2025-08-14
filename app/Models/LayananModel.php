@@ -23,13 +23,13 @@ class LayananModel extends Model
         'status'
     ];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'kode_layanan'    => 'required|is_unique[layanan.kode_layanan]',
         'nama_layanan'    => 'required|max_length[255]',
@@ -79,7 +79,7 @@ class LayananModel extends Model
         ],
     ];
 
-    // Callbacks
+
     protected $beforeInsert = [];
     protected $beforeUpdate = [];
     protected $afterInsert  = [];
@@ -89,7 +89,7 @@ class LayananModel extends Model
     {
         $rules = $this->validationRules;
 
-        // If editing, modify the is_unique rule to exclude current record
+
         if ($excludeKode !== null) {
             $rules['kode_layanan'] = 'required|is_unique[layanan.kode_layanan,kode_layanan,' . $excludeKode . ']';
         }

@@ -14,13 +14,13 @@ class PembelianModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['no_faktur', 'tanggal', 'supplier', 'total_harga', 'keterangan', 'user_id'];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'no_faktur'    => 'required|min_length[3]|max_length[20]|is_unique[pembelian.no_faktur]',
         'tanggal'      => 'required|valid_date',
@@ -53,7 +53,7 @@ class PembelianModel extends Model
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
-    // Callbacks
+
     protected $allowCallbacks = true;
     protected $beforeInsert   = [];
     protected $afterInsert    = [];

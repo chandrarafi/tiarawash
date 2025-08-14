@@ -39,7 +39,7 @@ class Karyawan extends BaseController
 
     public function store()
     {
-        // Handle JSON request dari AJAX
+
         if ($this->request->getHeaderLine('Content-Type') === 'application/json') {
             $json = $this->request->getJSON(true);
             $data = $json;
@@ -47,7 +47,7 @@ class Karyawan extends BaseController
             $data = $this->request->getPost();
         }
 
-        // Validasi input
+
         $rules = [
             'idkaryawan' => 'required|is_unique[karyawan.idkaryawan]',
             'namakaryawan' => 'required|max_length[100]',
@@ -65,13 +65,13 @@ class Karyawan extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Generate ID jika kosong
+
         $idkaryawan = $data['idkaryawan'] ?? '';
         if (empty($idkaryawan)) {
             $idkaryawan = $this->karyawanModel->generateId();
         }
 
-        // Simpan data
+
         try {
             $this->karyawanModel->save([
                 'idkaryawan' => $idkaryawan,
@@ -121,7 +121,7 @@ class Karyawan extends BaseController
 
     public function update($id = null)
     {
-        // Handle JSON request dari AJAX
+
         if ($this->request->getHeaderLine('Content-Type') === 'application/json') {
             $json = $this->request->getJSON(true);
             $data = $json;
@@ -129,12 +129,12 @@ class Karyawan extends BaseController
             $data = $this->request->getPost();
         }
 
-        // Jika ID tidak ada di parameter, ambil dari data
+
         if ($id === null && isset($data['id'])) {
             $id = $data['id'];
         }
 
-        // Pastikan karyawan ada
+
         $karyawan = $this->karyawanModel->find($id);
         if (!$karyawan) {
             if ($this->request->isAJAX()) {
@@ -146,7 +146,7 @@ class Karyawan extends BaseController
             throw new PageNotFoundException('Karyawan dengan ID ' . $id . ' tidak ditemukan');
         }
 
-        // Validasi input
+
         $rules = [
             'namakaryawan' => 'required|max_length[100]',
             'nohp' => 'required|max_length[15]',
@@ -163,7 +163,7 @@ class Karyawan extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Update data
+
         try {
             $this->karyawanModel->update($id, [
                 'namakaryawan' => $data['namakaryawan'],
@@ -230,12 +230,12 @@ class Karyawan extends BaseController
         }
     }
 
-    // AJAX Methods untuk DataTables dan sistem lama
+
     public function getKaryawan()
     {
         $request = $this->request;
 
-        // Parameters untuk DataTables
+
         $start = $request->getGet('start') ?? 0;
         $length = $request->getGet('length') ?? 10;
         $search = $request->getGet('search')['value'] ?? '';
@@ -244,14 +244,14 @@ class Karyawan extends BaseController
         $orderColumn = $order[0]['column'] ?? 0;
         $orderDir = $order[0]['dir'] ?? 'asc';
 
-        // Columns untuk ordering
+
         $columns = ['idkaryawan', 'namakaryawan', 'nohp', 'alamat'];
         $orderBy = $columns[$orderColumn] ?? 'idkaryawan';
 
-        // Query builder
+
         $builder = $this->karyawanModel->builder();
 
-        // Search
+
         if (!empty($search)) {
             $builder->groupStart()
                 ->like('idkaryawan', $search)
@@ -261,19 +261,19 @@ class Karyawan extends BaseController
                 ->groupEnd();
         }
 
-        // Total records (filtered)
+
         $recordsFiltered = $builder->countAllResults(false);
 
-        // Apply ordering dan limit
+
         $builder->orderBy($orderBy, $orderDir);
         $builder->limit($length, $start);
 
         $karyawan = $builder->get()->getResultArray();
 
-        // Total records (unfiltered)
+
         $recordsTotal = $this->karyawanModel->countAllResults();
 
-        // Format data untuk DataTables
+
         $data = [];
         foreach ($karyawan as $row) {
             $data[] = [
@@ -331,23 +331,20 @@ class Karyawan extends BaseController
         ]);
     }
 
-    /**
-     * Laporan Data Karyawan
-     */
     public function laporan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan karyawan
+
         $karyawan = $this->karyawanModel->orderBy('idkaryawan', 'ASC')->findAll();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Data Karyawan',
             'subtitle' => 'Laporan data karyawan untuk admin dan pimpinan',
@@ -360,45 +357,35 @@ class Karyawan extends BaseController
         return view('admin/karyawan/laporan', $data);
     }
 
-    /**
-     * Export Laporan Karyawan ke PDF
-     */
     public function exportPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan karyawan
+
         $karyawan = $this->karyawanModel->orderBy('idkaryawan', 'ASC')->findAll();
 
-        // Prepare data for PDF
+
         $data = [
             'karyawan' => $karyawan,
             'tanggal_cetak' => $tanggal_cetak,
             'total_karyawan' => count($karyawan)
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/karyawan/laporan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Data_Karyawan_' . str_replace('/', '-', $tanggal_cetak) . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/karyawan/laporan_pdf', $data);
+        $filename = 'Laporan_Data_Karyawan_' . str_replace('/', '-', $tanggal_cetak);
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

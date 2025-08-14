@@ -14,13 +14,13 @@ class PelangganModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['kode_pelanggan', 'user_id', 'nama_pelanggan', 'no_hp', 'alamat'];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules      = [
         'kode_pelanggan'  => 'permit_empty|is_unique[pelanggan.kode_pelanggan]',
         'user_id'         => 'permit_empty|numeric|integer',
@@ -44,15 +44,13 @@ class PelangganModel extends Model
         'no_hp' => [
             'max_length' => 'Nomor HP maksimal 15 karakter',
         ],
-        'alamat' => [
-            // No validation messages needed since it's optional
-        ],
+        'alamat' => [],
     ];
 
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
-    // Callbacks
+
     protected $allowCallbacks = true;
     protected $beforeInsert   = ['generateKodePelanggan'];
     protected $afterInsert    = [];
@@ -102,7 +100,7 @@ class PelangganModel extends Model
      */
     public function getPelangganWithUser($kode_pelanggan)
     {
-        // Cek dulu apakah pelanggan ada
+
         $pelanggan = $this->find($kode_pelanggan);
         if (!$pelanggan) {
             log_message('error', 'Pelanggan tidak ditemukan dengan kode: ' . $kode_pelanggan);
@@ -116,7 +114,7 @@ class PelangganModel extends Model
 
         $result = $builder->get()->getRowArray();
 
-        // Jika hasil query kosong, kembalikan data pelanggan saja
+
         if (!$result) {
             log_message('debug', 'Join query tidak mengembalikan hasil, mengembalikan data pelanggan saja');
             return $pelanggan;

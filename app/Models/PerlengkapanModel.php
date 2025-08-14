@@ -14,13 +14,13 @@ class PerlengkapanModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['nama', 'kategori', 'stok', 'harga', 'deskripsi'];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'nama'     => 'required|min_length[3]|max_length[100]',
         'kategori' => 'required|in_list[alat,bahan]',

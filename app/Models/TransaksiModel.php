@@ -25,21 +25,21 @@ class TransaksiModel extends Model
         'user_id'
     ];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules      = [
         'no_transaksi'     => 'permit_empty|is_unique[transaksi.no_transaksi]',
         'tanggal'          => 'required|valid_date',
         'booking_id'       => 'permit_empty|numeric',
-        // 'pelanggan_id'     => 'required|max_length[10]', // REMOVED: redundant
+
         'layanan_id'       => 'required|is_not_unique[layanan.kode_layanan]',
-        // 'no_plat'          => 'required|max_length[20]', // REMOVED: redundant
-        // 'jenis_kendaraan'  => 'required|in_list[motor,mobil,lainnya]', // REMOVED: redundant
+
+
         'merk_kendaraan'   => 'permit_empty|max_length[50]',
         'total_harga'      => 'permit_empty|decimal',
         'status_pembayaran' => 'required|in_list[belum_bayar,dibayar,batal]',
@@ -54,8 +54,8 @@ class TransaksiModel extends Model
             'required' => 'Tanggal transaksi harus diisi',
             'valid_date' => 'Format tanggal tidak valid',
         ],
-        // REMOVED: no_plat validation - data comes from booking table
-        // REMOVED: jenis_kendaraan validation - data comes from layanan table
+
+
         'layanan_id' => [
             'required' => 'Layanan harus dipilih',
             'numeric' => 'ID layanan tidak valid',
@@ -67,7 +67,7 @@ class TransaksiModel extends Model
         ],
     ];
 
-    // Callbacks
+
     protected $beforeInsert = ['generateNoTransaksi'];
     protected $beforeUpdate = [];
 
@@ -92,7 +92,7 @@ class TransaksiModel extends Model
         $builder->join('users u', 'u.id = t.user_id', 'left');
 
         if ($id !== null) {
-            // Check if $id is numeric (ID) or string (no_transaksi)
+
             if (is_numeric($id)) {
                 $builder->where('t.id', $id);
             } else {
@@ -207,7 +207,7 @@ class TransaksiModel extends Model
 
     public function getTransaksiByPelanggan($pelangganId)
     {
-        // Use JOIN via booking table since pelanggan_id is removed from transaksi
+
         $builder = $this->db->table('transaksi t');
         $builder->join('booking b', 'b.id = t.booking_id', 'left');
         $builder->where('b.pelanggan_id', $pelangganId);

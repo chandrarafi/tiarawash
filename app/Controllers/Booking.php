@@ -33,17 +33,14 @@ class Booking extends BaseController
         $this->db = \Config\Database::connect();
     }
 
-    /**
-     * Halaman form booking untuk pelanggan
-     */
     public function create()
     {
-        // Pastikan user sudah login dan adalah pelanggan
+
         if (!session()->get('logged_in') || session()->get('role') !== 'pelanggan') {
             return redirect()->to('auth')->with('error', 'Silakan login sebagai pelanggan terlebih dahulu.');
         }
 
-        // Get pelanggan data
+
         $userId = session()->get('user_id');
         $pelanggan = $this->pelangganModel->where('user_id', $userId)->first();
 
@@ -51,7 +48,7 @@ class Booking extends BaseController
             return redirect()->to('pelanggan/dashboard')->with('error', 'Data pelanggan tidak ditemukan.');
         }
 
-        // Get active services
+
         $layananList = $this->layananModel->where('status', 'aktif')->findAll();
 
         $data = [
@@ -64,16 +61,13 @@ class Booking extends BaseController
         return view('pelanggan/booking/create', $data);
     }
 
-    /**
-     * Proses simpan booking
-     */
     public function store()
     {
         if (!$this->request->isAJAX()) {
             return redirect()->back();
         }
 
-        // Validasi user login
+
         if (!session()->get('logged_in') || session()->get('role') !== 'pelanggan') {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -81,7 +75,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get pelanggan data
+
         $userId = session()->get('user_id');
         $pelanggan = $this->pelangganModel->where('user_id', $userId)->first();
 
@@ -92,7 +86,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get layanan data to check jenis_kendaraan
+
         $layananId = $this->request->getPost('layanan_id');
         $layanan = $this->layananModel->find($layananId);
         if (!$layanan) {
@@ -104,7 +98,7 @@ class Booking extends BaseController
 
         $jenisKendaraan = $layanan['jenis_kendaraan'];
 
-        // Dynamic validation rules based on jenis kendaraan
+
         $rules = [
             'layanan_id' => 'required',
             'tanggal' => 'required|valid_date',
@@ -112,7 +106,7 @@ class Booking extends BaseController
             'catatan' => 'permit_empty'
         ];
 
-        // Add vehicle-specific validation rules
+
         if ($jenisKendaraan === 'motor') {
             $rules['no_plat_motor'] = 'required|max_length[20]';
             $rules['merk_motor'] = 'permit_empty|max_length[50]';
@@ -124,7 +118,7 @@ class Booking extends BaseController
             $rules['merk_lainnya'] = 'permit_empty|max_length[50]';
         }
 
-        // Check if it's a combo package based on nama_layanan
+
         $namaLayanan = strtolower($layanan['nama_layanan']);
         $isComboPackage = strpos($namaLayanan, 'combo') !== false ||
             strpos($namaLayanan, 'paket') !== false ||
@@ -135,7 +129,7 @@ class Booking extends BaseController
             strpos($namaLayanan, 'lengkap') !== false;
 
         if ($isComboPackage) {
-            // For combo packages, require both motor and mobil
+
             $rules['no_plat_motor'] = 'required|max_length[20]';
             $rules['merk_motor'] = 'permit_empty|max_length[50]';
             $rules['no_plat_mobil'] = 'required|max_length[20]';
@@ -150,7 +144,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Cek ketersediaan slot
+
         $tanggal = $this->request->getPost('tanggal');
         $jam = $this->request->getPost('jam');
 
@@ -161,7 +155,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Prepare vehicle data based on layanan type
+
         $vehicleData = $this->prepareVehicleData($jenisKendaraan, $layanan['nama_layanan']);
 
         if (!$vehicleData) {
@@ -171,14 +165,14 @@ class Booking extends BaseController
             ]);
         }
 
-        // Start transaction
+
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
             $bookingIds = [];
 
-            // Create booking for each vehicle
+
             foreach ($vehicleData as $vehicle) {
                 $bookingData = [
                     'pelanggan_id' => $pelanggan['kode_pelanggan'],
@@ -205,7 +199,7 @@ class Booking extends BaseController
                 throw new \Exception('Database transaction failed');
             }
 
-            // Get the first booking for response (atau bisa disesuaikan logic nya)
+
             $firstBooking = $this->bookingModel->find($bookingIds[0]);
 
             $message = count($bookingIds) > 1
@@ -232,14 +226,11 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Prepare vehicle data based on layanan type
-     */
     private function prepareVehicleData($jenisKendaraan, $namaLayanan = '')
     {
         $vehicleData = [];
 
-        // Check if it's a combo package based on nama_layanan
+
         $isComboPackage = false;
         if (!empty($namaLayanan)) {
             $namaLayananLower = strtolower($namaLayanan);
@@ -253,7 +244,7 @@ class Booking extends BaseController
         }
 
         if ($isComboPackage) {
-            // For combo packages, collect both motor and mobil data
+
             $noPlatMotor = $this->request->getPost('no_plat_motor');
             $merkMotor = $this->request->getPost('merk_motor');
             $noPlatMobil = $this->request->getPost('no_plat_mobil');
@@ -307,15 +298,12 @@ class Booking extends BaseController
         return count($vehicleData) > 0 ? $vehicleData : null;
     }
 
-    /**
-     * Prepare vehicle data for public booking form
-     */
     private function prepareVehicleDataForPublic($hasComboPackage, $uniqueVehicleTypes)
     {
         $vehicleData = [];
 
         if ($hasComboPackage) {
-            // For combo packages, collect both motor and mobil data
+
             $noPlatMotor = $this->request->getPost('no_plat_motor');
             $merkMotor = $this->request->getPost('merk_motor');
             $noPlatMobil = $this->request->getPost('no_plat_mobil');
@@ -335,7 +323,7 @@ class Booking extends BaseController
                 ];
             }
         } else {
-            // Add vehicle data based on unique vehicle types
+
             foreach ($uniqueVehicleTypes as $type) {
                 if ($type === 'motor') {
                     $noPlatMotor = $this->request->getPost('no_plat_motor');
@@ -374,16 +362,13 @@ class Booking extends BaseController
         return count($vehicleData) > 0 ? $vehicleData : null;
     }
 
-    /**
-     * Proses simpan booking dari form public (untuk guest dan pelanggan)
-     */
     public function storePublic()
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid request']);
         }
 
-        // Parse selected services first to determine vehicle requirements
+
         $selectedServicesJson = $this->request->getPost('selected_services');
         $selectedServices = json_decode($selectedServicesJson, true);
 
@@ -394,7 +379,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get service data to determine vehicle requirements
+
         $serviceNames = [];
         $vehicleTypes = [];
         foreach ($selectedServices as $kodeLayanan) {
@@ -405,7 +390,7 @@ class Booking extends BaseController
             }
         }
 
-        // Check if any service is a combo package
+
         $hasComboPackage = false;
         foreach ($serviceNames as $namaLayanan) {
             $namaLayananLower = strtolower($namaLayanan);
@@ -423,7 +408,7 @@ class Booking extends BaseController
             }
         }
 
-        // Dynamic validation rules
+
         $rules = [
             'selected_services' => 'required',
             'total_durasi' => 'required|numeric',
@@ -433,16 +418,16 @@ class Booking extends BaseController
             'catatan' => 'permit_empty'
         ];
 
-        // Add vehicle-specific validation rules
+
         $uniqueVehicleTypes = array_unique($vehicleTypes);
         if ($hasComboPackage) {
-            // For combo packages, require both motor and mobil
+
             $rules['no_plat_motor'] = 'required|max_length[20]';
             $rules['merk_motor'] = 'permit_empty|max_length[50]';
             $rules['no_plat_mobil'] = 'required|max_length[20]';
             $rules['merk_mobil'] = 'permit_empty|max_length[50]';
         } else {
-            // Add validation based on vehicle types in services
+
             foreach ($uniqueVehicleTypes as $type) {
                 if ($type === 'motor') {
                     $rules['no_plat_motor'] = 'required|max_length[20]';
@@ -457,7 +442,7 @@ class Booking extends BaseController
             }
         }
 
-        // Jika user belum login, validasi data pelanggan
+
         $isLoggedIn = session()->get('logged_in') && session()->get('role') === 'pelanggan';
         if (!$isLoggedIn) {
             $rules['nama_pelanggan'] = 'required|max_length[100]';
@@ -473,10 +458,10 @@ class Booking extends BaseController
             ]);
         }
 
-        // Validate selected services exist
+
         $validServices = [];
         foreach ($selectedServices as $kodeLayanan) {
-            // Ensure kodeLayanan is a string
+
             if (!is_string($kodeLayanan) || empty($kodeLayanan)) {
                 return $this->response->setJSON([
                     'status' => 'error',
@@ -494,12 +479,12 @@ class Booking extends BaseController
             $validServices[] = $service;
         }
 
-        // Get atau create pelanggan data
+
         $pelangganId = null;
         $userId = null;
 
         if ($isLoggedIn) {
-            // User sudah login sebagai pelanggan
+
             $userId = session()->get('user_id');
             $pelanggan = $this->pelangganModel->where('user_id', $userId)->first();
 
@@ -511,19 +496,19 @@ class Booking extends BaseController
             }
             $pelangganId = $pelanggan['kode_pelanggan'];
         } else {
-            // Guest booking - create temporary pelanggan record
+
             $pelangganData = [
                 'nama_pelanggan' => $this->request->getPost('nama_pelanggan'),
                 'no_hp' => $this->request->getPost('no_hp'),
                 'alamat' => 'Guest booking - ' . date('Y-m-d H:i:s')
             ];
 
-            // Check if pelanggan already exists by phone
+
             $existingPelanggan = $this->pelangganModel->where('no_hp', $pelangganData['no_hp'])->first();
             if ($existingPelanggan) {
                 $pelangganId = $existingPelanggan['kode_pelanggan'];
             } else {
-                // Create new pelanggan for guest
+
                 if ($this->pelangganModel->insert($pelangganData)) {
                     $insertId = $this->pelangganModel->getInsertID();
                     $newPelanggan = $this->pelangganModel->find($insertId);
@@ -537,18 +522,18 @@ class Booking extends BaseController
             }
         }
 
-        // Check slot availability for the total duration
+
         $tanggal = $this->request->getPost('tanggal');
         $jam = $this->request->getPost('jam');
         $totalDurasi = (int) $this->request->getPost('total_durasi');
         $jenisKendaraan = $this->request->getPost('jenis_kendaraan');
 
-        // Convert jam to minutes for calculation
+
         list($hours, $minutes) = explode(':', $jam);
         $startTimeMinutes = ($hours * 60) + $minutes;
         $endTimeMinutes = $startTimeMinutes + $totalDurasi;
 
-        // Check if there are available karyawan for this time slot
+
         if (!$this->bookingModel->checkSlotAvailabilityWithKaryawan($tanggal, $jam, $totalDurasi)) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -560,7 +545,7 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Generate single kode_booking for all services
+
             $prefix = 'BK';
             $date = date('Ymd');
             $lastBooking = $this->bookingModel->orderBy('id', 'DESC')->first();
@@ -575,7 +560,7 @@ class Booking extends BaseController
 
             $sharedKodeBooking = $prefix . '-' . $date . '-' . sprintf('%03d', $number);
 
-            // Get ONE karyawan available for the entire booking duration
+
             $sharedKaryawan = $this->bookingModel->getRandomAvailableKaryawan(
                 $tanggal,
                 $jam,
@@ -588,19 +573,19 @@ class Booking extends BaseController
 
             log_message('info', "Assigned shared karyawan {$sharedKaryawan['namakaryawan']} (ID: {$sharedKaryawan['idkaryawan']}) for entire booking duration ({$totalDurasi} minutes)");
 
-            // Prepare vehicle data for the booking
+
             $vehicleData = $this->prepareVehicleDataForPublic($hasComboPackage, $uniqueVehicleTypes);
 
             if (!$vehicleData || empty($vehicleData)) {
                 throw new \Exception('Data kendaraan tidak valid atau tidak lengkap');
             }
 
-            // Create booking for each selected service (not per vehicle)
-            // Store all vehicle data in first vehicle's no_plat and merk_kendaraan
+
+
             $bookingIds = [];
             $totalHarga = 0;
 
-            // Combine all vehicle data into a single string for storage
+
             $allNoPlat = [];
             $allMerkKendaraan = [];
             foreach ($vehicleData as $vehicle) {
@@ -614,10 +599,10 @@ class Booking extends BaseController
             $combinedMerkKendaraan = implode(', ', $allMerkKendaraan);
 
             foreach ($validServices as $index => $service) {
-                // Calculate jam for each service (sequential)
+
                 $serviceStartMinutes = $startTimeMinutes;
                 if ($index > 0) {
-                    // Add duration of all previous services
+
                     for ($i = 0; $i < $index; $i++) {
                         $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
                     }
@@ -629,7 +614,7 @@ class Booking extends BaseController
                     $serviceStartMinutes % 60
                 );
 
-                // Set payment timeout (30 minutes from now)
+
                 $paymentExpires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
                 $bookingData = [
@@ -714,12 +699,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Detail booking
-     */
     public function detail($bookingId)
     {
-        // Pastikan user sudah login
+
         if (!session()->get('logged_in')) {
             return redirect()->to('auth');
         }
@@ -730,7 +712,7 @@ class Booking extends BaseController
             return redirect()->to('pelanggan/dashboard')->with('error', 'Booking tidak ditemukan.');
         }
 
-        // Cek apakah user berhak akses booking ini
+
         $userRole = session()->get('role');
         $userId = session()->get('user_id');
 
@@ -743,19 +725,19 @@ class Booking extends BaseController
             return redirect()->to('auth');
         }
 
-        // Get all bookings with same kode_booking (for multi-service bookings)
+
         $relatedBookings = [];
         if ($booking['kode_booking']) {
             $relatedBookings = $this->bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
         }
 
-        // Get antrian jika ada
+
         $antrian = $this->antrianModel->where('booking_id', $bookingId)->first();
 
-        // Get transaksi jika ada (check all bookings with same kode_booking)
+
         $transaksi = null;
         if ($booking['kode_booking']) {
-            // Find transaction for any booking with the same kode_booking
+
             $allRelatedBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
             foreach ($allRelatedBookings as $relatedBooking) {
                 $foundTransaksi = $this->transaksiModel->where('booking_id', $relatedBooking['id'])->first();
@@ -778,12 +760,9 @@ class Booking extends BaseController
         return view('pelanggan/booking/detail', $data);
     }
 
-    /**
-     * Riwayat booking pelanggan
-     */
     public function history()
     {
-        // Pastikan user sudah login sebagai pelanggan
+
         if (!session()->get('logged_in') || session()->get('role') !== 'pelanggan') {
             return redirect()->to('auth');
         }
@@ -795,10 +774,10 @@ class Booking extends BaseController
             return redirect()->to('pelanggan/dashboard')->with('error', 'Data pelanggan tidak ditemukan.');
         }
 
-        // Get booking history and group by kode_booking
+
         $allBookings = $this->bookingModel->getBookingsByPelanggan($pelanggan['kode_pelanggan']);
 
-        // Group bookings by kode_booking
+
         $groupedBookings = [];
         foreach ($allBookings as $booking) {
             $kodeBooking = $booking['kode_booking'];
@@ -816,7 +795,7 @@ class Booking extends BaseController
             $groupedBookings[$kodeBooking]['service_count']++;
         }
 
-        // Convert to indexed array and sort by date
+
         $bookings = array_values($groupedBookings);
         usort($bookings, function ($a, $b) {
             $dateTimeA = $a['main_booking']['tanggal'] . ' ' . $a['main_booking']['jam'];
@@ -834,12 +813,9 @@ class Booking extends BaseController
         return view('pelanggan/booking/history', $data);
     }
 
-    /**
-     * Konfirmasi booking (untuk admin)
-     */
     public function confirm($bookingId)
     {
-        // Pastikan user adalah admin/pimpinan
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -855,15 +831,15 @@ class Booking extends BaseController
             ]);
         }
 
-        // Start transaction
+
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            // Update status booking
+
             $this->bookingModel->update($bookingId, ['status' => 'dikonfirmasi']);
 
-            // Buat antrian otomatis
+
             $antrianData = [
                 'booking_id' => $bookingId,
                 'tanggal' => $booking['tanggal'],
@@ -901,16 +877,13 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Proses pembayaran dari booking
-     */
     public function processPayment($bookingId)
     {
         if (!$this->request->isAJAX()) {
             return redirect()->back();
         }
 
-        // Pastikan user sudah login
+
         if (!session()->get('logged_in')) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -926,7 +899,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Validasi akses
+
         $userRole = session()->get('role');
         $userId = session()->get('user_id');
 
@@ -940,7 +913,7 @@ class Booking extends BaseController
             }
         }
 
-        // Validasi input
+
         $rules = [
             'metode_pembayaran' => 'required|in_list[tunai,kartu_kredit,kartu_debit,e-wallet,transfer]'
         ];
@@ -953,12 +926,12 @@ class Booking extends BaseController
             ]);
         }
 
-        // Start transaction
+
         $db = \Config\Database::connect();
         $db->transStart();
 
         try {
-            // Create transaksi
+
             $transaksiData = [
                 'tanggal' => date('Y-m-d'),
                 'booking_id' => $bookingId,
@@ -977,7 +950,7 @@ class Booking extends BaseController
                 $transaksiId = $this->transaksiModel->getInsertID();
                 $transaksi = $this->transaksiModel->find($transaksiId);
 
-                // Update booking status
+
                 $this->bookingModel->update($bookingId, ['status' => 'selesai']);
 
                 log_message('info', 'Payment processed for booking ' . $bookingId . ': ' . $transaksi['no_transaksi']);
@@ -1010,16 +983,13 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Cancel booking
-     */
     public function cancel($bookingId)
     {
         if (!$this->request->isAJAX()) {
             return redirect()->back();
         }
 
-        // Pastikan user sudah login
+
         if (!session()->get('logged_in')) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1035,7 +1005,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Validasi akses
+
         $userRole = session()->get('role');
         $userId = session()->get('user_id');
 
@@ -1049,7 +1019,7 @@ class Booking extends BaseController
             }
         }
 
-        // Cek apakah booking masih bisa dibatalkan
+
         if (in_array($booking['status'], ['selesai', 'dibatalkan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1058,7 +1028,7 @@ class Booking extends BaseController
         }
 
         try {
-            // Update status booking
+
             if ($this->bookingModel->update($bookingId, ['status' => 'dibatalkan'])) {
                 return $this->response->setJSON([
                     'status' => 'success',
@@ -1077,9 +1047,6 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Get available time slots for specific date and service
-     */
     public function getAvailableSlots()
     {
         if (!$this->request->isAJAX()) {
@@ -1095,11 +1062,11 @@ class Booking extends BaseController
         }
 
         try {
-            // Get total number of karyawan
+
             $karyawanModel = new \App\Models\KaryawanModel();
             $totalKaryawan = $karyawanModel->countAll();
 
-            // Get existing bookings for the date with karyawan info
+
             $existingBookings = $this->bookingModel
                 ->select('booking.jam, booking.layanan_id, booking.id_karyawan')
                 ->join('layanan l', 'l.kode_layanan = booking.layanan_id', 'left')
@@ -1109,19 +1076,19 @@ class Booking extends BaseController
                 ->where('booking.id_karyawan IS NOT NULL') // Only bookings with assigned karyawan
                 ->findAll();
 
-            // Filter out past times for today
+
             $currentTime = date('H:i');
             $isToday = ($tanggal === date('Y-m-d'));
 
-            // Check if this is a simple request (like from pelanggan) - no total_durasi parameter
+
             if (empty($totalDurasi)) {
-                // Return simple array of available slots like pelanggan expects
+
                 $availableSlots = $this->generateSimpleAvailableSlots($existingBookings, $totalKaryawan, $isToday, $currentTime);
 
-                // Convert to plain arrays to ensure JSON compatibility
+
                 $existingBookingsArray = [];
                 foreach ($existingBookings as $booking) {
-                    // Only include bookings with valid karyawan assignment
+
                     if (!empty($booking['id_karyawan']) && !empty($booking['jam'])) {
                         $existingBookingsArray[] = [
                             'jam' => $booking['jam'],
@@ -1132,7 +1099,7 @@ class Booking extends BaseController
                     }
                 }
 
-                // Debug log
+
                 log_message('debug', "Processing date: $tanggal");
                 log_message('debug', "Total karyawan: $totalKaryawan");
                 log_message('debug', "Raw bookings: " . count($existingBookings));
@@ -1144,7 +1111,7 @@ class Booking extends BaseController
                 return $this->response->setJSON([
                     'status' => 'success',
                     'data' => $availableSlots,
-                    // Also include detailed data for admin karyawan count display
+
                     'existing_bookings' => $existingBookingsArray,
                     'total_karyawan' => (int)$totalKaryawan,
                     'is_today' => $isToday,
@@ -1152,7 +1119,7 @@ class Booking extends BaseController
                 ]);
             }
 
-            // Return complex data for admin (when total_durasi is provided)
+
             $response = [
                 'status' => 'success',
                 'existing_bookings' => $existingBookings,
@@ -1172,9 +1139,6 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Generate simple available slots array (like pelanggan expects)
-     */
     private function generateSimpleAvailableSlots($existingBookings, $totalKaryawan, $isToday, $currentTime)
     {
         $startHour = 8;
@@ -1183,7 +1147,7 @@ class Booking extends BaseController
 
 
 
-        // Generate 30-minute slots
+
         for ($hour = $startHour; $hour < $endHour; $hour++) {
             $slots = [
                 sprintf('%02d:00', $hour),
@@ -1191,15 +1155,15 @@ class Booking extends BaseController
             ];
 
             foreach ($slots as $slot) {
-                // Skip past times for today
+
                 if ($isToday && $currentTime && $slot <= $currentTime) {
                     continue;
                 }
 
-                // Count busy employees at this time
+
                 $busyKaryawanSet = [];
                 foreach ($existingBookings as $booking) {
-                    // Skip invalid bookings
+
                     if (empty($booking['id_karyawan']) || empty($booking['jam'])) {
                         continue;
                     }
@@ -1215,7 +1179,7 @@ class Booking extends BaseController
 
                 $availableKaryawan = $totalKaryawan - count($busyKaryawanSet);
 
-                // Log for debugging
+
                 log_message('debug', "Slot $slot - busy karyawan: " . count($busyKaryawanSet) . ", available: $availableKaryawan");
 
                 if ($availableKaryawan > 0) {
@@ -1226,9 +1190,6 @@ class Booking extends BaseController
         return $availableSlots;
     }
 
-    /**
-     * Helper method to add minutes to time string
-     */
     private function addMinutesToTime($timeStr, $minutes)
     {
         $time = new \DateTime($timeStr);
@@ -1236,28 +1197,22 @@ class Booking extends BaseController
         return $time->format('H:i');
     }
 
-    /**
-     * Helper method to check if times overlap
-     */
     private function timesOverlap($start1, $end1, $start2, $end2)
     {
         return $start1 < $end2 && $end1 > $start2;
     }
 
-    // ================== ADMIN BOOKING METHODS ==================
 
-    /**
-     * Admin booking index with payment confirmation integration
-     */
+
     public function index()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get all bookings grouped by kode_booking with optional transaction data
-        // Use a more compatible approach for MySQL strict mode
+
+
         $allBookings = $this->db->query("
             SELECT 
                 b.kode_booking,
@@ -1296,7 +1251,7 @@ class Booking extends BaseController
             ORDER BY MAX(b.created_at) DESC
         ")->getResultArray();
 
-        // Process the data to get proper structure
+
         $transactions = [];
         foreach ($allBookings as $booking) {
             $transactions[] = [
@@ -1309,7 +1264,7 @@ class Booking extends BaseController
                 'layanan_list' => $booking['layanan_list'],
                 'jumlah_layanan' => $booking['jumlah_layanan'],
                 'namakaryawan' => $booking['namakaryawan'],
-                // Transaction data (null if no transaction)
+
                 'no_transaksi' => $booking['no_transaksi'],
                 'status_pembayaran' => $booking['status_pembayaran'] ?? 'belum_bayar',
                 'bukti_pembayaran' => $booking['bukti_pembayaran'],
@@ -1320,7 +1275,7 @@ class Booking extends BaseController
             ];
         }
 
-        // Get statistics
+
         $stats = [
             'total_bookings' => $this->bookingModel->countAll(),
             'pending_bookings' => $this->bookingModel->where('status', 'menunggu_konfirmasi')->countAllResults(),
@@ -1339,17 +1294,14 @@ class Booking extends BaseController
         return view('admin/booking/index', $data);
     }
 
-    /**
-     * Admin create booking form
-     */
     public function adminCreate()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get related data for form
+
         $pelanggan = $this->pelangganModel->findAll();
         $layanan = $this->layananModel->where('status', 'aktif')->findAll();
         $karyawan = $this->karyawanModel->findAll();
@@ -1365,12 +1317,9 @@ class Booking extends BaseController
         return view('admin/booking/create', $data);
     }
 
-    /**
-     * Admin store booking
-     */
     public function adminStore()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -1402,7 +1351,7 @@ class Booking extends BaseController
             $kodeBooking = $this->bookingModel->generateNewKodeBooking();
             $layananModel = new \App\Models\LayananModel();
 
-            // Calculate total duration for all services
+
             $totalDurasi = 0;
             $validServices = [];
             foreach ($layananIds as $layananId) {
@@ -1417,7 +1366,7 @@ class Booking extends BaseController
                 throw new \Exception('Tidak ada layanan valid yang dipilih');
             }
 
-            // Get ONE karyawan available for the entire booking duration
+
             $sharedKaryawan = $this->bookingModel->getRandomAvailableKaryawan(
                 $this->request->getPost('tanggal'),
                 $this->request->getPost('jam'),
@@ -1433,7 +1382,7 @@ class Booking extends BaseController
             $totalHarga = 0;
             $firstBookingId = null;
 
-            // Create booking for each valid service
+
             foreach ($validServices as $layanan) {
                 $layananId = $layanan['kode_layanan'];
 
@@ -1464,10 +1413,10 @@ class Booking extends BaseController
                 $totalHarga += $layanan['harga'];
             }
 
-            // Create transaction
+
             $transaksiModel = new \App\Models\TransaksiModel();
 
-            // Generate no_transaksi
+
             $noTransaksi = 'TRX-' . date('Ymd') . '-' . sprintf('%04d', rand(1000, 9999));
 
             $transaksiData = [
@@ -1497,7 +1446,7 @@ class Booking extends BaseController
                 throw new \Exception('Database transaction failed');
             }
 
-            // Check if AJAX request
+
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'status' => 'success',
@@ -1510,7 +1459,7 @@ class Booking extends BaseController
             $db->transRollback();
             log_message('error', 'Admin booking creation failed: ' . $e->getMessage());
 
-            // Check if AJAX request
+
             if ($this->request->isAJAX()) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'status' => 'error',
@@ -1522,36 +1471,33 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Show booking detail with payment info by booking ID
-     */
     public function show($bookingId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get main booking with details
+
         $booking = $this->bookingModel->getBookingWithDetails($bookingId);
 
         if (!$booking) {
             return redirect()->to('admin/booking')->with('error', 'Booking tidak ditemukan');
         }
 
-        // Get all bookings with same kode_booking (multi-service)
+
         $relatedBookings = [];
         if ($booking['kode_booking']) {
             $relatedBookings = $this->bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
         }
 
-        // Get antrian if exists
+
         $antrian = $this->antrianModel->where('booking_id', $bookingId)->first();
 
-        // Get transaksi if exists (check all bookings with same kode_booking)
+
         $transaksi = null;
         if ($booking['kode_booking']) {
-            // Find transaction for any booking with the same kode_booking
+
             $allRelatedBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
             foreach ($allRelatedBookings as $relatedBooking) {
                 $foundTransaksi = $this->transaksiModel->where('booking_id', $relatedBooking['id'])->first();
@@ -1562,7 +1508,7 @@ class Booking extends BaseController
             }
         }
 
-        // Add compatibility fields for admin view
+
         $booking['tanggal_booking'] = $booking['tanggal'];
         $booking['jam_booking'] = $booking['jam'];
         $booking['booking_status'] = $booking['status'];
@@ -1579,12 +1525,9 @@ class Booking extends BaseController
         return view('admin/booking/show', $data);
     }
 
-    /**
-     * Edit booking
-     */
     public function edit($bookingId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -1595,10 +1538,10 @@ class Booking extends BaseController
             return redirect()->to('admin/booking')->with('error', 'Booking tidak ditemukan');
         }
 
-        // Get all bookings with the same kode_booking (for multi-service)
+
         $allBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
 
-        // Get services for all bookings with the same kode_booking
+
         $bookingServices = [];
         foreach ($allBookings as $b) {
             $layanan = $this->layananModel->where('kode_layanan', $b['layanan_id'])->first();
@@ -1607,7 +1550,7 @@ class Booking extends BaseController
             }
         }
 
-        // Get related data for form
+
         $pelanggan = $this->pelangganModel->findAll();
         $layanan = $this->layananModel->findAll();
         $karyawan = $this->karyawanModel->findAll();
@@ -1625,12 +1568,9 @@ class Booking extends BaseController
         return view('admin/booking/edit', $data);
     }
 
-    /**
-     * Update booking
-     */
     public function update($bookingId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -1654,7 +1594,7 @@ class Booking extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Get selected services
+
         $layananIds = $this->request->getPost('layanan_ids');
         if (empty($layananIds)) {
             return redirect()->back()->withInput()->with('error', 'Pilih minimal satu layanan');
@@ -1664,10 +1604,10 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Get existing bookings with the same kode_booking
+
             $existingBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
 
-            // Check which bookings have transactions (cannot be deleted)
+
             $bookingsWithTransactions = [];
             $bookingsWithoutTransactions = [];
 
@@ -1683,12 +1623,12 @@ class Booking extends BaseController
                 }
             }
 
-            // Delete bookings without transactions
+
             foreach ($bookingsWithoutTransactions as $bookingToDelete) {
                 $this->bookingModel->delete($bookingToDelete['id']);
             }
 
-            // Get total duration for all selected services
+
             $totalDurasi = 0;
             $validServices = [];
             foreach ($layananIds as $layananId) {
@@ -1703,7 +1643,7 @@ class Booking extends BaseController
                 throw new \Exception('Tidak ada layanan valid yang dipilih');
             }
 
-            // Get or assign karyawan
+
             $idKaryawan = $this->request->getPost('id_karyawan');
             if (empty($idKaryawan)) {
                 $tanggal = $this->request->getPost('tanggal');
@@ -1712,18 +1652,18 @@ class Booking extends BaseController
                 $idKaryawan = $availableKaryawan ? $availableKaryawan['idkaryawan'] : null;
             }
 
-            // Calculate start time in minutes
+
             list($hours, $minutes) = explode(':', $this->request->getPost('jam'));
             $startTimeMinutes = ($hours * 60) + $minutes;
 
-            // Update/Create bookings for each selected service
+
             $updatedBookingCount = 0;
 
             foreach ($validServices as $index => $service) {
-                // Calculate jam for each service (sequential)
+
                 $serviceStartMinutes = $startTimeMinutes;
                 if ($index > 0) {
-                    // Add duration of all previous services
+
                     for ($i = 0; $i < $index; $i++) {
                         $serviceStartMinutes += (int)$validServices[$i]['durasi_menit'];
                     }
@@ -1750,7 +1690,7 @@ class Booking extends BaseController
                     'user_id' => $booking['user_id'] // Keep original user
                 ];
 
-                // Try to update existing booking with transaction first
+
                 $updated = false;
                 if ($updatedBookingCount < count($bookingsWithTransactions)) {
                     $existingBooking = $bookingsWithTransactions[$updatedBookingCount];
@@ -1760,7 +1700,7 @@ class Booking extends BaseController
                     }
                 }
 
-                // If no existing booking to update, create new one
+
                 if (!$updated) {
                     if (!$this->bookingModel->insert($bookingData)) {
                         throw new \Exception('Gagal menyimpan booking untuk layanan: ' . $service['nama_layanan']);
@@ -1768,9 +1708,9 @@ class Booking extends BaseController
                 }
             }
 
-            // Handle remaining bookings with transactions that don't have corresponding services
+
             if ($updatedBookingCount < count($bookingsWithTransactions)) {
-                // Log warning for remaining bookings with transactions
+
                 for ($i = $updatedBookingCount; $i < count($bookingsWithTransactions); $i++) {
                     $remainingBooking = $bookingsWithTransactions[$i];
                     log_message('warning', "Booking ID {$remainingBooking['id']} has transaction but no corresponding service in update. Keeping existing data.");
@@ -1783,7 +1723,7 @@ class Booking extends BaseController
                 throw new \Exception('Gagal memperbarui booking');
             }
 
-            // Check if AJAX request
+
             if ($this->request->isAJAX()) {
                 return $this->response->setJSON([
                     'status' => 'success',
@@ -1796,7 +1736,7 @@ class Booking extends BaseController
             $db->transRollback();
             log_message('error', 'Update booking error: ' . $e->getMessage());
 
-            // Check if AJAX request
+
             if ($this->request->isAJAX()) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'status' => 'error',
@@ -1808,12 +1748,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Delete booking
-     */
     public function delete($bookingId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1843,12 +1780,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Approve payment (integrated into booking)
-     */
     public function approvePayment($transaksiId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1877,17 +1811,17 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Update payment status to approved
+
             $transaksiModel->update($transaksiId, [
                 'status_pembayaran' => 'dibayar',
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
 
-            // Update related booking status to confirmed
+
             if ($transaksi['booking_id']) {
                 $booking = $this->bookingModel->find($transaksi['booking_id']);
                 if ($booking && is_array($booking)) {
-                    // Update all bookings with same kode_booking
+
                     $this->bookingModel->where('kode_booking', $booking['kode_booking'])
                         ->set(['status' => 'dikonfirmasi'])
                         ->update();
@@ -1917,12 +1851,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Reject payment (integrated into booking)
-     */
     public function rejectPayment($transaksiId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -1953,18 +1884,18 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Update payment status to rejected
+
             $transaksiModel->update($transaksiId, [
                 'status_pembayaran' => 'batal',
                 'catatan' => $alasan,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
 
-            // Update related booking status to cancelled
+
             if ($transaksi['booking_id']) {
                 $booking = $this->bookingModel->find($transaksi['booking_id']);
                 if ($booking && is_array($booking)) {
-                    // Update all bookings with same kode_booking
+
                     $this->bookingModel->where('kode_booking', $booking['kode_booking'])
                         ->set(['status' => 'batal'])
                         ->update();
@@ -1994,12 +1925,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Confirm booking by kode_booking (for admin)
-     */
     public function confirmBookingByCode($kodeBooking)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -2007,7 +1935,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get all bookings with this kode_booking
+
         $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
 
         if (empty($bookings)) {
@@ -2017,7 +1945,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Check if booking is still pending
+
         $firstBooking = $bookings[0];
         if ($firstBooking['status'] !== 'menunggu_konfirmasi') {
             return $this->response->setJSON([
@@ -2030,12 +1958,12 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Update all bookings with same kode_booking to confirmed
+
             $this->bookingModel->where('kode_booking', $kodeBooking)
                 ->set(['status' => 'dikonfirmasi'])
                 ->update();
 
-            // Create antrian for the first booking (representing the whole booking session)
+
             $antrianData = [
                 'booking_id' => $firstBooking['id'],
                 'tanggal' => $firstBooking['tanggal'],
@@ -2075,12 +2003,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Reject booking by kode_booking (for admin)
-     */
     public function rejectBookingByCode($kodeBooking)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -2088,7 +2013,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Get all bookings with this kode_booking
+
         $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
 
         if (empty($bookings)) {
@@ -2098,7 +2023,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Check if booking is still pending
+
         $firstBooking = $bookings[0];
         if ($firstBooking['status'] !== 'menunggu_konfirmasi') {
             return $this->response->setJSON([
@@ -2113,7 +2038,7 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Update all bookings with same kode_booking to rejected
+
             $this->bookingModel->where('kode_booking', $kodeBooking)
                 ->set([
                     'status' => 'dibatalkan',
@@ -2121,7 +2046,7 @@ class Booking extends BaseController
                 ])
                 ->update();
 
-            // Also update related transaction if exists
+
             $transaksiModel = new \App\Models\TransaksiModel();
             $transaksi = $transaksiModel->where('booking_id', $firstBooking['id'])->first();
 
@@ -2155,16 +2080,13 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Get transaction by kode_booking (for receipt access from history)
-     */
     public function getTransaction($kodeBooking)
     {
         if (!$this->request->isAJAX()) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid request']);
         }
 
-        // Get any booking with this kode_booking to find related transaction
+
         $booking = $this->bookingModel->where('kode_booking', $kodeBooking)->first();
 
         if (!$booking) {
@@ -2174,7 +2096,7 @@ class Booking extends BaseController
             ]);
         }
 
-        // Find transaction for this booking
+
         $transaksi = $this->transaksiModel->where('booking_id', $booking['id'])->first();
 
         if ($transaksi) {
@@ -2192,12 +2114,9 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Delete transaction and related bookings
-     */
     public function deleteTransaction($transaksiId)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -2219,16 +2138,16 @@ class Booking extends BaseController
         $db->transStart();
 
         try {
-            // Get related booking
+
             $booking = $this->bookingModel->find($transaksi['booking_id']);
 
             if ($booking && is_array($booking)) {
-                // Delete all bookings with same kode_booking
+
                 $this->bookingModel->where('kode_booking', $booking['kode_booking'])->delete();
                 log_message('info', "Deleted bookings with kode_booking: {$booking['kode_booking']}");
             }
 
-            // Delete transaction
+
             $transaksiModel->delete($transaksiId);
             log_message('info', "Deleted transaction: {$transaksi['no_transaksi']}");
 
@@ -2253,22 +2172,19 @@ class Booking extends BaseController
         }
     }
 
-    /**
-     * Laporan Booking Pertanggan
-     */
     public function laporan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
         $tanggal_filter = $this->request->getGet('tanggal');
 
-        // Build query for booking data with proper GROUP BY compliance
+
         $builder = $this->db->table('booking b');
         $builder->select('
             b.kode_booking,
@@ -2289,7 +2205,7 @@ class Booking extends BaseController
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
         $builder->where('b.kode_booking IS NOT NULL');
 
-        // Apply date filters
+
         if ($tanggal_filter) {
             $builder->where('b.tanggal', $tanggal_filter);
         } else {
@@ -2303,7 +2219,7 @@ class Booking extends BaseController
 
         $bookings = $builder->get()->getResultArray();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Booking Pertanggal',
             'subtitle' => 'Laporan booking pelanggan untuk admin dan pimpinan',
@@ -2332,22 +2248,19 @@ class Booking extends BaseController
         return view('admin/booking/laporan', $data);
     }
 
-    /**
-     * Export Laporan Booking ke PDF
-     */
     public function exportPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
         $tanggal_filter = $this->request->getGet('tanggal');
 
-        // Build query for booking data with proper GROUP BY compliance
+
         $builder = $this->db->table('booking b');
         $builder->select('
             b.kode_booking,
@@ -2368,7 +2281,7 @@ class Booking extends BaseController
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
         $builder->where('b.kode_booking IS NOT NULL');
 
-        // Apply date filters
+
         if ($tanggal_filter) {
             $builder->where('b.tanggal', $tanggal_filter);
         } else {
@@ -2382,7 +2295,7 @@ class Booking extends BaseController
 
         $bookings = $builder->get()->getResultArray();
 
-        // Prepare data for PDF
+
         $data = [
             'bookings' => $bookings,
             'bulan' => $bulan,
@@ -2405,44 +2318,35 @@ class Booking extends BaseController
             ]
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/booking/laporan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Set filename
+        $html = view('admin/booking/laporan_pdf', $data);
+        
         if ($tanggal_filter) {
-            $filename = 'Laporan_Booking_' . date('d-m-Y', strtotime($tanggal_filter)) . '.pdf';
+            $filename = 'Laporan_Booking_' . date('d-m-Y', strtotime($tanggal_filter));
         } else {
-            $filename = 'Laporan_Booking_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
+            $filename = 'Laporan_Booking_' . $data['nama_bulan'][$bulan] . '_' . $tahun;
         }
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 
-    /**
-     * Laporan Booking Perbulan (Data Booking PerBulan)
-     */
     public function laporanPerbulan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Build query untuk laporan perbulan
+
         $builder = $this->db->table('booking b');
         $builder->select('
             b.kode_booking,
@@ -2467,7 +2371,7 @@ class Booking extends BaseController
 
         $bookings = $builder->get()->getResultArray();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Data Booking PerBulan',
             'subtitle' => 'Laporan booking pelanggan perbulan untuk admin dan pimpinan',
@@ -2495,21 +2399,18 @@ class Booking extends BaseController
         return view('admin/booking/laporan_perbulan', $data);
     }
 
-    /**
-     * Export Laporan Perbulan ke PDF
-     */
     public function exportPerbulanPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Build query untuk laporan perbulan
+
         $builder = $this->db->table('booking b');
         $builder->select('
             b.kode_booking,
@@ -2534,7 +2435,7 @@ class Booking extends BaseController
 
         $bookings = $builder->get()->getResultArray();
 
-        // Prepare data for PDF
+
         $data = [
             'bookings' => $bookings,
             'bulan' => $bulan,
@@ -2556,22 +2457,15 @@ class Booking extends BaseController
             ]
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/booking/laporan_perbulan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Booking_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/booking/laporan_perbulan_pdf', $data);
+        $filename = 'Laporan_Booking_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun;
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

@@ -22,20 +22,17 @@ class Pelanggan extends BaseController
         $this->userModel = new UserModel();
         $this->db = db_connect();
 
-        // Pastikan tabel pelanggan ada
+
         $this->createPelangganTableIfNotExists();
     }
 
-    /**
-     * Membuat tabel pelanggan jika belum ada
-     */
     private function createPelangganTableIfNotExists()
     {
-        // Periksa apakah tabel pelanggan sudah ada
+
         $tableExists = $this->db->tableExists('pelanggan');
 
         if (!$tableExists) {
-            // Buat tabel pelanggan tanpa foreign key constraint
+
             $this->db->query("
                 CREATE TABLE IF NOT EXISTS `pelanggan` (
                     `kode_pelanggan` VARCHAR(10) PRIMARY KEY,
@@ -52,31 +49,28 @@ class Pelanggan extends BaseController
         }
     }
 
-    /**
-     * Dashboard untuk pelanggan
-     */
     public function dashboard()
     {
-        // Get current user data
+
         $userId = session()->get('user_id');
         $userEmail = session()->get('email');
         $userName = session()->get('name');
 
-        // Get user data from database if needed
+
         $userModel = new \App\Models\UserModel();
         $user = $userModel->find($userId);
 
-        // Load required models
+
         $bookingModel = new \App\Models\BookingModel();
         $transaksiModel = new \App\Models\TransaksiModel();
         $layananModel = new \App\Models\LayananModel();
         $antrianModel = new \App\Models\AntrianModel();
 
-        // Get pelanggan data
+
         $pelanggan = $this->pelangganModel->where('user_id', $userId)->first();
         $pelangganId = $pelanggan ? $pelanggan['kode_pelanggan'] : null;
 
-        // Get real statistics
+
         $stats = [
             'total_booking' => 0,
             'booking_bulan_ini' => 0,
@@ -85,24 +79,24 @@ class Pelanggan extends BaseController
         ];
 
         if ($pelangganId) {
-            // Total booking
+
             $stats['total_booking'] = $bookingModel->where('pelanggan_id', $pelangganId)->countAllResults();
 
-            // Booking bulan ini
+
             $currentMonth = date('Y-m');
             $stats['booking_bulan_ini'] = $bookingModel
                 ->where('pelanggan_id', $pelangganId)
                 ->like('tanggal', $currentMonth, 'after')
                 ->countAllResults();
 
-            // Total transaksi (via JOIN dengan booking)
+
             $stats['total_transaksi'] = $transaksiModel
                 ->join('booking', 'booking.id = transaksi.booking_id', 'left')
                 ->where('booking.pelanggan_id', $pelangganId)
                 ->countAllResults();
         }
 
-        // Get recent bookings
+
         $recentBookings = [];
         if ($pelangganId) {
             $recentBookings = $bookingModel->getBookingWithDetails();
@@ -112,10 +106,10 @@ class Pelanggan extends BaseController
             $recentBookings = array_slice($recentBookings, 0, 5); // Get last 5 bookings
         }
 
-        // Get recent transactions
+
         $recentTransactions = [];
         if ($pelangganId) {
-            // Get recent transactions via normalized JOIN
+
             $recentTransactions = $transaksiModel
                 ->select('transaksi.*, booking.pelanggan_id, layanan.nama_layanan, layanan.jenis_kendaraan')
                 ->join('booking', 'booking.id = transaksi.booking_id', 'left')
@@ -126,24 +120,24 @@ class Pelanggan extends BaseController
                 ->findAll();
         }
 
-        // Get today's queue data
+
         $todayQueues = [];
         if ($pelangganId) {
             $today = date('Y-m-d');
             $todayQueues = $antrianModel->getAntrianByDate($today);
-            // Filter untuk pelanggan ini
+
             $todayQueues = array_filter($todayQueues, function ($antrian) use ($pelangganId) {
                 return $antrian['pelanggan_id'] == $pelangganId;
             });
         }
 
-        // Get active services
+
         $activeServices = $layananModel->where('status', 'aktif')->findAll();
 
-        // Get recent activities (combine bookings and transactions)
+
         $recentActivities = [];
 
-        // Add recent bookings to activities
+
         foreach ($recentBookings as $booking) {
             $recentActivities[] = [
                 'type' => 'booking',
@@ -156,7 +150,7 @@ class Pelanggan extends BaseController
             ];
         }
 
-        // Add recent transactions to activities  
+
         foreach ($recentTransactions as $transaction) {
             $recentActivities[] = [
                 'type' => 'transaction',
@@ -169,12 +163,12 @@ class Pelanggan extends BaseController
             ];
         }
 
-        // Sort activities by time (newest first)
+
         usort($recentActivities, function ($a, $b) {
             return strtotime($b['time']) - strtotime($a['time']);
         });
 
-        // Limit to 4 most recent activities
+
         $recentActivities = array_slice($recentActivities, 0, 4);
 
         $data = [
@@ -197,9 +191,6 @@ class Pelanggan extends BaseController
         return view('pelanggan/dashboard', $data);
     }
 
-    /**
-     * Get color based on booking status
-     */
     private function getStatusColor($status)
     {
         switch (strtolower($status)) {
@@ -222,9 +213,6 @@ class Pelanggan extends BaseController
         }
     }
 
-    /**
-     * Get color based on payment status
-     */
     private function getPaymentStatusColor($status)
     {
         switch (strtolower($status)) {
@@ -245,9 +233,6 @@ class Pelanggan extends BaseController
         }
     }
 
-    /**
-     * Get gradient colors based on status color
-     */
     private function getGradientColors($color)
     {
         switch ($color) {
@@ -275,9 +260,6 @@ class Pelanggan extends BaseController
         return view('admin/pelanggan/index', $data);
     }
 
-    /**
-     * Menampilkan form tambah pelanggan
-     */
     public function create()
     {
         return view('admin/pelanggan/create', [
@@ -285,9 +267,6 @@ class Pelanggan extends BaseController
         ]);
     }
 
-    /**
-     * Menampilkan form edit pelanggan
-     */
     public function edit($kode = null)
     {
         if (!$kode) {
@@ -299,7 +278,7 @@ class Pelanggan extends BaseController
             return redirect()->to('admin/pelanggan')->with('error', 'Data pelanggan tidak ditemukan');
         }
 
-        // Debug log
+
         log_message('debug', 'Menampilkan halaman edit untuk pelanggan: ' . $kode);
 
         return view('admin/pelanggan/edit', [
@@ -308,14 +287,11 @@ class Pelanggan extends BaseController
         ]);
     }
 
-    /**
-     * Mendapatkan semua data pelanggan untuk DataTables
-     */
     public function getPelanggan()
     {
         $request = $this->request;
 
-        // Parameter DataTables
+
         $start = $request->getGet('start') ?? 0;
         $length = $request->getGet('length') ?? 10;
         $search = $request->getGet('search')['value'] ?? '';
@@ -333,7 +309,7 @@ class Pelanggan extends BaseController
         $builder->select('pelanggan.*, users.email, users.username');
         $builder->join('users', 'users.id = pelanggan.user_id', 'left');
 
-        // Pencarian
+
         if (!empty($search)) {
             $builder->groupStart()
                 ->like('pelanggan.kode_pelanggan', $search)
@@ -344,10 +320,10 @@ class Pelanggan extends BaseController
                 ->groupEnd();
         }
 
-        // Total records
+
         $totalRecords = $builder->countAllResults(false);
 
-        // Pengurutan
+
         if ($order) {
             $columnIndex = $order['column'];
             $columnName = $columns[$columnIndex];
@@ -357,12 +333,12 @@ class Pelanggan extends BaseController
             $builder->orderBy('pelanggan.kode_pelanggan', 'ASC');
         }
 
-        // Limit & offset
+
         $builder->limit($length, $start);
 
         $data = $builder->get()->getResultArray();
 
-        // Format data untuk DataTables
+
         $formattedData = [];
         foreach ($data as $row) {
             $formattedData[] = [
@@ -382,23 +358,17 @@ class Pelanggan extends BaseController
         ]);
     }
 
-    /**
-     * Mendapatkan kode pelanggan baru
-     */
     public function getNewKode()
     {
         $newKode = $this->pelangganModel->generateKode();
         return $this->respond(['status' => 'success', 'kode' => $newKode]);
     }
 
-    /**
-     * Mendapatkan data user untuk select
-     */
     public function getUsers()
     {
         $users = $this->userModel->where('role', 'pelanggan')->findAll();
 
-        // Filter user yang belum terdaftar sebagai pelanggan
+
         $userPelanggan = $this->pelangganModel->findColumn('user_id');
         $userPelanggan = $userPelanggan ?? [];
 
@@ -409,9 +379,6 @@ class Pelanggan extends BaseController
         return $this->respond(['status' => 'success', 'data' => array_values($filteredUsers)]);
     }
 
-    /**
-     * Mendapatkan data pelanggan berdasarkan kode
-     */
     public function getByKode($kode)
     {
         $pelanggan = $this->pelangganModel->getPelangganWithUser($kode);
@@ -420,27 +387,24 @@ class Pelanggan extends BaseController
             return $this->fail('Pelanggan tidak ditemukan', 404);
         }
 
-        // Log data untuk debugging
+
         log_message('debug', 'Data pelanggan yang diambil: ' . json_encode($pelanggan));
 
         return $this->respond(['status' => 'success', 'data' => $pelanggan]);
     }
 
-    /**
-     * Menyimpan data pelanggan baru
-     */
     public function save()
     {
         $data = $this->request->getPost();
         $createAccount = $this->request->getPost('create_account') === '1';
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Jika membuat akun baru
+
             if ($createAccount) {
-                // Validasi data akun
+
                 $userValidation = [
                     'username' => 'required|alpha_numeric_space|min_length[3]|is_unique[users.username]',
                     'email' => 'required|valid_email|is_unique[users.email]',
@@ -451,7 +415,7 @@ class Pelanggan extends BaseController
                     return $this->fail($this->validator->getErrors(), 400);
                 }
 
-                // Buat akun user baru
+
                 $userData = [
                     'username' => $data['username'],
                     'email' => $data['email'],
@@ -461,11 +425,11 @@ class Pelanggan extends BaseController
                     'status' => 'active'
                 ];
 
-                // Simpan user terlebih dahulu
+
                 $userInsertResult = $this->userModel->insert($userData);
 
                 if (!$userInsertResult) {
-                    // Jika gagal menyimpan user, rollback dan kembalikan error
+
                     $this->db->transRollback();
                     $errors = $this->userModel->errors();
                     $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Unknown database error';
@@ -473,19 +437,19 @@ class Pelanggan extends BaseController
                     return $this->fail('Gagal menyimpan data user: ' . $errorMessage, 500);
                 }
 
-                // Ambil ID user yang baru dibuat
+
                 $userId = $this->userModel->getInsertID();
                 log_message('debug', 'User berhasil dibuat dengan ID: ' . $userId);
 
-                // Set user_id untuk data pelanggan
+
                 $data['user_id'] = $userId;
             } else {
-                // Jika tidak membuat akun baru, user_id bisa null
-                // Pastikan user_id adalah null, bukan string kosong atau 0
+
+
                 $data['user_id'] = null;
             }
 
-            // Validasi data pelanggan
+
             $pelangganValidation = [
                 'nama_pelanggan' => 'required|max_length[100]',
                 'no_hp' => 'required|max_length[15]',
@@ -496,10 +460,10 @@ class Pelanggan extends BaseController
                 return $this->fail($this->validator->getErrors(), 400);
             }
 
-            // Generate kode pelanggan baru
+
             $data['kode_pelanggan'] = $this->pelangganModel->generateKode();
 
-            // Simpan data pelanggan
+
             $pelangganData = [
                 'kode_pelanggan' => $data['kode_pelanggan'],
                 'user_id' => $data['user_id'],
@@ -510,17 +474,17 @@ class Pelanggan extends BaseController
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
-            // Debug log
+
             log_message('debug', 'Data pelanggan yang akan disimpan: ' . json_encode($pelangganData));
 
-            // Nonaktifkan validasi sementara untuk debugging
+
             $this->pelangganModel->skipValidation(true);
 
-            // Simpan pelanggan menggunakan model
+
             $insertResult = $this->pelangganModel->insert($pelangganData);
 
             if (!$insertResult) {
-                // Jika gagal menyimpan, rollback dan kembalikan error
+
                 $this->db->transRollback();
                 $errors = $this->pelangganModel->errors();
                 $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Unknown database error';
@@ -528,7 +492,7 @@ class Pelanggan extends BaseController
                 return $this->fail('Gagal menyimpan data pelanggan: ' . $errorMessage, 500);
             }
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
             return $this->respondCreated([
@@ -536,48 +500,45 @@ class Pelanggan extends BaseController
                 'message' => 'Data pelanggan berhasil disimpan'
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
             log_message('error', 'Exception saat menyimpan data: ' . $e->getMessage() . ' pada baris ' . $e->getLine());
             return $this->fail('Gagal menyimpan data: ' . $e->getMessage(), 500);
         }
     }
 
-    /**
-     * Mengupdate data pelanggan
-     */
     public function update($kode)
     {
         $data = $this->request->getPost();
         $changeAccount = $this->request->getPost('change_account') === '1';
 
-        // Cek apakah pelanggan ada
+
         $pelanggan = $this->pelangganModel->find($kode);
         if (!$pelanggan) {
             return $this->fail('Pelanggan tidak ditemukan', 404);
         }
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Jika mengubah informasi akun
+
             if ($changeAccount) {
-                // Cek apakah pelanggan sudah memiliki akun
+
                 $hasAccount = !empty($pelanggan['user_id']);
 
-                // Validasi data akun
+
                 $userValidation = [
                     'username' => 'required|alpha_numeric_space|min_length[3]',
                     'email' => 'required|valid_email',
                 ];
 
-                // Password hanya wajib jika membuat akun baru
+
                 if (!$hasAccount) {
                     $userValidation['password'] = 'required|min_length[6]';
                 }
 
-                // Tambahkan validasi unique kecuali untuk akun yang sama
+
                 if ($hasAccount) {
                     $userValidation['username'] .= '|is_unique[users.username,id,' . $pelanggan['user_id'] . ']';
                     $userValidation['email'] .= '|is_unique[users.email,id,' . $pelanggan['user_id'] . ']';
@@ -590,7 +551,7 @@ class Pelanggan extends BaseController
                     return $this->fail($this->validator->getErrors(), 400);
                 }
 
-                // Data user yang akan disimpan
+
                 $userData = [
                     'username' => $data['username'],
                     'email' => $data['email'],
@@ -599,17 +560,17 @@ class Pelanggan extends BaseController
                     'status' => 'active'
                 ];
 
-                // Tambahkan password jika diisi
+
                 if (!empty($data['password'])) {
                     $userData['password'] = $data['password'];
                 }
 
                 if ($hasAccount) {
-                    // Update user yang sudah ada
+
                     $userUpdateResult = $this->userModel->update($pelanggan['user_id'], $userData);
 
                     if (!$userUpdateResult) {
-                        // Jika gagal update user, rollback dan kembalikan error
+
                         $this->db->transRollback();
                         $errors = $this->userModel->errors();
                         $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Unknown database error';
@@ -617,14 +578,14 @@ class Pelanggan extends BaseController
                         return $this->fail('Gagal memperbarui data user: ' . $errorMessage, 500);
                     }
 
-                    // User ID tetap sama
+
                     $data['user_id'] = $pelanggan['user_id'];
                 } else {
-                    // Buat akun user baru
+
                     $userInsertResult = $this->userModel->insert($userData);
 
                     if (!$userInsertResult) {
-                        // Jika gagal menyimpan user, rollback dan kembalikan error
+
                         $this->db->transRollback();
                         $errors = $this->userModel->errors();
                         $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Unknown database error';
@@ -632,16 +593,16 @@ class Pelanggan extends BaseController
                         return $this->fail('Gagal menyimpan data user: ' . $errorMessage, 500);
                     }
 
-                    // Ambil ID user yang baru dibuat
+
                     $userId = $this->userModel->getInsertID();
                     log_message('debug', 'User berhasil dibuat dengan ID: ' . $userId);
 
-                    // Set user_id untuk data pelanggan
+
                     $data['user_id'] = $userId;
                 }
             }
 
-            // Validasi data pelanggan
+
             $pelangganValidation = [
                 'nama_pelanggan' => 'required|max_length[100]',
                 'no_hp' => 'required|max_length[15]',
@@ -652,7 +613,7 @@ class Pelanggan extends BaseController
                 return $this->fail($this->validator->getErrors(), 400);
             }
 
-            // Update data pelanggan
+
             $pelangganData = [
                 'nama_pelanggan' => $data['nama_pelanggan'],
                 'no_hp' => $data['no_hp'],
@@ -660,22 +621,22 @@ class Pelanggan extends BaseController
                 'updated_at' => date('Y-m-d H:i:s')
             ];
 
-            // Update user_id jika diubah
+
             if ($changeAccount) {
                 $pelangganData['user_id'] = $data['user_id'] ?? null;
             } else if (isset($data['remove_account']) && $data['remove_account'] === '1') {
-                // Jika memilih untuk menghapus akun
+
                 $pelangganData['user_id'] = null;
             }
 
-            // Debug log
+
             log_message('debug', 'Data pelanggan yang akan diupdate: ' . json_encode($pelangganData));
 
-            // Update pelanggan
+
             $updateResult = $this->pelangganModel->update($kode, $pelangganData);
 
             if (!$updateResult) {
-                // Jika gagal update, rollback dan kembalikan error
+
                 $this->db->transRollback();
                 $errors = $this->pelangganModel->errors();
                 $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Unknown database error';
@@ -683,7 +644,7 @@ class Pelanggan extends BaseController
                 return $this->fail('Gagal memperbarui data pelanggan: ' . $errorMessage, 500);
             }
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
             return $this->respond([
@@ -691,48 +652,45 @@ class Pelanggan extends BaseController
                 'message' => 'Data pelanggan berhasil diperbarui'
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
             log_message('error', 'Exception saat memperbarui data: ' . $e->getMessage() . ' pada baris ' . $e->getLine());
             return $this->fail('Gagal memperbarui data: ' . $e->getMessage(), 500);
         }
     }
 
-    /**
-     * Menghapus data pelanggan
-     */
     public function delete($kode)
     {
-        // Cek apakah pelanggan ada
+
         $pelanggan = $this->pelangganModel->find($kode);
         if (!$pelanggan) {
             return $this->fail('Pelanggan tidak ditemukan', 404);
         }
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Jika pelanggan memiliki akun user, hapus juga data usernya
+
             if (!empty($pelanggan['user_id'])) {
                 $userId = $pelanggan['user_id'];
 
-                // Hapus data user
+
                 $this->userModel->delete($userId);
 
-                // Log untuk debugging
+
                 log_message('info', 'Menghapus user dengan ID: ' . $userId . ' terkait dengan pelanggan: ' . $kode);
             }
 
-            // Hapus data pelanggan
+
             $this->pelangganModel->delete($kode);
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
             return $this->respond(['status' => 'success', 'message' => 'Data pelanggan berhasil dihapus']);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Gagal menghapus data: ' . $e->getMessage());
@@ -740,12 +698,9 @@ class Pelanggan extends BaseController
         }
     }
 
-    /**
-     * Halaman profil pelanggan
-     */
     public function profile()
     {
-        // Hanya bisa diakses oleh customer
+
         if (session()->get('role') !== 'customer') {
             return redirect()->to('/');
         }
@@ -759,12 +714,9 @@ class Pelanggan extends BaseController
         ]);
     }
 
-    /**
-     * Update profil pelanggan
-     */
     public function updateProfile()
     {
-        // Hanya bisa diakses oleh customer
+
         if (session()->get('role') !== 'customer') {
             return redirect()->to('/');
         }
@@ -778,7 +730,7 @@ class Pelanggan extends BaseController
 
         $data = $this->request->getPost();
 
-        // Validasi hanya field yang diizinkan
+
         $validationRules = [
             'nama_pelanggan' => 'required|max_length[100]',
             'no_hp' => 'required|max_length[15]',
@@ -802,26 +754,23 @@ class Pelanggan extends BaseController
         }
     }
 
-    /**
-     * Laporan Data Pelanggan
-     */
     public function laporan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan pelanggan
+
         $builder = $this->pelangganModel->builder();
         $builder->orderBy('kode_pelanggan', 'ASC');
 
         $pelanggan = $builder->get()->getResultArray();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Data Pelanggan',
             'subtitle' => 'Laporan data pelanggan untuk admin dan pimpinan',
@@ -834,48 +783,38 @@ class Pelanggan extends BaseController
         return view('admin/pelanggan/laporan', $data);
     }
 
-    /**
-     * Export Laporan Pelanggan ke PDF
-     */
     public function exportPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Build query untuk laporan pelanggan
+
         $builder = $this->pelangganModel->builder();
         $builder->orderBy('kode_pelanggan', 'ASC');
 
         $pelanggan = $builder->get()->getResultArray();
 
-        // Prepare data for PDF
+
         $data = [
             'pelanggan' => $pelanggan,
             'tanggal_cetak' => $tanggal_cetak,
             'total_pelanggan' => count($pelanggan)
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
+        $html = view('admin/pelanggan/laporan_pdf', $data);
+        $filename = 'Laporan_Data_Pelanggan_' . str_replace('/', '-', $tanggal_cetak);
 
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/pelanggan/laporan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
 
-        // Set filename
-        $filename = 'Laporan_Data_Pelanggan_' . str_replace('/', '-', $tanggal_cetak) . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

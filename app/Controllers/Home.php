@@ -6,7 +6,7 @@ class Home extends BaseController
 {
     public function index(): string
     {
-        // Check if user is logged in
+
         $session = session();
         $user = null;
         $isLoggedIn = false;
@@ -17,13 +17,13 @@ class Home extends BaseController
             $isLoggedIn = true;
         }
 
-        // Load LayananModel to get real services data
+
         $layananModel = new \App\Models\LayananModel();
 
-        // Get active services grouped by vehicle type
+
         $services = $layananModel->where('status', 'aktif')->findAll();
 
-        // Group services by vehicle type
+
         $groupedServices = [
             'motor' => [],
             'mobil' => [],
@@ -37,7 +37,7 @@ class Home extends BaseController
             }
         }
 
-        // Get statistics from database
+
         $userModel = new \App\Models\UserModel();
         $bookingModel = new \App\Models\BookingModel();
         $transaksiModel = new \App\Models\TransaksiModel();
@@ -63,20 +63,20 @@ class Home extends BaseController
 
     public function booking()
     {
-        // Load required models
+
         $layananModel = new \App\Models\LayananModel();
         $pelangganModel = new \App\Models\PelangganModel();
 
-        // Get active services
+
         $services = $layananModel->where('status', 'aktif')->findAll();
 
-        // Group services by vehicle type
+
         $groupedServices = [];
         foreach ($services as $service) {
             $groupedServices[$service['jenis_kendaraan']][] = $service;
         }
 
-        // Check if user is logged in as customer
+
         $user = null;
         $pelanggan = null;
         $isLoggedIn = false;

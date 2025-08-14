@@ -14,13 +14,13 @@ class OTPModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['email', 'otp_code', 'expires_at', 'is_used', 'purpose'];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'email'     => 'required|valid_email',
         'otp_code'  => 'required|exact_length[6]',
@@ -49,7 +49,7 @@ class OTPModel extends Model
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
-    // Callbacks
+
     protected $allowCallbacks = true;
     protected $beforeInsert   = [];
     protected $afterInsert    = [];
@@ -65,16 +65,16 @@ class OTPModel extends Model
      */
     public function generateOTP($email, $purpose = 'registration')
     {
-        // Delete existing unused OTP for this email and purpose
+
         $this->where('email', $email)
             ->where('purpose', $purpose)
             ->where('is_used', 0)
             ->delete();
 
-        // Generate 6-digit OTP
+
         $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        // Set expiration time (5 minutes from now)
+
         $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
         $data = [
@@ -105,7 +105,7 @@ class OTPModel extends Model
             ->first();
 
         if ($otp) {
-            // Mark OTP as used
+
             $this->update($otp['id'], ['is_used' => 1]);
             return true;
         }

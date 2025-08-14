@@ -22,13 +22,13 @@ class AntrianModel extends Model
         'karyawan_id'
     ];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'tanggal' => 'required|valid_date',
     ];
@@ -40,7 +40,7 @@ class AntrianModel extends Model
         ],
     ];
 
-    // Callbacks
+
     protected $beforeInsert = ['generateNomorAntrian'];
     protected $beforeUpdate = [];
     protected $afterInsert  = [];
@@ -48,15 +48,15 @@ class AntrianModel extends Model
 
     protected function generateNomorAntrian(array $data)
     {
-        // Always generate if nomor_antrian is empty
+
         if (empty($data['data']['nomor_antrian'])) {
             $tanggal = isset($data['data']['tanggal']) ? $data['data']['tanggal'] : date('Y-m-d');
             $formattedDate = date('Ymd', strtotime($tanggal));
 
-            // Format: A + YYYYMMDD + 3-digit sequence (001, 002, 003, etc.)
+
             $prefix = 'A' . $formattedDate;
 
-            // Generate using a more direct approach with database locking
+
             $newNomorAntrian = $this->generateUniqueNomorAntrian($prefix, $tanggal);
             $data['data']['nomor_antrian'] = $newNomorAntrian;
 
@@ -73,11 +73,11 @@ class AntrianModel extends Model
     {
         $db = \Config\Database::connect();
 
-        // Use database transaction with locking to prevent race conditions
+
         $db->transStart();
 
         try {
-            // Lock the table for reading to prevent concurrent inserts
+
             $query = "SELECT nomor_antrian FROM {$this->table} 
                      WHERE DATE(tanggal) = ? 
                      AND nomor_antrian LIKE ? 
@@ -97,28 +97,28 @@ class AntrianModel extends Model
 
             if ($lastRecord && !empty($lastRecord['nomor_antrian'])) {
                 $nomorAntrian = $lastRecord['nomor_antrian'];
-                // Extract the last 3 digits for sequence
+
                 if (strlen($nomorAntrian) === 12 && substr($nomorAntrian, 0, 9) === $prefix) {
                     $lastSequence = (int) substr($nomorAntrian, -3);
                     $nextSequence = $lastSequence + 1;
                 }
             }
 
-            // Ensure sequence doesn't exceed 999
+
             if ($nextSequence > 999) {
                 $nextSequence = 1;
             }
 
-            // Generate the nomor_antrian
+
             $newNomorAntrian = $prefix . sprintf('%03d', $nextSequence);
 
-            // Double-check uniqueness within the same transaction
+
             $checkQuery = "SELECT COUNT(*) as count FROM {$this->table} WHERE nomor_antrian = ?";
             $checkResult = $db->query($checkQuery, [$newNomorAntrian]);
             $count = $checkResult->getRowArray()['count'];
 
             if ($count > 0) {
-                // If somehow still exists, try a few more numbers
+
                 for ($i = 1; $i <= 10; $i++) {
                     $testSequence = $nextSequence + $i;
                     if ($testSequence > 999) $testSequence = 1;
@@ -144,7 +144,7 @@ class AntrianModel extends Model
         } catch (\Exception $e) {
             $db->transRollback();
 
-            // Emergency fallback - use timestamp-based unique number
+
             $timestamp = time();
             $uniqueSequence = ($timestamp % 999) + 1;
             $fallbackNomor = $prefix . sprintf('%03d', $uniqueSequence);
@@ -163,7 +163,7 @@ class AntrianModel extends Model
         try {
             $db = \Config\Database::connect();
 
-            // Find records with invalid nomor_antrian format
+
             $query = "SELECT id, nomor_antrian, tanggal 
                      FROM antrian 
                      WHERE LENGTH(nomor_antrian) < 12 
@@ -175,12 +175,12 @@ class AntrianModel extends Model
             foreach ($invalidRecords as $record) {
                 log_message('warning', "Found invalid nomor_antrian: {$record['nomor_antrian']} (ID: {$record['id']})");
 
-                // Generate a proper nomor_antrian for this record using direct database query
+
                 $tanggal = $record['tanggal'];
                 $formattedDate = date('Ymd', strtotime($tanggal));
                 $prefix = 'A' . $formattedDate;
 
-                // Find the highest sequence for this date (excluding the current invalid record)
+
                 $lastQuery = "SELECT nomor_antrian 
                              FROM antrian 
                              WHERE DATE(tanggal) = ? 
@@ -206,7 +206,7 @@ class AntrianModel extends Model
 
                 $newNomor = $prefix . sprintf('%03d', $nextSequence);
 
-                // Directly update using raw SQL to avoid model callbacks
+
                 $updateQuery = "UPDATE antrian SET nomor_antrian = ? WHERE id = ?";
                 $db->query($updateQuery, [$newNomor, $record['id']]);
 
@@ -267,7 +267,7 @@ class AntrianModel extends Model
         $builder->join('karyawan k', 'k.idkaryawan = b.id_karyawan', 'left');
         $builder->where('a.tanggal', $date);
 
-        // Order by priority: diproses first, then menunggu, then others
+
         $builder->orderBy("FIELD(a.status, 'diproses', 'menunggu', 'selesai', 'batal')", '', false);
         $builder->orderBy('a.created_at', 'ASC');
 
@@ -328,7 +328,7 @@ class AntrianModel extends Model
         $antrian = $this->find($antrianId);
         if (!$antrian) return 0;
 
-        // Count antrian yang lebih dulu dan masih aktif
+
         $position = $this->where('tanggal', $antrian['tanggal'])
             ->where('status !=', 'selesai')
             ->where('status !=', 'batal')
@@ -346,10 +346,10 @@ class AntrianModel extends Model
         $antrian = $this->find($antrianId);
         if (!$antrian) return 0;
 
-        // Get average service time
+
         $avgServiceTime = 60; // Default 60 minutes
 
-        // Calculate from completed services today
+
         $completed = $this->select('TIME_TO_SEC(TIMEDIFF(jam_selesai, jam_mulai)) / 60 as duration')
             ->where('tanggal', $antrian['tanggal'])
             ->where('status', 'selesai')
@@ -362,7 +362,7 @@ class AntrianModel extends Model
             $avgServiceTime = $totalDuration / count($completed);
         }
 
-        // Count queue ahead
+
         $queueAhead = $this->getQueuePosition($antrianId) - 1;
 
         return (int)($queueAhead * $avgServiceTime);
@@ -376,7 +376,7 @@ class AntrianModel extends Model
         $data = ['status' => $status];
 
         if ($status == 'diproses' && $karyawanId) {
-            // Update id_karyawan in booking table instead of antrian
+
             $antrian = $this->find($id);
             if ($antrian && $antrian['booking_id']) {
                 $bookingModel = new \App\Models\BookingModel();
@@ -395,7 +395,7 @@ class AntrianModel extends Model
 
         $result = $this->update($id, $data);
 
-        // Log status change
+
         if ($result) {
             log_message('info', "Antrian ID {$id} status changed to {$status}" .
                 ($karyawanId ? " by karyawan {$karyawanId}" : ""));
@@ -419,18 +419,18 @@ class AntrianModel extends Model
 
         $mainBooking = $bookings[0];
 
-        // Check if queue already exists
+
         $existingQueue = $this->where('booking_id', $mainBooking['id'])->first();
         if ($existingQueue) {
             return $existingQueue['id'];
         }
 
-        // Pastikan booking sudah dikonfirmasi dan dibayar
+
         if ($mainBooking['status'] !== 'dikonfirmasi') {
             return false;
         }
 
-        // Create execution queue (bukan payment queue)
+
         $queueData = [
             'booking_id' => $mainBooking['id'],
             'tanggal' => $mainBooking['tanggal'],

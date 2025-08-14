@@ -14,13 +14,13 @@ class DetailPembelianModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = ['no_faktur', 'perlengkapan_id', 'jumlah', 'harga_satuan', 'subtotal'];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'no_faktur'    => 'required|max_length[20]',
         'perlengkapan_id' => 'required|integer',

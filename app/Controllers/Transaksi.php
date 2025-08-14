@@ -16,23 +16,20 @@ class Transaksi extends BaseController
         $this->db = \Config\Database::connect();
     }
 
-    /**
-     * Laporan Transaksi Cuci Pertanggal
-     */
     public function laporanPertanggal()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal = $this->request->getGet('tanggal') ?? date('d/m/Y');
 
-        // Convert tanggal format if needed
+
         $tanggalFilter = date('Y-m-d', strtotime(str_replace('/', '-', $tanggal)));
 
-        // Build query untuk laporan transaksi dengan join
+
         $builder = $this->db->table('transaksi t');
         $builder->select('
             t.no_transaksi as kode_transaksi,
@@ -53,10 +50,10 @@ class Transaksi extends BaseController
 
         $transaksi = $builder->get()->getResultArray();
 
-        // Calculate total
+
         $total_harga = array_sum(array_column($transaksi, 'harga'));
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Transaksi Cuci Pertanggal',
             'active' => 'laporan-transaksi-pertanggal',
@@ -68,21 +65,18 @@ class Transaksi extends BaseController
         return view('admin/transaksi/laporan_pertanggal', $data);
     }
 
-    /**
-     * Laporan Transaksi Cuci Perbulan
-     */
     public function laporanPerbulan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $periode = $this->request->getGet('periode') ?? date('m/Y');
         list($bulan, $tahun) = explode('/', $periode);
 
-        // Build query untuk laporan transaksi perbulan
+
         $builder = $this->db->table('transaksi t');
         $builder->select('
             DATE(t.tanggal) as tanggal,
@@ -106,10 +100,10 @@ class Transaksi extends BaseController
 
         $transaksi = $builder->get()->getResultArray();
 
-        // Calculate total
+
         $total_harga = array_sum(array_column($transaksi, 'harga'));
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Transaksi Cuci Perbulan',
             'active' => 'laporan-transaksi-perbulan',
@@ -137,20 +131,17 @@ class Transaksi extends BaseController
         return view('admin/transaksi/laporan_perbulan', $data);
     }
 
-    /**
-     * Laporan Transaksi Cuci Pertahun
-     */
     public function laporanPertahun()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $periode = $this->request->getGet('periode') ?? date('Y');
 
-        // Build query untuk laporan transaksi pertahun - group by month
+
         $laporanDetail = [];
         $totalTransaksiTahun = 0;
         $totalHargaTahun = 0;
@@ -189,7 +180,7 @@ class Transaksi extends BaseController
             $totalHargaTahun += ($result['total_harga'] ?? 0);
         }
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Transaksi Cuci Pertahun',
             'active' => 'laporan-transaksi-pertahun',
@@ -204,18 +195,18 @@ class Transaksi extends BaseController
 
     public function exportPertanggalPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal = $this->request->getGet('tanggal') ?? date('d/m/Y');
 
-        // Convert tanggal format if needed
+
         $tanggalFilter = date('Y-m-d', strtotime(str_replace('/', '-', $tanggal)));
 
-        // Build query untuk laporan transaksi dengan join
+
         $builder = $this->db->table('transaksi t');
         $builder->select('
             t.no_transaksi as kode_transaksi,
@@ -236,47 +227,40 @@ class Transaksi extends BaseController
 
         $transaksi = $builder->get()->getResultArray();
 
-        // Calculate total
+
         $total_harga = array_sum(array_column($transaksi, 'harga'));
 
-        // Prepare data for PDF
+
         $data = [
             'transaksi' => $transaksi,
             'tanggal' => $tanggal,
             'total_harga' => $total_harga
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
+        $html = view('admin/transaksi/laporan_pertanggal_pdf', $data);
+        $filename = 'Laporan_Transaksi_Cuci_Pertanggal_' . str_replace('/', '-', $tanggal);
 
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/transaksi/laporan_pertanggal_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
 
-        // Set filename
-        $filename = 'Laporan_Transaksi_Cuci_Pertanggal_' . str_replace('/', '-', $tanggal) . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 
     public function exportPerbulanPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $periode = $this->request->getGet('periode') ?? date('m/Y');
         list($bulan, $tahun) = explode('/', $periode);
 
-        // Build query untuk laporan transaksi perbulan
+
         $builder = $this->db->table('transaksi t');
         $builder->select('
             DATE(t.tanggal) as tanggal,
@@ -300,46 +284,39 @@ class Transaksi extends BaseController
 
         $transaksi = $builder->get()->getResultArray();
 
-        // Calculate total
+
         $total_harga = array_sum(array_column($transaksi, 'harga'));
 
-        // Prepare data for PDF
+
         $data = [
             'transaksi' => $transaksi,
             'periode' => $periode,
             'total_harga' => $total_harga
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
+        $html = view('admin/transaksi/laporan_perbulan_pdf', $data);
+        $filename = 'Laporan_Transaksi_Cuci_Perbulan_' . str_replace('/', '-', $periode);
 
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/transaksi/laporan_perbulan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
 
-        // Set filename
-        $filename = 'Laporan_Transaksi_Cuci_Perbulan_' . str_replace('/', '-', $periode) . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 
     public function exportPertahunPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $periode = $this->request->getGet('periode') ?? date('Y');
 
-        // Build query untuk laporan transaksi pertahun - group by month
+
         $laporanDetail = [];
         $totalTransaksiTahun = 0;
         $totalHargaTahun = 0;
@@ -378,7 +355,7 @@ class Transaksi extends BaseController
             $totalHargaTahun += ($result['total_harga'] ?? 0);
         }
 
-        // Prepare data for PDF
+
         $data = [
             'laporan_detail' => $laporanDetail,
             'periode' => $periode,
@@ -386,22 +363,15 @@ class Transaksi extends BaseController
             'total_harga' => $totalHargaTahun
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
+        $html = view('admin/transaksi/laporan_pertahun_pdf', $data);
+        $filename = 'Laporan_Transaksi_Cuci_Pertahun_' . $periode;
 
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/transaksi/laporan_pertahun_pdf', $data));
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
 
-        // Set filename
-        $filename = 'Laporan_Transaksi_Cuci_Pertahun_' . $periode . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

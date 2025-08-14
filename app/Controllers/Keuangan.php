@@ -265,21 +265,14 @@ class Keuangan extends BaseController
 
         // Generate PDF
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/keuangan/laporan_perbulan_pdf', $data));
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Keuangan_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/keuangan/laporan_perbulan_pdf', $data);
+        $filename = 'Laporan_Keuangan_PerBulan_' . $data['nama_bulan'][$bulan] . '_' . $tahun;
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 
     /**
@@ -350,20 +343,13 @@ class Keuangan extends BaseController
 
         // Generate PDF
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/keuangan/laporan_pertahun_pdf', $data));
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Keuangan_PerTahun_' . $tahun . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/keuangan/laporan_pertahun_pdf', $data);
+        $filename = 'Laporan_Keuangan_PerTahun_' . $tahun;
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

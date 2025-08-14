@@ -31,12 +31,9 @@ class Antrian extends BaseController
         $this->validation = \Config\Services::validation();
     }
 
-    /**
-     * Main dashboard with real-time queue monitoring
-     */
     public function index()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -57,12 +54,9 @@ class Antrian extends BaseController
         return view('admin/antrian/index', $data);
     }
 
-    /**
-     * Create queue manually (walk-in customers)
-     */
     public function create()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -87,12 +81,9 @@ class Antrian extends BaseController
         return view('admin/antrian/create', $data);
     }
 
-    /**
-     * Store new queue
-     */
     public function store()
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -128,31 +119,31 @@ class Antrian extends BaseController
             $tanggal = $this->request->getPost('tanggal');
 
             if ($bookingId) {
-                // Check if booking already has queue
+
                 $existingAntrian = $this->antrianModel->where('booking_id', $bookingId)->first();
                 if ($existingAntrian) {
                     throw new \Exception('Booking ini sudah memiliki antrian');
                 }
 
-                // Create queue from existing booking
+
                 $queueData = [
                     'booking_id' => $bookingId,
                     'tanggal' => $tanggal,
                     'status' => 'menunggu'
                 ];
             } else {
-                // Create walk-in booking first, then queue
+
                 $pelangganData = [
                     'nama_pelanggan' => $this->request->getPost('customer_name'),
                     'no_hp' => $this->request->getPost('customer_phone'),
                     'alamat' => $this->request->getPost('customer_address')
                 ];
 
-                // Insert temporary pelanggan
+
                 $this->pelangganModel->insert($pelangganData);
                 $pelangganId = $this->pelangganModel->getInsertID();
 
-                // Create booking
+
                 $bookingData = [
                     'kode_booking' => $this->bookingModel->generateNewKodeBooking(),
                     'pelanggan_id' => $pelangganId,
@@ -168,7 +159,7 @@ class Antrian extends BaseController
                 $this->bookingModel->insert($bookingData);
                 $bookingId = $this->bookingModel->getInsertID();
 
-                // Create queue
+
                 $queueData = [
                     'booking_id' => $bookingId,
                     'tanggal' => $tanggal,
@@ -176,7 +167,7 @@ class Antrian extends BaseController
                 ];
             }
 
-            // Insert queue
+
             $this->antrianModel->insert($queueData);
             $antrianId = $this->antrianModel->getInsertID();
 
@@ -212,12 +203,9 @@ class Antrian extends BaseController
         }
     }
 
-    /**
-     * Show detailed queue information
-     */
     public function show($id = null)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
@@ -228,7 +216,7 @@ class Antrian extends BaseController
             throw new PageNotFoundException('Antrian dengan ID ' . $id . ' tidak ditemukan');
         }
 
-        // Get related bookings for multi-service
+
         $relatedBookings = [];
         if ($antrian['kode_booking']) {
             $relatedBookings = $this->bookingModel->getBookingsByKodeBooking($antrian['kode_booking']);
@@ -247,12 +235,9 @@ class Antrian extends BaseController
         return view('admin/antrian/show', $data);
     }
 
-    /**
-     * Update queue status with comprehensive logic
-     */
     public function updateStatus($id = null)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -277,16 +262,16 @@ class Antrian extends BaseController
         $db->transStart();
 
         try {
-            // Update queue status
+
             $this->antrianModel->updateStatus($id, $status, $karyawanId, $notes);
 
-            // Update related booking status
+
             if ($antrian['booking_id']) {
                 $newBookingStatus = $this->mapQueueStatusToBookingStatus($status);
                 $this->bookingModel->update($antrian['booking_id'], ['status' => $newBookingStatus]);
             }
 
-            // Handle completion logic
+
             if ($status == 'selesai' && $antrian['booking_id']) {
                 $this->handleQueueCompletion($antrian['booking_id']);
             }
@@ -310,12 +295,9 @@ class Antrian extends BaseController
         }
     }
 
-    /**
-     * Assign employee to queue
-     */
     public function assignKaryawan($id = null)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -342,10 +324,10 @@ class Antrian extends BaseController
         }
 
         try {
-            // Update queue with assigned employee
+
             $this->antrianModel->updateStatus($id, 'diproses', $karyawanId);
 
-            // Update booking status
+
             if ($antrian['booking_id']) {
                 $this->bookingModel->update($antrian['booking_id'], ['status' => 'diproses']);
             }
@@ -362,12 +344,9 @@ class Antrian extends BaseController
         }
     }
 
-    /**
-     * Auto assign to least busy employee
-     */
     public function autoAssign($id = null)
     {
-        // Check admin permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return $this->response->setJSON([
                 'status' => 'error',
@@ -397,9 +376,6 @@ class Antrian extends BaseController
         }
     }
 
-    /**
-     * Get real-time queue data (AJAX)
-     */
     public function getRealtimeData()
     {
         $tanggal = $this->request->getGet('tanggal') ?? date('Y-m-d');
@@ -413,9 +389,6 @@ class Antrian extends BaseController
         ]);
     }
 
-    /**
-     * Public queue display (for customer monitoring)
-     */
     public function publicDisplay()
     {
         $tanggal = date('Y-m-d');
@@ -431,9 +404,6 @@ class Antrian extends BaseController
         return view('public/antrian_display', $data);
     }
 
-    /**
-     * Employee dashboard
-     */
     public function karyawanDashboard()
     {
         $userRole = session()->get('role');
@@ -455,11 +425,8 @@ class Antrian extends BaseController
         return view('admin/antrian/karyawan_dashboard', $data);
     }
 
-    // =================== PRIVATE HELPER METHODS ===================
 
-    /**
-     * Map queue status to booking status
-     */
+
     private function mapQueueStatusToBookingStatus($queueStatus)
     {
         $mapping = [
@@ -472,20 +439,16 @@ class Antrian extends BaseController
         return $mapping[$queueStatus] ?? 'dikonfirmasi';
     }
 
-    /**
-     * Handle completion logic - HANYA update status booking
-     * NOTE: Transaksi sudah dibuat saat booking, jadi tidak perlu buat lagi
-     */
     private function handleQueueCompletion($bookingId)
     {
-        // Get booking
+
         $booking = $this->bookingModel->find($bookingId);
 
         if (!$booking) {
             return;
         }
 
-        // Update semua booking dengan kode_booking yang sama ke status 'selesai'
+
         $allBookings = $this->bookingModel->where('kode_booking', $booking['kode_booking'])->findAll();
 
         foreach ($allBookings as $b) {
@@ -493,25 +456,19 @@ class Antrian extends BaseController
         }
 
         log_message('info', "Queue completed for booking group: {$booking['kode_booking']}. All bookings marked as completed.");
-
-        // NOTE: Transaksi sudah ada dari saat booking, jadi tidak perlu buat transaksi baru
-        // Customer sudah bayar di muka saat booking
     }
 
-    /**
-     * Laporan Antrian
-     */
     public function laporan()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Convert tanggal_cetak format from DD/MM/YYYY to YYYY-MM-DD for database query
+
         $tanggal_filter = $tanggal_cetak;
         if ($tanggal_cetak && $tanggal_cetak !== date('d/m/Y')) {
             $date_parts = explode('/', $tanggal_cetak);
@@ -522,19 +479,19 @@ class Antrian extends BaseController
             $tanggal_filter = date('Y-m-d');
         }
 
-        // Build query untuk laporan antrian dengan join dan filter tanggal
+
         $builder = $this->antrianModel->builder();
         $builder->select('antrian.*, b.kode_booking, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
         $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
 
-        // Apply date filter
+
         $builder->where('antrian.tanggal', $tanggal_filter);
 
         $builder->orderBy('antrian.id', 'ASC');
 
         $antrian = $builder->get()->getResultArray();
 
-        // Prepare data for view
+
         $data = [
             'title' => 'Laporan Antrian',
             'subtitle' => 'Laporan antrian untuk admin dan pimpinan',
@@ -547,20 +504,17 @@ class Antrian extends BaseController
         return view('admin/antrian/laporan', $data);
     }
 
-    /**
-     * Export Laporan Antrian ke PDF
-     */
     public function exportPDF()
     {
-        // Check admin/pimpinan permission
+
         if (!in_array(session()->get('role'), ['admin', 'pimpinan'])) {
             return redirect()->to('auth')->with('error', 'Akses ditolak');
         }
 
-        // Get filter parameters
+
         $tanggal_cetak = $this->request->getGet('tanggal_cetak') ?? date('d/m/Y');
 
-        // Convert tanggal_cetak format from DD/MM/YYYY to YYYY-MM-DD for database query
+
         $tanggal_filter = $tanggal_cetak;
         if ($tanggal_cetak && $tanggal_cetak !== date('d/m/Y')) {
             $date_parts = explode('/', $tanggal_cetak);
@@ -571,41 +525,34 @@ class Antrian extends BaseController
             $tanggal_filter = date('Y-m-d');
         }
 
-        // Build query untuk laporan antrian dengan join dan filter tanggal
+
         $builder = $this->antrianModel->builder();
         $builder->select('antrian.*, b.kode_booking, b.tanggal, b.jam, antrian.jam_mulai, antrian.jam_selesai, b.status as booking_status');
         $builder->join('booking b', 'antrian.booking_id = b.id', 'LEFT');
 
-        // Apply date filter
+
         $builder->where('antrian.tanggal', $tanggal_filter);
 
         $builder->orderBy('antrian.id', 'ASC');
 
         $antrian = $builder->get()->getResultArray();
 
-        // Prepare data for PDF
+
         $data = [
             'antrian' => $antrian,
             'tanggal_cetak' => $tanggal_cetak,
             'total_antrian' => count($antrian)
         ];
 
-        // Generate PDF
+
         require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
 
-        $options = new \Dompdf\Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-
-        $dompdf = new \Dompdf\Dompdf($options);
-        $dompdf->loadHtml(view('admin/antrian/laporan_pdf', $data));
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Set filename
-        $filename = 'Laporan_Antrian_' . str_replace('/', '-', $tanggal_cetak) . '.pdf';
-
-        // Output PDF
-        $dompdf->stream($filename, array('Attachment' => false));
+        $html = view('admin/antrian/laporan_pdf', $data);
+        $filename = 'Laporan_Antrian_' . str_replace('/', '-', $tanggal_cetak);
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'landscape');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 }

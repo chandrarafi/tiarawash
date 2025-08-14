@@ -22,13 +22,13 @@ class DetailTransaksiModel extends Model
         'subtotal'
     ];
 
-    // Dates
+
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
-    // Validation
+
     protected $validationRules = [
         'transaksi_id' => 'required|numeric|is_not_unique[transaksi.id]',
         'jenis_item'   => 'required|in_list[layanan,produk]',

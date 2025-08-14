@@ -85,7 +85,7 @@ class Pembelian extends BaseController
         return view('admin/pembelian/detail', $data);
     }
 
-    // API untuk DataTables
+
     public function getPembelian()
     {
         $request = $this->request;
@@ -94,12 +94,12 @@ class Pembelian extends BaseController
         $length = $request->getGet('length');
         $search = $request->getGet('search')['value'];
 
-        // Query dasar
+
         $builder = $this->pembelianModel->builder();
         $builder->select('pembelian.*, users.name as user_name');
         $builder->join('users', 'users.id = pembelian.user_id', 'left');
 
-        // Filter pencarian
+
         if ($search) {
             $builder->groupStart()
                 ->like('no_faktur', $search)
@@ -109,16 +109,16 @@ class Pembelian extends BaseController
                 ->groupEnd();
         }
 
-        // Hitung total records dan filtered records
+
         $totalRecords = $builder->countAllResults(false);
         $totalFiltered = $totalRecords;
 
-        // Ambil data dengan limit dan offset
+
         $builder->orderBy('pembelian.tanggal', 'DESC');
         $builder->limit($length, $start);
         $data = $builder->get()->getResultArray();
 
-        // Format data untuk DataTables
+
         $response = [
             'draw' => intval($draw),
             'recordsTotal' => $totalRecords,
@@ -166,7 +166,7 @@ class Pembelian extends BaseController
             'items' => 'required',
         ];
 
-        // Validasi manual untuk keunikan no_faktur
+
         $noFaktur = $this->request->getPost('no_faktur');
         try {
             $existingNoFaktur = $this->pembelianModel->where('no_faktur', $noFaktur)->first();
@@ -191,7 +191,7 @@ class Pembelian extends BaseController
             ]);
         }
 
-        // Ambil data pembelian
+
         $data = [
             'no_faktur' => $this->request->getPost('no_faktur'),
             'tanggal' => $this->request->getPost('tanggal'),
@@ -201,7 +201,7 @@ class Pembelian extends BaseController
             'user_id' => session()->get('user_id')
         ];
 
-        // Ambil data items
+
         $items = json_decode($this->request->getPost('items'), true);
         if (!$items || !is_array($items) || count($items) === 0) {
             return $this->response->setJSON([
@@ -210,18 +210,18 @@ class Pembelian extends BaseController
             ]);
         }
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Simpan data pembelian
+
             $insertResult = $this->pembelianModel->insert($data);
             if (!$insertResult) {
                 throw new \Exception('Gagal menyimpan data pembelian: ' . implode(', ', $this->pembelianModel->errors()));
             }
             $noFaktur = $data['no_faktur']; // Use no_faktur instead of getInsertID()
 
-            // Simpan detail pembelian
+
             $totalHarga = 0;
             foreach ($items as $item) {
                 $subtotal = $item['jumlah'] * $item['harga_satuan'];
@@ -241,7 +241,7 @@ class Pembelian extends BaseController
 
                 log_message('debug', 'Detail pembelian inserted with ID: ' . $detailId);
 
-                // Update stok perlengkapan
+
                 $stokUpdateResult = $this->detailPembelianModel->updateStokPerlengkapan($detailId);
                 if (!$stokUpdateResult) {
                     throw new \Exception('Gagal update stok perlengkapan untuk detail ID: ' . $detailId);
@@ -250,16 +250,16 @@ class Pembelian extends BaseController
                 $totalHarga += $subtotal;
             }
 
-            // Update total harga pembelian
+
             $updateResult = $this->pembelianModel->update($noFaktur, ['total_harga' => $totalHarga]);
             if (!$updateResult) {
                 throw new \Exception('Gagal update total harga pembelian');
             }
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
-            // Log aktivitas
+
             log_message('info', 'Pembelian baru dibuat: {no_faktur} oleh {user_id}', [
                 'no_faktur' => $data['no_faktur'],
                 'user_id' => $data['user_id']
@@ -271,7 +271,7 @@ class Pembelian extends BaseController
                 'no_faktur' => $noFaktur
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Error saat menyimpan pembelian: ' . $e->getMessage());
@@ -301,7 +301,7 @@ class Pembelian extends BaseController
             ]);
         }
 
-        // Use validation rules for edit
+
         $rules = $this->pembelianModel->getValidationRulesForEdit($noFaktur);
 
         if (!$this->validate($rules)) {
@@ -311,7 +311,7 @@ class Pembelian extends BaseController
             ]);
         }
 
-        // Ambil data pembelian
+
         $data = [
             'no_faktur' => $noFaktur,
             'tanggal' => $this->request->getPost('tanggal'),
@@ -319,24 +319,24 @@ class Pembelian extends BaseController
             'keterangan' => $this->request->getPost('keterangan')
         ];
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Update data pembelian
+
             $this->pembelianModel->update($noFaktur, $data);
 
-            // Hitung total harga awal dari item yang sudah ada
+
             $totalHarga = 0;
             $existingDetails = $this->detailPembelianModel->where('no_faktur', $noFaktur)->findAll();
             foreach ($existingDetails as $detail) {
                 $totalHarga += $detail['subtotal'];
             }
 
-            // Cek apakah ada item baru yang perlu ditambahkan
+
             $items = json_decode($this->request->getPost('items'), true);
             if ($items && is_array($items) && count($items) > 0) {
-                // Tambahkan item baru
+
                 foreach ($items as $item) {
                     $subtotal = $item['jumlah'] * $item['harga_satuan'];
                     $detailData = [
@@ -350,14 +350,14 @@ class Pembelian extends BaseController
                     $this->detailPembelianModel->insert($detailData);
                     $detailId = $this->detailPembelianModel->getInsertID();
 
-                    // Update stok perlengkapan
+
                     $this->detailPembelianModel->updateStokPerlengkapan($detailId);
 
                     $totalHarga += $subtotal;
                 }
             }
 
-            // Cek apakah ada item yang diperbarui jumlahnya
+
             $updatedItems = json_decode($this->request->getPost('updated_items'), true);
             if ($updatedItems && is_array($updatedItems) && count($updatedItems) > 0) {
                 foreach ($updatedItems as $item) {
@@ -365,30 +365,30 @@ class Pembelian extends BaseController
                         continue; // Lewati jika tidak ada ID
                     }
 
-                    // Ambil data detail lama
+
                     $oldDetail = $this->detailPembelianModel->find($item['id']);
                     if (!$oldDetail) {
                         continue; // Lewati jika item tidak ditemukan
                     }
 
-                    // Hitung selisih jumlah untuk update stok
+
                     $jumlahSelisih = $item['jumlah'] - $oldDetail['jumlah'];
 
-                    // Update stok perlengkapan
+
                     if ($jumlahSelisih != 0) {
                         $perlengkapan = $this->perlengkapanModel->find($oldDetail['perlengkapan_id']);
                         if ($perlengkapan) {
                             $newStok = $perlengkapan['stok'] + $jumlahSelisih;
-                            // Pastikan stok tidak negatif
+
                             $newStok = max(0, $newStok);
                             $this->perlengkapanModel->update($oldDetail['perlengkapan_id'], ['stok' => $newStok]);
                         }
                     }
 
-                    // Hitung subtotal baru
+
                     $subtotal = $item['jumlah'] * $item['harga_satuan'];
 
-                    // Update detail pembelian
+
                     $detailData = [
                         'jumlah' => $item['jumlah'],
                         'subtotal' => $subtotal
@@ -396,21 +396,21 @@ class Pembelian extends BaseController
 
                     $this->detailPembelianModel->update($item['id'], $detailData);
 
-                    // Kurangi total harga lama dan tambahkan yang baru
+
                     $totalHarga = $totalHarga - $oldDetail['subtotal'] + $subtotal;
                 }
             }
 
-            // Update total harga pembelian
+
             $updateResult = $this->pembelianModel->update($noFaktur, ['total_harga' => $totalHarga]);
             if (!$updateResult) {
                 throw new \Exception('Gagal update total harga pembelian');
             }
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
-            // Log aktivitas
+
             log_message('info', 'Pembelian diupdate: {no_faktur} oleh {user_id}', [
                 'no_faktur' => $data['no_faktur'],
                 'user_id' => session()->get('user_id')
@@ -421,7 +421,7 @@ class Pembelian extends BaseController
                 'message' => 'Data pembelian berhasil diperbarui'
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Error saat memperbarui pembelian: ' . $e->getMessage());
@@ -444,34 +444,34 @@ class Pembelian extends BaseController
             return $this->failNotFound('Data pembelian tidak ditemukan');
         }
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Dapatkan semua detail pembelian untuk mengembalikan stok
+
             $details = $this->detailPembelianModel->where('no_faktur', $noFaktur)->findAll();
 
-            // Kembalikan stok perlengkapan
+
             foreach ($details as $detail) {
                 $perlengkapan = $this->perlengkapanModel->find($detail['perlengkapan_id']);
                 if ($perlengkapan) {
                     $newStok = $perlengkapan['stok'] - $detail['jumlah'];
-                    // Pastikan stok tidak negatif
+
                     $newStok = max(0, $newStok);
                     $this->perlengkapanModel->update($detail['perlengkapan_id'], ['stok' => $newStok]);
                 }
             }
 
-            // Hapus detail pembelian
+
             $this->detailPembelianModel->where('no_faktur', $noFaktur)->delete();
 
-            // Hapus pembelian
+
             $this->pembelianModel->delete($noFaktur);
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
-            // Log aktivitas
+
             log_message('info', 'Pembelian dihapus: {no_faktur} oleh {user_id}', [
                 'no_faktur' => $pembelian['no_faktur'],
                 'user_id' => session()->get('user_id')
@@ -482,7 +482,7 @@ class Pembelian extends BaseController
                 'message' => 'Data pembelian berhasil dihapus'
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Error saat menghapus pembelian: ' . $e->getMessage());
@@ -510,7 +510,7 @@ class Pembelian extends BaseController
             ]);
         }
 
-        // Ambil data detail
+
         $noFaktur = $this->request->getPost('no_faktur');
         $perlengkapanId = $this->request->getPost('perlengkapan_id');
         $jumlah = $this->request->getPost('jumlah');
@@ -525,22 +525,22 @@ class Pembelian extends BaseController
             'subtotal' => $subtotal
         ];
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Simpan detail pembelian
+
             $this->detailPembelianModel->insert($data);
             $detailId = $this->detailPembelianModel->getInsertID();
 
-            // Update stok perlengkapan
+
             $this->detailPembelianModel->updateStokPerlengkapan($detailId);
 
-            // Update total harga pembelian
+
             $totalHarga = $this->detailPembelianModel->calculateTotal($noFaktur);
             $this->pembelianModel->update($noFaktur, ['total_harga' => $totalHarga]);
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
             return $this->response->setJSON([
@@ -550,7 +550,7 @@ class Pembelian extends BaseController
                 'total_harga' => $totalHarga
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Error saat menambahkan detail pembelian: ' . $e->getMessage());
@@ -575,27 +575,27 @@ class Pembelian extends BaseController
 
         $noFaktur = $detail['no_faktur'];
 
-        // Mulai transaksi database
+
         $this->db->transBegin();
 
         try {
-            // Kembalikan stok perlengkapan
+
             $perlengkapan = $this->perlengkapanModel->find($detail['perlengkapan_id']);
             if ($perlengkapan) {
                 $newStok = $perlengkapan['stok'] - $detail['jumlah'];
-                // Pastikan stok tidak negatif
+
                 $newStok = max(0, $newStok);
                 $this->perlengkapanModel->update($detail['perlengkapan_id'], ['stok' => $newStok]);
             }
 
-            // Hapus detail pembelian
+
             $this->detailPembelianModel->delete($id);
 
-            // Update total harga pembelian
+
             $totalHarga = $this->detailPembelianModel->calculateTotal($noFaktur);
             $this->pembelianModel->update($noFaktur, ['total_harga' => $totalHarga]);
 
-            // Commit transaksi
+
             $this->db->transCommit();
 
             return $this->respondDeleted([
@@ -604,7 +604,7 @@ class Pembelian extends BaseController
                 'total_harga' => $totalHarga
             ]);
         } catch (\Exception $e) {
-            // Rollback transaksi jika terjadi error
+
             $this->db->transRollback();
 
             log_message('error', 'Error saat menghapus detail pembelian: ' . $e->getMessage());
@@ -621,7 +621,7 @@ class Pembelian extends BaseController
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Get data pembelian berdasarkan filter
+
         $pembelian = [];
         $total_harga = 0;
 
@@ -649,7 +649,7 @@ class Pembelian extends BaseController
         $bulan = $this->request->getGet('bulan') ?? date('m');
         $tahun = $this->request->getGet('tahun') ?? date('Y');
 
-        // Get data pembelian berdasarkan filter
+
         $pembelian = [];
         $total_harga = 0;
 
@@ -685,15 +685,16 @@ class Pembelian extends BaseController
             'total_harga' => $total_harga
         ];
 
-        // Load DOMPDF library
-        $dompdf = new \Dompdf\Dompdf();
-        $dompdf->loadHtml(view('admin/pembelian/laporan_pdf', $data));
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
 
-        // Output the generated PDF to Browser
-        $filename = 'Laporan_Pembelian_Alat_' . $periode . '.pdf';
-        $dompdf->stream($filename, array("Attachment" => false));
+        require_once ROOTPATH . 'vendor/autoload.php';
+        require_once APPPATH . 'Helpers/PdfHelper.php';
+
+        $html = view('admin/pembelian/laporan_pdf', $data);
+        $filename = 'Laporan_Pembelian_Alat_' . $periode;
+        
+        $pdfResult = \App\Helpers\PdfHelper::generatePdf($html, $filename, 'A4', 'portrait');
+        
+        return \App\Helpers\PdfHelper::streamPdf($pdfResult, false);
     }
 
     public function getLaporanData()

@@ -38,15 +38,15 @@ class Layanan extends BaseController
 
     public function store()
     {
-        // Check if this is an AJAX request
+
         if ($this->request->isAJAX()) {
             return $this->storeAjax();
         }
 
-        // Validasi input
+
         $rules = $this->layananModel->getValidationRules();
 
-        // Jika tidak ada file foto yang diupload, hapus validasi foto
+
         $foto = $this->request->getFile('foto');
         if (!$foto || !$foto->isValid()) {
             unset($rules['foto']);
@@ -56,14 +56,14 @@ class Layanan extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Handle upload foto
+
         $fotoName = null;
         if ($foto && $foto->isValid() && !$foto->hasMoved()) {
             $fotoName = $foto->getRandomName();
             $foto->move(FCPATH . 'uploads/layanan', $fotoName);
         }
 
-        // Simpan data
+
         $this->layananModel->save([
             'kode_layanan' => $this->request->getPost('kode_layanan'),
             'nama_layanan' => $this->request->getPost('nama_layanan'),
@@ -89,13 +89,13 @@ class Layanan extends BaseController
         ];
 
         try {
-            // Log incoming data
+
             log_message('debug', 'POST data: ' . json_encode($this->request->getPost()));
 
-            // Get form data
+
             $postData = $this->request->getPost();
 
-            // Basic validation
+
             if (empty($postData['kode_layanan'])) {
                 $response['message'] = 'Kode layanan tidak boleh kosong';
                 return $this->response->setJSON($response);
@@ -106,7 +106,7 @@ class Layanan extends BaseController
                 return $this->response->setJSON($response);
             }
 
-            // Handle file upload
+
             $fotoName = null;
             $foto = $this->request->getFile('foto');
             log_message('debug', 'File info: ' . json_encode([
@@ -117,7 +117,7 @@ class Layanan extends BaseController
             ]));
 
             if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-                // Validate file type and size
+
                 $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
                 if (!in_array($foto->getMimeType(), $allowedTypes)) {
                     $response['message'] = 'Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.';
@@ -129,7 +129,7 @@ class Layanan extends BaseController
                     return $this->response->setJSON($response);
                 }
 
-                // Create directory if not exists
+
                 $uploadPath = FCPATH . 'uploads/layanan';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
@@ -144,7 +144,7 @@ class Layanan extends BaseController
                 log_message('debug', 'Photo uploaded successfully: ' . $fotoName);
             }
 
-            // Prepare data for insertion
+
             $data = [
                 'kode_layanan' => $postData['kode_layanan'],
                 'nama_layanan' => $postData['nama_layanan'],
@@ -156,10 +156,10 @@ class Layanan extends BaseController
                 'status' => $postData['status'] ?? 'aktif'
             ];
 
-            // Debug: Log the data being saved
+
             log_message('debug', 'Data to save: ' . json_encode($data));
 
-            // Use model insert method
+
             $result = $this->layananModel->insert($data);
 
             log_message('debug', 'Insert result: ' . ($result ? 'true' : 'false'));
@@ -204,21 +204,21 @@ class Layanan extends BaseController
 
     public function update($kode = null)
     {
-        // Check if this is an AJAX request
+
         if ($this->request->isAJAX()) {
             return $this->updateAjax($kode);
         }
 
-        // Get existing data
+
         $existingLayanan = $this->layananModel->find($kode);
         if (!$existingLayanan) {
             throw new PageNotFoundException('Layanan dengan kode ' . $kode . ' tidak ditemukan');
         }
 
-        // Validasi input
+
         $rules = $this->layananModel->getValidationRulesForEdit($kode);
 
-        // Jika tidak ada file foto yang diupload, hapus validasi foto
+
         $foto = $this->request->getFile('foto');
         if (!$foto || !$foto->isValid()) {
             unset($rules['foto']);
@@ -228,10 +228,10 @@ class Layanan extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // Handle upload foto
+
         $fotoName = $existingLayanan['foto']; // Keep existing foto
         if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-            // Delete old foto if exists
+
             if ($existingLayanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
                 unlink(FCPATH . 'uploads/layanan/' . $existingLayanan['foto']);
             }
@@ -240,7 +240,7 @@ class Layanan extends BaseController
             $foto->move(FCPATH . 'uploads/layanan', $fotoName);
         }
 
-        // Update data
+
         $this->layananModel->update($kode, [
             'kode_layanan' => $this->request->getPost('kode_layanan'),
             'nama_layanan' => $this->request->getPost('nama_layanan'),
@@ -266,26 +266,26 @@ class Layanan extends BaseController
         ];
 
         try {
-            // Log incoming data
+
             log_message('debug', 'UPDATE POST data: ' . json_encode($this->request->getPost()));
 
-            // Get existing data
+
             $existingLayanan = $this->layananModel->find($kode);
             if (!$existingLayanan) {
                 $response['message'] = 'Layanan dengan kode ' . $kode . ' tidak ditemukan';
                 return $this->response->setJSON($response);
             }
 
-            // Get form data
+
             $postData = $this->request->getPost();
 
-            // Basic validation
+
             if (empty($postData['nama_layanan'])) {
                 $response['message'] = 'Nama layanan tidak boleh kosong';
                 return $this->response->setJSON($response);
             }
 
-            // Handle file upload
+
             $fotoName = $existingLayanan['foto']; // Keep existing photo by default
             $foto = $this->request->getFile('foto');
 
@@ -297,7 +297,7 @@ class Layanan extends BaseController
             ]));
 
             if ($foto && $foto->isValid() && !$foto->hasMoved()) {
-                // Validate file type and size
+
                 $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
                 if (!in_array($foto->getMimeType(), $allowedTypes)) {
                     $response['message'] = 'Format file tidak didukung. Gunakan JPG, JPEG, atau PNG.';
@@ -309,13 +309,13 @@ class Layanan extends BaseController
                     return $this->response->setJSON($response);
                 }
 
-                // Delete old photo if exists
+
                 if ($existingLayanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $existingLayanan['foto'])) {
                     unlink(FCPATH . 'uploads/layanan/' . $existingLayanan['foto']);
                     log_message('debug', 'Old photo deleted: ' . $existingLayanan['foto']);
                 }
 
-                // Create directory if not exists
+
                 $uploadPath = FCPATH . 'uploads/layanan';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
@@ -330,15 +330,15 @@ class Layanan extends BaseController
                 log_message('debug', 'New photo uploaded successfully: ' . $fotoName);
             }
 
-            // Validate input first
+
             $rules = $this->layananModel->getValidationRulesForEdit($kode);
 
-            // Remove foto validation if no file uploaded
+
             if (!$foto || !$foto->isValid()) {
                 unset($rules['foto']);
             }
 
-            // Prepare data for validation
+
             $validationData = [
                 'kode_layanan' => $postData['kode_layanan'],
                 'nama_layanan' => $postData['nama_layanan'],
@@ -355,7 +355,7 @@ class Layanan extends BaseController
                 return $this->response->setJSON($response);
             }
 
-            // Prepare data for update
+
             $data = [
                 'kode_layanan' => $postData['kode_layanan'],
                 'nama_layanan' => $postData['nama_layanan'],
@@ -367,10 +367,10 @@ class Layanan extends BaseController
                 'status' => $postData['status'] ?? 'aktif'
             ];
 
-            // Debug: Log the data being updated
+
             log_message('debug', 'Data to update: ' . json_encode($data));
 
-            // Use model update method (skip validation since we already validated)
+
             $this->layananModel->skipValidation();
             if ($this->layananModel->update($kode, $data)) {
                 $response['status'] = true;
@@ -396,7 +396,7 @@ class Layanan extends BaseController
 
     public function delete($kode = null)
     {
-        // Check if this is an AJAX/API request
+
         if ($this->request->isAJAX() || $this->request->getMethod() === 'delete') {
             return $this->deleteAjax($kode);
         }
@@ -407,7 +407,7 @@ class Layanan extends BaseController
             throw new PageNotFoundException('Layanan dengan kode ' . $kode . ' tidak ditemukan');
         }
 
-        // Delete foto file if exists
+
         if ($layanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $layanan['foto'])) {
             unlink(FCPATH . 'uploads/layanan/' . $layanan['foto']);
         }
@@ -430,7 +430,7 @@ class Layanan extends BaseController
         }
 
         try {
-            // Delete foto file if exists
+
             if ($layanan['foto'] && file_exists(FCPATH . 'uploads/layanan/' . $layanan['foto'])) {
                 unlink(FCPATH . 'uploads/layanan/' . $layanan['foto']);
             }

@@ -26,26 +26,23 @@ class Payment extends BaseController
         $this->detailTransaksiModel = new DetailTransaksiModel();
     }
 
-    /**
-     * Display payment page for a booking
-     */
     public function index($kodeBooking = null)
     {
         if (!$kodeBooking) {
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Kode booking tidak ditemukan');
         }
 
-        // Auto-cancel expired bookings first
+
         $this->bookingModel->cancelExpiredBookings();
 
-        // Get all bookings with this kode_booking (multiple services)
+
         $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
 
         if (empty($bookings)) {
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Booking tidak ditemukan');
         }
 
-        // Check if booking is expired
+
         $paymentInfo = $this->bookingModel->getPaymentInfo($kodeBooking);
         if ($paymentInfo && $paymentInfo['is_expired']) {
             return view('payment/expired', [
@@ -55,14 +52,14 @@ class Payment extends BaseController
             ]);
         }
 
-        // Check if already paid
+
         $existingTransaksi = $this->transaksiModel->where('booking_id', $bookings[0]['id'])->first();
         if ($existingTransaksi && $existingTransaksi['status_pembayaran'] === 'dibayar') {
             session()->setFlashdata('error', 'Booking ini sudah dibayar');
             return redirect()->to('/');
         }
 
-        // Get booking details with layanan info
+
         $bookingDetails = [];
         $totalHarga = 0;
         $pelangganInfo = null;
@@ -75,7 +72,7 @@ class Payment extends BaseController
             ];
             $totalHarga += (float)$layanan['harga'];
 
-            // Get pelanggan info (same for all bookings)
+
             if (!$pelangganInfo) {
                 $pelangganInfo = $this->pelangganModel->find($booking['pelanggan_id']);
             }
@@ -94,9 +91,6 @@ class Payment extends BaseController
         return view('payment/index', $data);
     }
 
-    /**
-     * Process payment
-     */
     public function process()
     {
         if (!$this->request->isAJAX()) {
@@ -108,7 +102,7 @@ class Payment extends BaseController
             'metode_pembayaran' => 'required|in_list[transfer]'
         ];
 
-        // Add bukti_pembayaran validation only if file is uploaded
+
         $buktiFile = $this->request->getFile('bukti_pembayaran');
         if ($buktiFile && $buktiFile->isValid() && !$buktiFile->hasMoved()) {
             $rules['bukti_pembayaran'] = 'uploaded[bukti_pembayaran]|max_size[bukti_pembayaran,2048]|ext_in[bukti_pembayaran,jpg,jpeg,png,pdf]';
@@ -125,7 +119,7 @@ class Payment extends BaseController
         $kodeBooking = $this->request->getPost('kode_booking');
         $metodePembayaran = $this->request->getPost('metode_pembayaran');
 
-        // Get all bookings with this kode_booking
+
         $bookings = $this->bookingModel->where('kode_booking', $kodeBooking)->findAll();
 
         if (empty($bookings)) {
@@ -135,7 +129,7 @@ class Payment extends BaseController
             ]);
         }
 
-        // Check if already has transaction (pending or paid)
+
         $existingTransaksi = null;
         foreach ($bookings as $booking) {
             $transaksi = $this->transaksiModel->where('booking_id', $booking['id'])->first();
@@ -156,7 +150,7 @@ class Payment extends BaseController
         $db->transStart();
 
         try {
-            // Calculate total amount
+
             $totalHarga = 0;
             $pelangganId = $bookings[0]['pelanggan_id'];
             $firstBooking = $bookings[0];
@@ -166,18 +160,18 @@ class Payment extends BaseController
                 $totalHarga += (float)$layanan['harga'];
             }
 
-            // Handle file upload for bukti pembayaran
+
             $buktiPembayaranPath = null;
             $buktiFile = $this->request->getFile('bukti_pembayaran');
 
             if ($buktiFile && $buktiFile->isValid() && !$buktiFile->hasMoved()) {
-                // Create uploads directory if not exists
+
                 $uploadPath = FCPATH . 'uploads/bukti_pembayaran/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
 
-                // Generate unique filename
+
                 $newName = 'bukti_' . $kodeBooking . '_' . time() . '.' . $buktiFile->getExtension();
 
                 if ($buktiFile->move($uploadPath, $newName)) {
@@ -188,21 +182,21 @@ class Payment extends BaseController
                 }
             }
 
-            // Determine payment status based on whether bukti_pembayaran is uploaded
+
             $statusPembayaran = 'belum_bayar'; // Default status
             if ($buktiPembayaranPath) {
                 $statusPembayaran = 'dibayar'; // Mark as paid if proof is uploaded
                 log_message('info', 'Payment proof uploaded, setting status to dibayar');
             }
 
-            // Create main transaction - normalized data structure
+
             $transaksiData = [
                 'tanggal' => date('Y-m-d'),
                 'booking_id' => $firstBooking['id'], // Reference to first booking
-                // 'pelanggan_id' => $pelangganId, // REMOVED: redundant, use booking.pelanggan_id
+
                 'layanan_id' => $firstBooking['layanan_id'], // Main service
-                // 'no_plat' => $firstBooking['no_plat'], // REMOVED: redundant, use booking.no_plat
-                // 'jenis_kendaraan' => $firstBooking['jenis_kendaraan'], // REMOVED: redundant, use layanan.jenis_kendaraan
+
+
                 'total_harga' => $totalHarga,
                 'metode_pembayaran' => $metodePembayaran,
                 'status_pembayaran' => $statusPembayaran,
@@ -211,7 +205,7 @@ class Payment extends BaseController
                 'user_id' => session()->get('user_id') ?? null
             ];
 
-            // Debug log transaksi data
+
             log_message('info', 'Attempting to insert transaksi with data: ' . json_encode($transaksiData));
 
             if (!$this->transaksiModel->insert($transaksiData)) {
@@ -223,7 +217,7 @@ class Payment extends BaseController
 
             $transaksiId = $this->transaksiModel->getInsertID();
 
-            // Create detail transactions for each service
+
             foreach ($bookings as $booking) {
                 $layanan = $this->layananModel->find($booking['layanan_id']);
 
@@ -245,7 +239,7 @@ class Payment extends BaseController
                     throw new \Exception('Gagal menyimpan detail transaksi: ' . json_encode($detailErrors));
                 }
 
-                // Update booking status to 'dikonfirmasi'
+
                 $this->bookingModel->update($booking['id'], ['status' => 'diproses']);
             }
 
@@ -255,7 +249,7 @@ class Payment extends BaseController
                 throw new \Exception('Database transaction failed');
             }
 
-            // Get the created transaction
+
             $transaksi = $this->transaksiModel->find($transaksiId);
 
             if (!$transaksi || !is_array($transaksi)) {
@@ -285,9 +279,6 @@ class Payment extends BaseController
         }
     }
 
-    /**
-     * Payment success page
-     */
     public function success($noTransaksi = null)
     {
         if (!$noTransaksi) {
@@ -301,21 +292,21 @@ class Payment extends BaseController
         log_message('info', 'Transaksi result: ' . json_encode($transaksi));
 
         if (!$transaksi) {
-            // Fallback: Try basic lookup without JOIN
+
             log_message('info', 'Trying fallback lookup without JOIN');
             $basicTransaksi = $this->transaksiModel->where('no_transaksi', $noTransaksi)->first();
 
             if ($basicTransaksi) {
                 log_message('info', 'Basic transaksi found, manually building data');
 
-                // Get related data via normalized method
+
                 $transaksiWithDetails = $this->transaksiModel->getTransaksiWithDetails($transaksi['id']);
 
                 $pelanggan = null;
                 $layanan = null;
                 $user = null;
 
-                // Extract data from normalized result
+
                 if ($transaksiWithDetails) {
                     if ($transaksiWithDetails['nama_pelanggan']) {
                         $pelanggan = [
@@ -341,7 +332,7 @@ class Payment extends BaseController
                     $user = $userModel->find($basicTransaksi['user_id']);
                 }
 
-                // Build combined result
+
                 $transaksi = $basicTransaksi;
                 $transaksi['nama_pelanggan'] = $pelanggan ? $pelanggan['nama_pelanggan'] : null;
                 $transaksi['nama_layanan'] = $layanan ? $layanan['nama_layanan'] : null;
@@ -354,10 +345,10 @@ class Payment extends BaseController
             }
         }
 
-        // Get detail transactions
+
         $details = $this->detailTransaksiModel->getDetailByTransaksi($transaksi['id']);
 
-        // Get karyawan name from booking
+
         $karyawanName = null;
         if (isset($transaksi['booking_id'])) {
             $bookingModel = new \App\Models\BookingModel();
@@ -374,17 +365,17 @@ class Payment extends BaseController
             }
         }
 
-        // Add karyawan name to transaksi data
+
         $transaksi['nama_karyawan'] = $karyawanName;
 
-        // Get all booking details for multi-service support
+
         $bookingDetails = [];
         if (isset($transaksi['booking_id'])) {
             $bookingModel = new \App\Models\BookingModel();
             $booking = $bookingModel->find($transaksi['booking_id']);
 
             if ($booking && $booking['kode_booking']) {
-                // Get all bookings with the same kode_booking
+
                 $allBookings = $bookingModel->getBookingsByKodeBooking($booking['kode_booking']);
 
                 foreach ($allBookings as $bookingItem) {
@@ -399,7 +390,7 @@ class Payment extends BaseController
             }
         }
 
-        // Generate QR Code for payment info
+
         $qrData = $this->generatePaymentQRData($transaksi);
         $qrCodeImage = $this->generateQRCode($qrData);
 
@@ -414,9 +405,6 @@ class Payment extends BaseController
         return view('payment/success', $data);
     }
 
-    /**
-     * Get available payment methods
-     */
     private function getPaymentMethods()
     {
         return [
@@ -433,9 +421,6 @@ class Payment extends BaseController
         ];
     }
 
-    /**
-     * Generate payment QR data
-     */
     private function generatePaymentQRData($transaksi)
     {
         return json_encode([
@@ -450,15 +435,12 @@ class Payment extends BaseController
         ]);
     }
 
-    /**
-     * Generate QR Code image
-     */
     private function generateQRCode($data)
     {
         try {
-            // Try multiple QR code generation methods
 
-            // Method 1: Try BaconQrCode directly
+
+
             if (class_exists('\BaconQrCode\Writer') && class_exists('\BaconQrCode\Renderer\ImageRenderer')) {
                 try {
                     $renderer = new \BaconQrCode\Renderer\ImageRenderer(
@@ -475,18 +457,10 @@ class Payment extends BaseController
                 }
             }
 
-            // Method 2: Try online QR service as backup (optional)
-            // Note: Comment this out if you don't want external dependencies
-            /*
-            $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($data);
-            $qrImage = @file_get_contents($qrUrl);
-            if ($qrImage !== false) {
-                log_message('info', 'QR Code generated using online service');
-                return 'data:image/png;base64,' . base64_encode($qrImage);
-            }
-            */
 
-            // Method 3: Always use our beautiful fallback
+
+
+
             log_message('info', 'Using QR Code fallback placeholder');
             return $this->generateSimpleQRFallback($data);
         } catch (\Exception $e) {
@@ -497,13 +471,13 @@ class Payment extends BaseController
 
     private function generateSimpleQRFallback($data)
     {
-        // Simple fallback - create a professional placeholder with transaction info
+
         $lines = explode("\n", $data);
         $noTransaksi = '';
         $tanggal = '';
         $total = '';
 
-        // Extract key info from data
+
         foreach ($lines as $line) {
             if (strpos($line, 'No. Transaksi:') !== false) {
                 $noTransaksi = trim(str_replace('No. Transaksi:', '', $line));
